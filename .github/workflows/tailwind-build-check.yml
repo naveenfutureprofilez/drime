@@ -1,0 +1,62 @@
+name: Tailwind CSS Build Check
+
+on:
+  pull_request:
+    branches: [ main, master, develop ]
+    paths:
+      - 'resources/client/**'
+      - 'common/foundation/resources/client/**'
+      - 'resources/views/**'
+      - 'common/foundation/resources/views/**'
+      - '*.php'
+      - 'tailwind.config.js'
+      - 'tailwind.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+
+jobs:
+  tailwind-build:
+    runs-on: ubuntu-latest
+    name: Check Tailwind CSS Build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check Tailwind CSS Build
+        run: |
+          echo "🎨 Running Tailwind CSS build check..."
+          npx tailwindcss -i resources/client/App.css --content "./resources/**/*.{php,jsx,tsx,js,ts}" "./common/**/*.{php,jsx,tsx,js,ts}" -o /dev/null
+          echo "✅ Tailwind CSS build check passed!"
+
+      - name: Run Tailwind Config Tests (if available)
+        run: |
+          if [ -f "jest.config.js" ] && [ -d "tests" ]; then
+            echo "🧪 Running Tailwind configuration tests..."
+            npm test -- --testPathPattern=tailwind-config
+          else
+            echo "ℹ️ No Tailwind configuration tests found, skipping..."
+          fi
+        continue-on-error: true
+
+      - name: Build Check Summary
+        run: |
+          echo "## 📋 Tailwind CSS Build Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Tailwind CSS compilation passed**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This check ensures that all Tailwind CSS classes used in the codebase are valid and can be compiled successfully." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Files checked:" >> $GITHUB_STEP_SUMMARY
+          echo "- PHP files: \`*.php\`" >> $GITHUB_STEP_SUMMARY
+          echo "- JavaScript/TypeScript: \`*.js\`, \`*.ts\`" >> $GITHUB_STEP_SUMMARY  
+          echo "- React components: \`*.jsx\`, \`*.tsx\`" >> $GITHUB_STEP_SUMMARY

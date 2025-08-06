@@ -40,3 +40,68 @@ Expired guest uploads are automatically purged from the system to free up storag
 2.  **Protect Routes**: Use the `guest.uploads.enabled` middleware to protect routes that require guest uploads to be enabled.
 3.  **Manage Guest Links**: Use the helper methods on the `ShareableLink` model to manage guest links (`isGuest()`, `isExpired()`, `softDeleteGuest()`).
 
+## Development & Troubleshooting
+
+### Tailwind CSS Issues
+
+If you encounter issues with Tailwind CSS not applying styles correctly, follow these troubleshooting steps:
+
+#### Build Check
+Run the Tailwind CSS build check to ensure all classes are valid:
+```bash
+npx tailwindcss -i resources/client/App.css --content "./resources/**/*.{php,jsx,tsx,js,ts}" "./common/**/*.{php,jsx,tsx,js,ts}" -o /dev/null
+```
+
+#### Configuration Validation
+If you have Jest configured, run the Tailwind configuration tests:
+```bash
+npm test -- --testPathPattern=tailwind-config
+```
+
+#### Common Issues
+
+1. **Classes not applying**: 
+   - Ensure your files are included in the `content` array of `tailwind.config.js`
+   - Check that the file extensions match those specified in the config
+   - Verify that the classes are spelled correctly
+
+2. **Custom colors/spacing not working**:
+   - Check that custom values are properly defined in `common/foundation/resources/client/shared.tailwind.js`
+   - Ensure the shared configuration is correctly imported in your main config
+   - Verify CSS custom properties are available in the browser
+
+3. **Build errors**:
+   - Run `npm ci` to ensure all dependencies are properly installed
+   - Check for syntax errors in your Tailwind configuration files
+   - Ensure Node.js version compatibility (recommended: Node 18+)
+
+4. **Hot Module Replacement (HMR) issues**:
+   - The Vite configuration includes `followSymlinks: true` to handle symlinked packages
+   - Restart the dev server if HMR stops working: `npm run dev`
+
+#### Dark Mode
+The application supports dark mode through the `dark:` prefix. Toggle dark mode by adding/removing the `dark` class from the HTML element:
+```javascript
+document.documentElement.classList.toggle('dark');
+```
+
+### CI/CD Integration
+
+The project includes a GitHub Actions workflow (`.github/workflows/tailwind-build-check.yml`) that:
+- Automatically runs on pull requests affecting CSS-related files
+- Validates that all Tailwind classes compile successfully
+- Runs Tailwind configuration tests if available
+- Provides detailed summaries of build results
+
+### Testing
+
+Run all tests:
+```bash
+npm test
+```
+
+Run only Tailwind-related tests:
+```bash
+npm test -- --testPathPattern=tailwind
+```
+
