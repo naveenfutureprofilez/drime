@@ -1,0 +1,22 @@
+import { useLocation } from 'react-router';
+import { useEffect } from 'react';
+import { usePrevious } from '@ui/utils/hooks/use-previous';
+import { getScrollParent } from '@react-aria/utils';
+export function useScrollToTop(ref) {
+  const {
+    pathname
+  } = useLocation();
+  const previousPathname = usePrevious(pathname);
+  useEffect(() => {
+    if (previousPathname !== pathname) {
+      scrollToTop(ref);
+    }
+  }, [pathname, previousPathname, ref]);
+}
+export function scrollToTop(ref) {
+  const scrollParent = ref?.current ? getScrollParent(ref.current) : document.documentElement;
+  scrollParent.scrollTo({
+    top: 0,
+    left: 0
+  });
+}

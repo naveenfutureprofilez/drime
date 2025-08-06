@@ -1,0 +1,100 @@
+import { useAuth } from '../../auth/use-auth';
+import { memo, useEffect, useId, useMemo, useRef } from 'react';
+import lazyLoader from '@ui/utils/loaders/lazy-loader';
+import clsx from 'clsx';
+import { useSettings } from '@ui/settings/use-settings';
+import dot from 'dot-object';
+import { getScrollParent } from '@react-aria/utils';
+export function AdHost({
+  slot,
+  className
+}) {
+  const settings = useSettings();
+  const {
+    isSubscribed
+  } = useAuth();
+  const adCode = useMemo(() => {
+    return dot.pick(`ads.${slot}`, settings);
+  }, [slot, settings]);
+  if (settings.ads?.disable || isSubscribed || !adCode) return null;
+  return <InvariantAd className={className} slot={slot} adCode={adCode} />;
+}
+const InvariantAd = memo(({
+  slot,
+  adCode,
+  className
+}) => {
+  const ref = useRef(null);
+  const id = useId();
+  useEffect(() => {
+    if (ref.current) {
+      loadAdScripts(adCode, ref.current).then(() => {
+        executeAdJavascript(adCode, id);
+      });
+    }
+    return () => {
+      // @ts-ignore
+      delete window['google_ad_modifications'];
+    };
+  }, [adCode, id]);
+
+  // remove height modifications added by adsense
+  useEffect(() => {
+    if (ref.current) {
+      const scrollParent = getScrollParent(ref.current);
+      if (scrollParent) {
+        const observer = new MutationObserver(function () {
+          scrollParent.style.height = '';
+          scrollParent.style.minHeight = '';
+        });
+        observer.observe(scrollParent, {
+          attributes: true,
+          attributeFilter: ['style']
+        });
+        return () => observer.disconnect();
+      }
+    }
+  }, []);
+  return <div ref={ref} id={id} className={clsx('ad-host flex max-h-[600px] min-h-90 w-full max-w-full items-center justify-center overflow-hidden', `${slot.replace(/\./g, '-')}-host`, className)} dangerouslySetInnerHTML={{
+    __html: getAdHtml(adCode)
+  }}></div>;
+}, () => {
+  // never re-render
+  return false;
+});
+function getAdHtml(adCode) {
+  // strip out all script tags from ad code and leave only html
+  return adCode?.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '').trim();
+}
+
+// Load any external scripts needed by ad.
+function loadAdScripts(adCode, parentEl) {
+  const promises = [];
+
+  // load ad code script
+  const pattern = /<script.*?src=['"](.*?)['"]/g;
+  let match;
+  while (match = pattern.exec(adCode)) {
+    if (match[1]) {
+      promises.push(lazyLoader.loadAsset(match[1], {
+        type: 'js',
+        parentEl
+      }));
+    }
+  }
+  return Promise.all(promises);
+}
+
+// Execute ad code javascript and replace document.write if needed.
+function executeAdJavascript(adCode, id) {
+  // find any ad code javascript that needs to be executed
+  const pattern = /<script\b[^>]*>([\s\S]*?)<\/script>/g;
+  let content;
+  while (content = pattern.exec(adCode)) {
+    if (content[1]) {
+      const r = `var d = document.createElement('div'); d.innerHTML = $1; document.getElementById('${id}').appendChild(d.firstChild);`;
+      const toEval = content[1].replace(/document.write\((.+?)\);/, r);
+      eval(toEval);
+    }
+  }
+}

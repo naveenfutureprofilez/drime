@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Progress Bar</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="progress-container">
+        <div class="progress-bar-wrapper">
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-fill" id="progressFill">
+                    <div class="progress-stripes"></div>
+                </div>
+                <div class="progress-text" id="progressText">0%</div>
+                <div class="progress-icon" id="progressIcon">
+                    <div class="check-icon">✓</div>
+                    <div class="error-icon">!</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="progress-stats" id="progressStats">
+            <div class="speed">Speed: <span id="speedValue">0 KB/s</span></div>
+            <div class="eta">ETA: <span id="etaValue">--:--</span></div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button onclick="startProgress()">Start Progress</button>
+        <button onclick="simulateError()">Simulate Error</button>
+        <button onclick="resetProgress()">Reset</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

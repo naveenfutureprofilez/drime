@@ -1,0 +1,30 @@
+export let FilterControlType = /*#__PURE__*/function (FilterControlType) {
+  FilterControlType["Select"] = "select";
+  FilterControlType["DateRangePicker"] = "dateRangePicker";
+  FilterControlType["SelectModel"] = "selectModel";
+  FilterControlType["Input"] = "input";
+  FilterControlType["BooleanToggle"] = "booleanToggle";
+  FilterControlType["ChipField"] = "chipField";
+  FilterControlType["Custom"] = "custom";
+  return FilterControlType;
+}({});
+export let FilterOperator = /*#__PURE__*/function (FilterOperator) {
+  FilterOperator["eq"] = "=";
+  FilterOperator["ne"] = "!=";
+  FilterOperator["gt"] = ">";
+  FilterOperator["gte"] = ">=";
+  FilterOperator["lt"] = "<";
+  FilterOperator["lte"] = "<=";
+  FilterOperator["has"] = "has";
+  FilterOperator["notNull"] = "notNull";
+  FilterOperator["contains"] = "contains";
+  FilterOperator["notContains"] = "notContains";
+  FilterOperator["startsWith"] = "startsWith";
+  FilterOperator["endsWith"] = "endsWith";
+  FilterOperator["hasAll"] = "hasAll";
+  FilterOperator["doesntHave"] = "doesntHave";
+  FilterOperator["between"] = "between";
+  return FilterOperator;
+}({});
+export const ALL_STRING_OPERATORS = [FilterOperator.eq, FilterOperator.ne, FilterOperator.contains, FilterOperator.notContains, FilterOperator.startsWith, FilterOperator.endsWith, FilterOperator.notNull];
+export const ALL_NUMBER_OPERATORS = [FilterOperator.eq, FilterOperator.ne, FilterOperator.gt, FilterOperator.gte, FilterOperator.lt, FilterOperator.lte, FilterOperator.notNull];

@@ -1,0 +1,22 @@
+import React from 'react';
+import { IconButton } from '@ui/buttons/icon-button';
+import { UndoIcon } from '@ui/icons/material/Undo';
+import { RedoIcon } from '@ui/icons/material/Redo';
+export function HistoryButtons({
+  editor
+}) {
+  return <span>
+      <IconButton size="md" disabled={!editor.can().undo()} onClick={() => {
+      editor.commands.focus();
+      editor.commands.undo();
+    }}>
+        <UndoIcon />
+      </IconButton>
+      <IconButton size="md" disabled={!editor.can().redo()} onClick={() => {
+      editor.commands.focus();
+      editor.commands.redo();
+    }}>
+        <RedoIcon />
+      </IconButton>
+    </span>;
+}

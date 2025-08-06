@@ -1,0 +1,18 @@
+import { useMutation } from '@tanstack/react-query';
+import { apiClient, queryClient } from '@common/http/query-client';
+import { showHttpErrorToast } from '@common/http/show-http-error-toast';
+import { DatatableDataQueryKey } from '@common/datatable/requests/paginated-resources';
+export function useUpdateDomain() {
+  return useMutation({
+    mutationFn: props => updateDomain(props),
+    onSuccess: (response, props) => {
+      return queryClient.invalidateQueries({
+        queryKey: DatatableDataQueryKey('custom-domain')
+      });
+    },
+    onError: err => showHttpErrorToast(err)
+  });
+}
+function updateDomain(payload) {
+  return apiClient.put(`custom-domain/${payload.domainId}`, payload).then(r => r.data);
+}

@@ -1,0 +1,44 @@
+import lazyLoader from '@ui/utils/loaders/lazy-loader';
+function prefixId(id) {
+  return `be-fonts-${id}`;
+}
+export function loadFonts(fonts, options) {
+  const doc = options.document || document;
+  const googleFonts = [];
+  const customFonts = [];
+  let promises = [];
+  fonts.forEach(font => {
+    if ('google' in font && font.google) {
+      googleFonts.push(font);
+    } else if ('src' in font) {
+      customFonts.push(font);
+    }
+    // native fonts don't need to be loaded, they are already available in the browser
+  });
+  if (googleFonts?.length) {
+    const weights = options.weights || [400];
+    const families = fonts.map(f => `${f.family}:${weights.join(',')}`).join('|');
+    const googlePromise = lazyLoader.loadAsset(`https://fonts.googleapis.com/css?family=${families}&display=swap`, {
+      type: 'css',
+      id: prefixId(options.id),
+      force: options.forceAssetLoad,
+      document: doc
+    });
+    promises.push(googlePromise);
+  }
+  if (customFonts?.length) {
+    const customFontPromises = customFonts.map(async fontConfig => {
+      const loadedFont = Array.from(doc.fonts.values()).find(current => {
+        return current.family === fontConfig.family;
+      });
+      if (loadedFont) {
+        return loadedFont.loaded;
+      }
+      const fontFace = new FontFace(fontConfig.family, `url(${options?.prefixSrc ? options.prefixSrc(fontConfig.src) : fontConfig.src})`, fontConfig.descriptors);
+      doc.fonts.add(fontFace);
+      return fontFace.load();
+    });
+    promises = promises.concat(customFontPromises);
+  }
+  return Promise.all(promises);
+}

@@ -1,0 +1,85 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Services\GuestUploadService;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Common\Core\BaseController;
+use Illuminate\Validation\ValidationException;
+use Common\Files\Tus\TusCache;
+
+class GuestTusController extends BaseController
+{
+    public function __construct(private GuestUploadService $guestUploadService)
+    {
+    }
+
+    /**
+     * Handle TUS upload completion and create GuestUpload record
+     */
+    public function createEntry(Request $request): JsonResponse
+    {
+        $request->validate([
+            'uploadKey' => 'required|string',
+            'password' => 'nullable|string|min:4|max:255',
+            'expires_in_hours' => 'nullable|integer|min:1|max:168',
+            'max_downloads' => 'nullable|integer|min:1|max:1000',
+        ]);
+
+        $uploadKey = $request->string('uploadKey')->toString();
+
+        // Get TUS cache to validate file details before creating entry
+        $tusCache = app(TusCache::class);
+        $tusData = $tusCache->get($uploadKey);
+
+        if (!$tusData) {
+            return response()->json(['message' => 'Upload data not found'], 404);
+        }
+
+        // Get guest upload settings
+        $maxSizeMb = settings('guest_uploads.max_size_mb', 100);
+        $maxSizeBytes = $maxSizeMb * 1024 * 1024;
+        $blockedExtensions = settings('uploads.blocked_extensions', []);
+
+        // Validate file size
+        if (isset($tusData['size']) && $tusData['size'] > $maxSizeBytes) {
+            return response()->json([
+                'message' => 'File size limit exceeded',
+                'error' => 'File size exceeds the maximum allowed size of ' . $maxSizeMb . ' MB.',
+            ], 413);
+        }
+
+        // Validate content type
+        $fileName = base64_decode($tusData['name'] ?? '');
+        $extension = pathinfo($fileName, PATHINFO_EXTENSION);
+        $mimeType = $tusData['mime'] ?? '';
+
+        if (in_array(strtolower($extension), $blockedExtensions) || in_array($mimeType, $blockedExtensions)) {
+            return response()->json([
+                'message' => 'File type not allowed',
+                'error' => 'This file type or extension is blocked from being uploaded.',
+            ], 422);
+        }
+
+        try {
+            $result = $this->guestUploadService->handleTusUpload($uploadKey, $request);
+
+            return response()->json([
+                'message' => 'File uploaded successfully',
+                'fileEntry' => $result // Maintain compatibility with existing TUS frontend
+            ], 201);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'error' => $e->getMessage()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Upload failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+}

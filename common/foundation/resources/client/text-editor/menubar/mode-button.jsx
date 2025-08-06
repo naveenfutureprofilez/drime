@@ -1,0 +1,20 @@
+import { Button } from '@ui/buttons/button';
+import { CodeIcon } from '@ui/icons/material/Code';
+import { Trans } from '@ui/i18n/trans';
+import { DialogTrigger } from '@ui/overlays/dialog/dialog-trigger';
+import { AceDialog } from '../../ace-editor/ace-dialog';
+import React from 'react';
+export function ModeButton({
+  editor
+}) {
+  return <DialogTrigger type="modal" onClose={newValue => {
+    if (newValue != null) {
+      editor?.commands.setContent(newValue);
+    }
+  }}>
+      <Button variant="text" startIcon={<CodeIcon />}>
+        <Trans message="Source" />
+      </Button>
+      <AceDialog title={<Trans message="Source code" />} defaultValue={editor.getHTML()} />
+    </DialogTrigger>;
+}

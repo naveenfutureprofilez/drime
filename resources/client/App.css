@@ -1,0 +1,79 @@
+@import '../../common/foundation/resources/client/core/common.css';
+@import 'drive/file-view/file-grid/file-grid.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global fixes for text visibility */
+body {
+  @apply text-gray-900;
+}
+
+/* Ensure text is visible on all backgrounds */
+.text-white {
+  color: white !important;
+}
+
+.text-gray-900 {
+  color: rgb(17 24 39) !important;
+}
+
+.text-gray-700 {
+  color: rgb(55 65 81) !important;
+}
+
+.text-gray-600 {
+  color: rgb(75 85 99) !important;
+}
+
+.text-gray-500 {
+  color: rgb(107 114 128) !important;
+}
+
+/* Dark mode specific fixes */
+.dark {
+  @apply text-white;
+}
+
+.dark .text-gray-900 {
+  color: white !important;
+}
+
+.dark .text-gray-700 {
+  color: rgb(209 213 219) !important;
+}
+
+.dark .text-gray-600 {
+  color: rgb(156 163 175) !important;
+}
+
+.dark .text-gray-500 {
+  color: rgb(107 114 128) !important;
+}
+
+.landing-container {
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+@media screen and (min-width: 768px) {
+  .landing-container {
+    max-width: 750px;
+  }
+}
+
+@media screen and (min-width: 992px) {
+  .landing-container {
+    max-width: 970px;
+  }
+}
+
+@media screen and (min-width: 1200px) {
+  .landing-container {
+    max-width: 1170px;
+  }
+}

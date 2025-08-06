@@ -1,0 +1,14 @@
+import { FormTextField } from '@ui/forms/input-field/text-field/text-field';
+import { Trans } from '@ui/i18n/trans';
+import { Fragment } from 'react';
+import { FormSwitch } from '@ui/forms/toggle/switch';
+export function HostStep({
+  stepper
+}) {
+  return <Fragment>
+      <FormTextField autoFocus name="host" required maxLength={100} label={<Trans message="Host" />} placeholder="https://example.com" description={<Trans message="Enter the exact domain name you want your items to be accessible with. It can be a subdomain (example.yourdomain.com) or root domain (yourdomain.com)." />} />
+      {stepper.showGlobalField && <FormSwitch className="mt-24 border-t pt-24" name="global" description={<Trans message="Whether all users should be able to select this domain." />}>
+          <Trans message="Global" />
+        </FormSwitch>}
+    </Fragment>;
+}

@@ -1,0 +1,42 @@
+import { HexColorInput, HexColorPicker } from 'react-colorful';
+import React, { useState } from 'react';
+import { parseColor } from '@react-stately/color';
+import { ColorPresets } from '@ui/color-picker/color-presets';
+import { getInputFieldClassNames } from '@ui/forms/input-field/get-input-field-class-names';
+import { ColorSwatch } from '@ui/color-picker/color-swatch';
+const DefaultPresets = ColorPresets.map(({
+  color
+}) => color).slice(0, 14);
+export function ColorPicker({
+  defaultValue,
+  onChange,
+  colorPresets,
+  showInput
+}) {
+  const [color, setColor] = useState(defaultValue);
+  const presets = colorPresets || DefaultPresets;
+  const style = getInputFieldClassNames({
+    size: 'sm'
+  });
+  return <div>
+      <HexColorPicker className="!w-auto" color={color} onChange={newColor => {
+      onChange?.(newColor);
+      setColor(newColor);
+    }} />
+      <div className="px-12 py-20">
+        {presets && <ColorSwatch colors={presets} onChange={newColor => {
+        if (newColor) {
+          const hex = parseColor(newColor).toString('hex');
+          onChange?.(hex);
+          setColor(hex);
+        }
+      }} value={color} />}
+        {showInput && <div className="pt-20">
+            <HexColorInput autoComplete="off" role="textbox" autoCorrect="off" spellCheck="false" required aria-label="Hex color" prefixed className={style.input} color={color} onChange={newColor => {
+          onChange?.(newColor);
+          setColor(newColor);
+        }} />
+          </div>}
+      </div>
+    </div>;
+}
