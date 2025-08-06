@@ -36,8 +36,8 @@ export function TransferHomepage() {
   }, []);
   return <>
       <DefaultMetaTags />
-      <div className="min-h-screen bg-gray-50">
-        <Navbar color="transparent" className="bg-white shadow-sm" menuPosition="homepage-navbar" />
+      <div className="min-h-screen bg-white text-black">
+        {/* <Navbar color="transparent" className="bg-white shadow-sm" menuPosition="homepage-navbar" /> */}
         
         <main className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
@@ -47,13 +47,13 @@ export function TransferHomepage() {
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <Trans message="Service Online" />
               </div>
-              <h1 className="text-5xl font-bold text-gray-900 mb-6 tracking-tight">
-                <Trans message="Drime Transfer ds" />
+              <h1 className="text-5xl font-bold  mb-6 tracking-tight">
+                <Trans message="Drime Transfer" />
               </h1>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+              <p className="text-xl   max-w-3xl mx-auto leading-relaxed">
                 <Trans message="Send files up to 3GB per file for free. Secure, fast, and reliable file sharing with automatic cleanup after 7 days." />
               </p>
-              <div className="mt-6 flex justify-center gap-6 text-sm text-gray-500">
+              <div className="mt-6 flex justify-center gap-6 text-sm  ">
                 <div className="flex items-center gap-2">
                   <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -94,25 +94,27 @@ export function TransferHomepage() {
       </div>
     </>;
 }
+
+
 function UploadSection({
   settings,
   onUploadComplete,
   onShowSettings
 }) {
-  return <div className="p-8">
+  return <div className="shadow-md p-8 rounded-xl">
       {/* Top Actions */}
       <div className="flex justify-between items-center mb-8">
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" startIcon={<LinkIcon />} className="text-gray-600">
-            <Trans message="Link transfer" />
-          </Button>
-          <Button variant="outline" size="sm" startIcon={<EmailIcon />} className="text-gray-600">
-            <Trans message="Email transfer" />
-          </Button>
+          <button className="!bg-gray-300 text-black px-2 py-2 rounded-[30px]">
+            <LinkIcon /> <Trans message="Link transfer" />
+          </button>
+          <button className="!bg-gray-300 text-black px-2 py-2 rounded-[30px]">
+            <EmailIcon /> <Trans message="Email transfer" />
+          </button>
         </div>
-        <Button variant="text" size="sm" startIcon={<SettingsIcon />} onClick={onShowSettings} className="text-gray-600">
-          <Trans message="Settings" />
-        </Button>
+        <button onClick={onShowSettings} className="!bg-gray-300 text-black px-2 py-2 rounded-[30px]">
+          <SettingsIcon /> <Trans message="Settings" />
+        </button>
       </div>
 
       {/* Upload Widget */}
@@ -142,13 +144,15 @@ function ShareSection({
   onNewTransfer,
   onShowEmailPanel
 }) {
+  // All files should share the same upload/share URL
   const shareUrl = files[0]?.share_url || '';
+  console.log('ShareSection received files:', files); // Debug log to see all files
   return <div className="p-8">
       <div className="text-center mb-6">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <FileUploadIcon className="w-8 h-8 text-green-600" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <h2 className="text-2xl font-bold  mb-2">
           <Trans message="Transfer ready!" />
         </h2>
         <p className="text-gray-600">
@@ -158,10 +162,10 @@ function ShareSection({
 
       <ShareLinkPanel shareUrl={shareUrl} files={files} onEmailTransfer={onShowEmailPanel} />
 
-      <div className="mt-8 text-center">
-        <Button variant="outline" onClick={onNewTransfer} className="px-8">
+      <div className="mt-2 text-center">
+        <button onClick={onNewTransfer} className="px-8 text-primary">
           <Trans message="Send another transfer" />
-        </Button>
+        </button>
       </div>
     </div>;
 }

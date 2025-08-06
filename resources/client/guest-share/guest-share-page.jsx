@@ -13,9 +13,9 @@ export function Component() {
   useEffect(() => {
     apiClient.get(`guest/upload/${hash}`).then(response => setData(response.data)).catch(err => setError(err));
   }, [hash]);
-  return <div className="min-h-screen bg-gray-50">
+  return <div className="min-h-screen ">
       <Navbar color="transparent" className="bg-white shadow-sm" menuPosition="homepage-navbar" />
-      <main className="container mx-auto px-4 py-8">
+      <main className=" px-4 w-full py-8  bg-white">
         <div className="max-w-2xl mx-auto">
           {error ? <div className="text-center text-red-500">
               <h1 className="text-2xl font-bold mb-4">

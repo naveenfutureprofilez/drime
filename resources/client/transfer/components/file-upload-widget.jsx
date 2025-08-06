@@ -27,7 +27,7 @@ export function FileUploadWidget({
     setIsDragOver(false);
     const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) {
-      setSelectedFiles(files);
+      setSelectedFiles(prevFiles => prevFiles.length > 0 ? [...prevFiles, ...files] : files);
     }
   }, []);
   const handleFileSelect = useCallback(() => {
@@ -37,6 +37,16 @@ export function FileUploadWidget({
     }).then(files => {
       if (files?.length) {
         setSelectedFiles(files);
+      }
+    });
+  }, []);
+  const handleAddMoreFiles = useCallback(() => {
+    openUploadWindow({
+      multiple: true,
+      types: ['*']
+    }).then(files => {
+      if (files?.length) {
+        setSelectedFiles(prevFiles => [...prevFiles, ...files]);
       }
     });
   }, []);
@@ -66,6 +76,7 @@ export function FileUploadWidget({
         }
       });
       setUploadProgress(null);
+      console.log('Upload API response:', response.data.data); // Debug log to check API structure
       onUploadComplete(response.data.data.uploads);
     } catch (error) {
       console.error('Upload failed:', error);
@@ -93,36 +104,36 @@ export function FileUploadWidget({
       </div>;
   }
   return <div className="text-center">
-      {selectedFiles.length === 0 ? <div className={`border-2 border-dashed rounded-2xl p-12 transition-colors ${isDragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}`} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+      {selectedFiles.length === 0 ? <div className={`border-2 border-dashed rounded-2xl p-4 transition-colors ${isDragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}`} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <AddIcon className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <h3 className="text-lg font-medium text-black-900 mb-2">
             <Trans message="Click to upload or drag and drop" />
           </h3>
           <p className="text-sm text-gray-500 mb-6">
-            <Trans message="Share up to 10GB for free" />
+            <Trans message="Share up to 3GB per file for free" />
           </p>
           <Button variant="flat" color="primary" size="lg" onClick={handleFileSelect} className="px-8">
             <Trans message="Choose files" />
           </Button>
         </div> : <div>
           <div className="bg-gray-50 rounded-xl p-6 mb-6">
-            <h3 className="font-medium text-gray-900 mb-4">
+            <h3 className="font-medium  mb-4">
               <Trans message="Selected files" />
             </h3>
             <div className="space-y-3">
-              {selectedFiles.map((file, index) => <div key={index} className="flex items-center justify-between bg-white rounded-lg p-3">
-                  <div className="flex items-center gap-3">
+              {selectedFiles.map((file, index) => <div key={index} className="flex items-center justify-between bg-white rounded-lg p-3 border border-black rounded-lg">
+                  <div className="flex items-center gap-3 ">
                     <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
                       <FileUploadIcon className="w-4 h-4 text-blue-600" />
                     </div>
                     <div className="text-left">
-                      <div className="text-sm font-medium text-gray-900">{file.name}</div>
-                      <div className="text-xs text-gray-500">{prettyBytes(file.size)}</div>
+                      <div className="text-sm font-medium ">{file.name}</div>
+                      <div className="text-xs ">{prettyBytes(file.size)}</div>
                     </div>
                   </div>
-                  <button onClick={() => removeFile(index)} className="text-gray-400 hover:text-red-500 p-1">
+                  <button onClick={() => removeFile(index)} className=" p-1">
                     ✕
                   </button>
                 </div>)}
@@ -141,12 +152,15 @@ export function FileUploadWidget({
           </div>
           
           <div className="flex gap-3 justify-center">
-            <Button variant="outline" onClick={() => setSelectedFiles([])}>
+            <button className="border-2 border-dashed rounded-2xl p-4 transition-colors" onClick={handleAddMoreFiles}>
+              <Trans message="Add more files" />
+            </button>
+            <button className="border-2 border-dashed rounded-2xl p-4 transition-colors" onClick={() => setSelectedFiles([])}>
               <Trans message="Clear all" />
-            </Button>
-            <Button variant="flat" color="primary" onClick={handleUpload} className="px-8">
+            </button>
+            <button className="border-2 border-dashed rounded-2xl p-4 transition-colors" onClick={handleUpload}>
               <Trans message="Upload files" />
-            </Button>
+            </button>
           </div>
         </div>}
     </div>;

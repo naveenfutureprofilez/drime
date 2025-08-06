@@ -8,16 +8,15 @@ export const GuestDownloadView = ({
   expiresAt
 }) => {
   return <div className="space-y-6">
-      {/* File List */}
-      <div className="bg-gray-50 rounded-xl p-4">
-        <h3 className="font-medium text-gray-900 mb-3">
+      <div className="bg-white text-black rounded-xl p-4">
+        <h3 className="font-medium  mb-3">
           <Trans message="Download Files" />
         </h3>
         <div className="space-y-2">
-          {files?.map((file, index) => <div key={index} className="flex items-center gap-3 bg-white rounded-lg p-3">
+          {files?.map((file, index) => <div key={index} className="flex items-center gap-3 bg-white border border-black rounded-lg p-3">
               <div className="flex-1 text-left">
-                <div className="text-sm font-medium text-gray-900">{file.name || file.filename || file.original_filename}</div>
-                <div className="text-xs text-gray-500">{prettyBytes(file.file_size || file.size || 0)}</div>
+                <div className="text-sm font-medium ">{file.name || file.filename || file.original_filename}</div>
+                <div className="text-xs ">{prettyBytes(file.file_size || file.size || 0)}</div>
               </div>
             </div>) || []}
         </div>
@@ -29,7 +28,7 @@ export const GuestDownloadView = ({
           <span className="font-medium">{prettyBytes(totalSize)}</span>
         </div>
 
-        {expiresAt && <div className="mt-2 text-xs text-gray-500">
+        {expiresAt && <div className="mt-2 text-xs ">
             <Trans message="Expires on :date" values={{
           date: new Date(expiresAt).toLocaleDateString()
         }} />
@@ -38,7 +37,7 @@ export const GuestDownloadView = ({
 
       {/* Download Button */}
       <div className="flex justify-center pt-4">
-        <Button variant="flat" color="primary" onClick={() => {
+        <button className=' text-black' onClick={() => {
         if (files && files.length === 1) {
           // Single file - direct download
           const file = files[0];
@@ -52,7 +51,7 @@ export const GuestDownloadView = ({
         }
       }}>
           <Trans message="Download all" />
-        </Button>
+        </button>
       </div>
     </div>;
 };

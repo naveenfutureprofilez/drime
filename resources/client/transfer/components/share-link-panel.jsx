@@ -35,17 +35,17 @@ export function ShareLinkPanel({
   return <div className="space-y-6">
       {/* Files List */}
       <div className="bg-gray-50 rounded-xl p-4">
-        <h3 className="font-medium text-gray-900 mb-3">
+        <h3 className="font-medium  mb-3">
           <Trans message="Files ready for download" />
         </h3>
         <div className="space-y-2">
-          {files.map((file, index) => <div key={index} className="flex items-center gap-3 bg-white rounded-lg p-3">
+          {files.map((file, index) => <div key={index} className="flex items-center gap-3 bg-white border border-black rounded-lg p-3">
               <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
                 <InsertDriveFileIcon className="w-4 h-4 text-blue-600" />
               </div>
               <div className="flex-1 text-left">
-                <div className="text-sm font-medium text-gray-900">{file.filename}</div>
-                <div className="text-xs text-gray-500">{prettyBytes(file.size)}</div>
+                <div className="text-sm font-medium ">{file.filename}</div>
+                <div className="text-xs ">{prettyBytes(file.size)}</div>
               </div>
             </div>)}
         </div>
@@ -57,7 +57,7 @@ export function ShareLinkPanel({
           <span className="font-medium">{prettyBytes(totalSize)}</span>
         </div>
         
-        {expiresAt && <div className="mt-2 text-xs text-gray-500">
+        {expiresAt && <div className="mt-2 text-xs ">
             <Trans message="Expires on :date" values={{
           date: expiresAt.toLocaleDateString()
         }} />
@@ -66,12 +66,12 @@ export function ShareLinkPanel({
 
       {/* Share Link */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium  mb-2">
           <Trans message="Share this link" />
         </label>
         <div className="flex gap-2">
           <div className="flex-1 relative">
-            <input type="text" value={shareUrl} readOnly className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm font-mono" />
+            <input type="text" value={shareUrl}  className="w-full px-4 py-3 bg-white  border border-black rounded-lg text-sm font-mono" />
           </div>
           <IconButton onClick={handleCopy} className={`px-4 py-3 ${copied ? 'bg-green-500 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}>
             {copied ? <CheckIcon className="w-5 h-5" /> : <ContentCopyIcon className="w-5 h-5" />}
@@ -84,12 +84,12 @@ export function ShareLinkPanel({
 
       {/* Action Buttons */}
       <div className="flex gap-3 justify-center pt-4">
-        <Button variant="outline" startIcon={<EmailIcon />} onClick={onEmailTransfer}>
-          <Trans message="Send via email" />
-        </Button>
-        <Button variant="flat" color="primary" onClick={() => window.open(shareUrl, '_blank')}>
+        <button   onClick={onEmailTransfer}>
+          <EmailIcon /> <Trans message="Send via email" />
+        </button>
+        <button  onClick={() => window.open(shareUrl, '_blank')}>
           <Trans message="Open download page" />
-        </Button>
+        </button>
       </div>
     </div>;
 }
