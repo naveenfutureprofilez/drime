@@ -14,6 +14,7 @@ import { billingPageRoutes } from '@common/billing/billing-page/routes/billing-p
 import { commonRoutes } from '@common/core/common-routes';
 import { adminRoutes } from '@common/admin/routes/admin-routes';
 import { QuickSharePage } from '@app/quick-share/quick-share-page';
+import { TailwindDebugTest } from '@app/debug-tailwind-test';
 export const appRouter = createBrowserRouter([{
   id: 'root',
   element: <RootRoute />,
@@ -31,6 +32,9 @@ export const appRouter = createBrowserRouter([{
   }, {
     path: '/quick-share',
     element: <QuickSharePage />
+  }, {
+    path: '/debug-tailwind',
+    element: <TailwindDebugTest />
   }, {
     path: '/share/:hash',
     lazy: () => import('@app/guest-share/guest-share-page')
