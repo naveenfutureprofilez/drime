@@ -7,10 +7,10 @@ const {
 
 module.exports = {
   content: [
-    './resources/client/**/*.ts*',
-    './common/foundation/resources/client/**/*.ts*',
-    './common/foundation/resources/views/install/**/*.blade.php',
-    './common/foundation/resources/views/framework.blade.php',
+    './resources/client/**/*.{js,jsx,ts,tsx}',
+    './common/foundation/resources/client/**/*.{js,jsx,ts,tsx}',
+    './common/foundation/resources/views/**/*.blade.php',
+    './resources/views/**/*.blade.php',
   ],
   darkMode: 'class',
   theme: {
