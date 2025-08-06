@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "baseUrl": "",
+    "paths": {
+      "@ui/*": ["common/foundation/resources/client/ui/library/*"],
+      "@common/*": ["common/foundation/resources/client/*"],
+      "@app/*": ["resources/client/*"]
+    },
+    "checkJs": false,
+    "jsx": "react-jsx",
+    "allowJs": true
+  },
+  "include": [
+    "resources/client/**/*.jsx",
+    "common/foundation/resources/client/**/*.jsx"
+  ]
+}

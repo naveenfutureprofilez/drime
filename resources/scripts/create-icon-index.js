@@ -19,12 +19,12 @@ function createIndexTyping(files) {
     )
     .join('\n')}`;
 
-  return fse.writeFile(path.resolve(DIR, 'index.ts'), contents, 'utf8');
+  return fse.writeFile(path.resolve(DIR, 'index.js'), contents, 'utf8');
 }
 
 async function run() {
   await fse.ensureDir(DIR);
-  const files = await glob('!(index)*.tsx', {cwd: DIR});
+  const files = await glob('!(index)*.jsx', {cwd: DIR});
   await createIndexTyping(files);
 }
 

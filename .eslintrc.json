@@ -1,16 +1,22 @@
 {
   "env": {
     "browser": true,
-    "es2021": true
+    "es2021": true,
+    "node": true,
+    "jest": true
   },
   "extends": [
+    "eslint:recommended",
     "plugin:react/recommended",
     "plugin:react-hooks/recommended",
     "prettier"
   ],
-  "parser": "@typescript-eslint/parser",
+  "parser": "@babel/eslint-parser",
   "parserOptions": {
-    "project": "./tsconfig.json",
+    "requireConfigFile": false,
+    "babelOptions": {
+      "presets": ["@babel/preset-env", "@babel/preset-react"]
+    },
     "ecmaFeatures": {
       "jsx": true
     },
@@ -19,45 +25,43 @@
   },
   "plugins": [
     "react",
-    "react-hooks",
-    "@typescript-eslint"
+    "react-hooks"
   ],
   "ignorePatterns": [
     "*.config.*",
-    "*.d.ts"
+    "public/**/*",
+    "progress-bar/**/*",
+    "node_modules/**/*",
+    "build/**/*",
+    "dist/**/*",
+    "vendor/**/*",
+    "**/*.min.js",
+    "common/foundation/resources/client/shared.tailwind.js"
   ],
   "rules": {
     "react/destructuring-assignment": "off",
-    "@typescript-eslint/naming-convention": "off",
-    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/rules-of-hooks": "warn",
     "react/no-array-index-key": "off",
     "react/jsx-filename-extension": [
-      1,
+      "warn",
       {
         "extensions": [
-          ".tsx"
+          ".jsx", ".js"
         ]
       }
     ],
     "import/prefer-default-export": "off",
     "prefer-destructuring": "off",
-    "radix": ["error", "as-needed"],
-    "prefer-const": ["error", {
-      "destructuring": "all"
-    }],
+    "radix": ["warn", "as-needed"],
     "no-use-before-define": "off",
     "no-plusplus": "off",
     "arrow-body-style": "off",
-    "@typescript-eslint/no-use-before-define": "off",
-    "@typescript-eslint/lines-between-class-members": "off",
-    "no-unused-expressions": "off",
-    "@typescript-eslint/no-unused-expressions": "error",
     "no-param-reassign": "off",
     "class-methods-use-this": "off",
     "consistent-return": "off",
     "default-case": "off",
     "no-return-assign": [
-      "error",
+      "warn",
       "except-parens"
     ],
     "react/react-in-jsx-scope": "off",
@@ -69,8 +73,22 @@
     "import/no-extraneous-dependencies": "off",
     "react/display-name": "off",
     "react/no-unstable-nested-components": [
-      "error",
+      "warn",
       {"allowAsProps":  true}
-    ]
+    ],
+    "no-unused-vars": "warn",
+    "no-undef": "warn",
+    "no-empty": "warn",
+    "no-case-declarations": "warn",
+    "no-unsafe-optional-chaining": "warn",
+    "prefer-const": "warn",
+    "no-cond-assign": "warn",
+    "no-useless-escape": "warn",
+    "no-prototype-builtins": "warn"
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
   }
 }

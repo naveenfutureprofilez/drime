@@ -10,7 +10,6 @@ on:
       - 'common/foundation/resources/views/**'
       - '*.php'
       - 'tailwind.config.js'
-      - 'tailwind.config.ts'
       - 'package.json'
       - 'package-lock.json'
 
@@ -35,7 +34,7 @@ jobs:
       - name: Check Tailwind CSS Build
         run: |
           echo "🎨 Running Tailwind CSS build check..."
-          npx tailwindcss -i resources/client/App.css --content "./resources/**/*.{php,jsx,tsx,js,ts}" "./common/**/*.{php,jsx,tsx,js,ts}" -o /dev/null
+          npx tailwindcss -i resources/client/App.css --content "./resources/**/*.{php,jsx,js}" "./common/**/*.{php,jsx,js}" -o /dev/null
           echo "✅ Tailwind CSS build check passed!"
 
       - name: Run Tailwind Config Tests (if available)
@@ -58,5 +57,5 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Files checked:" >> $GITHUB_STEP_SUMMARY
           echo "- PHP files: \`*.php\`" >> $GITHUB_STEP_SUMMARY
-          echo "- JavaScript/TypeScript: \`*.js\`, \`*.ts\`" >> $GITHUB_STEP_SUMMARY  
-          echo "- React components: \`*.jsx\`, \`*.tsx\`" >> $GITHUB_STEP_SUMMARY
+          echo "- JavaScript: \`*.js\`" >> $GITHUB_STEP_SUMMARY  
+          echo "- React components: \`*.jsx\`" >> $GITHUB_STEP_SUMMARY

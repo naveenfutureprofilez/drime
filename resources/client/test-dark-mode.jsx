@@ -46,7 +46,7 @@ export function TestDarkModeComponent() {
         <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">Test Instructions:</h3>
         <ol className="list-decimal list-inside text-sm text-yellow-700 dark:text-yellow-300 mt-2 space-y-1">
           <li>Hover over the test elements to see red background</li>
-          <li>Click "Toggle Dark Mode" to enable dark mode</li>
+          <li>Click &quot;Toggle Dark Mode&quot; to enable dark mode</li>
           <li>Verify elements show black background in dark mode</li>
           <li>Test hover states work in both light and dark modes</li>
         </ol>
