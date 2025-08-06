@@ -89,6 +89,7 @@
     "@babel/cli": "^7.28.0",
     "@babel/core": "^7.28.0",
     "@babel/preset-typescript": "^7.27.1",
+    "@esbuild/darwin-arm64": "^0.25.8",
     "@prettier/plugin-php": "^0.21.0",
     "@rollup/plugin-replace": "^5.0",
     "@tailwindcss/typography": "^0.5.10",

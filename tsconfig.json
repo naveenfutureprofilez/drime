@@ -24,7 +24,7 @@
   },
   "include": [
     "resources/client/**/*.jsx",
-    "common/foundation/resources/client/**/*.jsx",
+    "common/foundation/resources/client/**/*.jsx"
   ],
   "references": [{"path": "./tsconfig.node.json"}]
 }
