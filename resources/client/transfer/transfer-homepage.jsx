@@ -94,8 +94,6 @@ export function TransferHomepage() {
       </div>
     </>;
 }
-
-
 function UploadSection({
   settings,
   onUploadComplete,
