@@ -42,7 +42,7 @@ jobs:
         run: |
           if [ -f "jest.config.js" ] && [ -d "tests" ]; then
             echo "🧪 Running Tailwind configuration tests..."
-            npm test -- --testPathPattern=tailwind-config
+            npm test -- --testNamePattern="Tailwind"
           else
             echo "ℹ️ No Tailwind configuration tests found, skipping..."
           fi
