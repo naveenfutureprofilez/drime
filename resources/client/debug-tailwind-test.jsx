@@ -9,7 +9,7 @@ export function TailwindDebugTest() {
     <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 p-8">
       <div className="mx-auto max-w-4xl space-y-8">
         <h1 className="text-4xl font-bold text-white text-center mb-12">
-          Tailwind CSS Debug Test
+          Tailwind CSS Debug Test - HMR Test
         </h1>
 
         {/* Typography Tests */}
@@ -151,6 +151,24 @@ export function TailwindDebugTest() {
             <div className="bg-white p-4 shadow-sm rounded">Shadow SM</div>
             <div className="bg-white p-4 shadow-md rounded">Shadow MD</div>
             <div className="bg-white p-4 shadow-lg rounded">Shadow LG</div>
+          </div>
+        </section>
+
+        {/* HMR Test Section */}
+        <section className="bg-emerald-50 border-2 border-emerald-300 rounded-xl p-8">
+          <h2 className="text-3xl font-bold text-emerald-800 mb-6">HMR & JIT Test Section</h2>
+          <p className="text-emerald-700 bg-emerald-100 p-4 rounded-lg shadow-inner">
+            This section was added to test Hot Module Replacement with new Tailwind classes.
+            If you can see these emerald colors, HMR is working correctly!
+            Last updated: 4:30 PM
+          </p>
+          <div className="mt-4 grid grid-cols-2 gap-4">
+            <div className="bg-gradient-to-r from-emerald-400 to-teal-500 p-4 rounded-lg text-white font-semibold">
+              New gradient classes
+            </div>
+            <div className="bg-emerald-500 hover:bg-emerald-600 transition-all duration-300 p-4 rounded-lg text-white font-semibold cursor-pointer">
+              Hover effect test
+            </div>
           </div>
         </section>
 

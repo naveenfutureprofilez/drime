@@ -32,7 +32,7 @@ export default defineConfig({
     tsconfigPaths(),
     react(),
     laravel({
-      input: ['resources/client/main.tsx'],
+      input: ['resources/client/main.jsx'],
       refresh: false,
     }),
     basePath(),

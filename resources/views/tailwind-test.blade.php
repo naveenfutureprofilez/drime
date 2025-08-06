@@ -36,6 +36,29 @@
             <div class="bg-danger text-white p-16 rounded-input">
                 Custom Danger Color (should work)
             </div>
+            
+            <!-- Dark mode and hover test component -->
+            <div class="mt-8 p-6 border border-gray-300 rounded-lg">
+                <h2 class="text-2xl font-bold mb-4 text-gray-900">Dark Mode & Hover Test</h2>
+                <div class="dark:bg-black hover:bg-red-500 bg-gray-200 p-8 rounded-lg transition-colors cursor-pointer">
+                    <p class="text-gray-800 dark:text-white">
+                        This component has classes: <code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">dark:bg-black hover:bg-red-500</code>
+                    </p>
+                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                        • Normal: gray background<br>
+                        • Hover: red background<br>
+                        • Dark mode: black background
+                    </p>
+                </div>
+                
+                <!-- Dark mode toggle button -->
+                <button 
+                    onclick="document.documentElement.classList.toggle('dark')"
+                    class="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors"
+                >
+                    Toggle Dark Mode
+                </button>
+            </div>
         </div>
     </div>
 </body>

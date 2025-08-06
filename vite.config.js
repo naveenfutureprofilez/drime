@@ -19,6 +19,11 @@ function basePath() {
 
 export default defineConfig({
   base: '',
+  server: {
+    watch: {
+      followSymlinks: true
+    }
+  },
   resolve: {
     preserveSymlinks: true,
     alias: {

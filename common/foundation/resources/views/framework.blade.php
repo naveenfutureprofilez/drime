@@ -61,7 +61,7 @@
         @endif
 
         @viteReactRefresh
-        @vite('resources/client/main.tsx')
+        @vite('resources/client/main.jsx')
 
         @if (file_exists($customCssPath))
             @if ($content = file_get_contents($customCssPath))
