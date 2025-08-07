@@ -17,16 +17,33 @@ class GuestUploadService
      */
     public function handleUpload(Request $request): array
     {
-        // Ensure guest uploads work independently of billing system
+        // a. Validate guest access as today
         $this->validateGuestUploadAccess();
         
         $files = $request->file('files');
-        $uploadedFiles = [];
         
+        // b. Create the GuestUpload *before* iterating files. Populate all non-file fields once.
         $expiresAt = $this->calculateExpiryTime($request->integer('expires_in_hours', 72)); // Default 3 days
         $password = $request->string('password')->toString();
         $maxDownloads = $request->integer('max_downloads');
+        
+        $guestUpload = GuestUpload::create([
+            'password' => $password ?: null,
+            'expires_at' => $expiresAt,
+            'max_downloads' => $maxDownloads,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'metadata' => [
+                'upload_method' => 'direct', // Will be 'tus' for resumable uploads
+            ],
+            'recipient_emails' => [],
+            'total_size' => 0, // Will be updated after processing all files
+        ]);
+        
+        $totalSize = 0;
+        $uploadedFiles = [];
 
+        // c. Inside the loop keep previous logic for FileEntry creation but do not create GuestUpload rows
         foreach ($files as $file) {
             // Store file using configured disk (Cloudflare R2)
             $disk = Storage::disk(config('common.site.uploads_disk'));
@@ -51,44 +68,45 @@ class GuestUploadService
                 'type' => 'file',
             ]);
 
-            // Create GuestUpload record
-            $guestUpload = GuestUpload::create([
-                'file_entry_id' => $fileEntry->id,
-                'original_filename' => $file->getClientOriginalName(),
-                'file_size' => $file->getSize(),
-                'mime_type' => $file->getMimeType(),
-                'password' => $password ?: null,
-                'expires_at' => $expiresAt,
-                'max_downloads' => $maxDownloads,
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-                'metadata' => [
-                    'original_extension' => $file->getClientOriginalExtension(),
-                    'upload_method' => 'direct', // Will be 'tus' for resumable uploads
-                ],
-                'recipient_emails' => [],
-            ]);
-
+            // After each FileEntry is stored: attach to GuestUpload and track total size
+            $guestUpload->files()->attach($fileEntry->id);
+            $totalSize += $file->getSize();
+            
+            // Build file info for response
             $uploadedFiles[] = [
-                'hash' => $guestUpload->hash,
-                'filename' => $guestUpload->original_filename,
-                'size' => $guestUpload->file_size,
-                'mime_type' => $guestUpload->mime_type,
-                'expires_at' => $guestUpload->expires_at->toISOString(),
-                'download_url' => url("/download/{$guestUpload->hash}"),
+                'id' => $fileEntry->id,
+                'filename' => $file->getClientOriginalName(),
+                'size' => $file->getSize(),
+                'mime_type' => $file->getMimeType(),
+                'download_url' => url("/download/{$guestUpload->hash}?file={$fileEntry->id}"),
                 'share_url' => url("/share/{$guestUpload->hash}"),
             ];
         }
 
+        // d. After loop finishes, update total_size and save
+        $guestUpload->total_size = $totalSize;
+        $guestUpload->save();
+
+        // e. Build response payload
         return [
-            'uploads' => $uploadedFiles,
-            'total_files' => count($uploadedFiles),
-            'expires_at' => $expiresAt->toISOString(),
+            'hash' => $guestUpload->hash,
+            'expires_at' => $guestUpload->expires_at->toISOString(),
+            'files' => $uploadedFiles,
+            'download_all_url' => url("/download/{$guestUpload->hash}"),
         ];
     }
 
     /**
-     * Handle TUS upload completion
+     * Handle TUS upload completion with multi-file support
+     * 
+     * This method supports grouping multiple TUS uploads into a single GuestUpload:
+     * 1. If upload_group_hash is provided, attach the file to existing GuestUpload
+     * 2. If upload_group_hash is not provided, create a new GuestUpload
+     * 3. The response always echoes the shared hash for the client to use in subsequent uploads
+     * 
+     * @param string $uploadKey The TUS upload key for this specific file
+     * @param Request $request Request containing upload_group_hash and other parameters
+     * @return array Response containing the shared hash and file information
      */
     public function handleTusUpload(string $uploadKey, Request $request): array
     {
@@ -104,6 +122,36 @@ class GuestUploadService
         $fileSize = $tusData['size'] ?? 0;
         $mimeType = $tusData['mime'] ?? 'application/octet-stream';
         
+        // Get or create GuestUpload based on upload_group_hash
+        $uploadGroupHash = $request->string('upload_group_hash')->toString();
+        
+        if ($uploadGroupHash) {
+            // Find existing GuestUpload by upload_group_hash
+            $guestUpload = GuestUpload::where('hash', $uploadGroupHash)->first();
+            
+            if (!$guestUpload) {
+                throw new \Exception('Upload group not found');
+            }
+        } else {
+            // Create new GuestUpload if no upload_group_hash supplied
+            $expiresAt = $this->calculateExpiryTime(
+                $request->integer('expires_in_hours', 72)
+            );
+            
+            $guestUpload = GuestUpload::create([
+                'password' => $request->string('password')->toString() ?: null,
+                'expires_at' => $expiresAt,
+                'max_downloads' => $request->integer('max_downloads'),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'metadata' => [
+                    'upload_method' => 'tus',
+                ],
+                'recipient_emails' => [],
+                'total_size' => 0, // Will be updated after attaching files
+            ]);
+        }
+        
         // Create FileEntry for TUS uploaded file
         $fileEntry = FileEntry::create([
             'name' => base64_decode($fileName),
@@ -118,33 +166,26 @@ class GuestUploadService
             'type' => 'file',
         ]);
 
-        $expiresAt = $this->calculateExpiryTime(
-            $request->integer('expires_in_hours', 72)
-        );
-
-        // Create GuestUpload record
-        $guestUpload = GuestUpload::create([
-            'file_entry_id' => $fileEntry->id,
-            'original_filename' => base64_decode($fileName),
-            'file_size' => $fileSize,
-            'mime_type' => $mimeType,
-            'password' => $request->string('password')->toString() ?: null,
-            'expires_at' => $expiresAt,
-            'max_downloads' => $request->integer('max_downloads'),
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'metadata' => [
-                'upload_method' => 'tus',
-                'tus_key' => $uploadKey,
-            ],
-            'recipient_emails' => [],
-        ]);
+        // Attach the file to the GuestUpload
+        $guestUpload->files()->attach($fileEntry->id);
+        
+        // Update total size by summing all attached files
+        $totalSize = $guestUpload->files()->sum('file_entries.file_size');
+        $guestUpload->update(['total_size' => $totalSize]);
 
         return [
-            'hash' => $guestUpload->hash,
-            'filename' => $guestUpload->original_filename,
-            'size' => $guestUpload->file_size,
-            'mime_type' => $guestUpload->mime_type,
+            'hash' => $guestUpload->hash, // Return shared hash for group
+            'fileEntry' => [ // Maintain compatibility with existing TUS frontend
+                'id' => $fileEntry->id,
+                'name' => $fileEntry->name,
+                'file_name' => $fileEntry->file_name,
+                'mime' => $fileEntry->mime,
+                'file_size' => $fileEntry->file_size,
+                'extension' => $fileEntry->extension,
+            ],
+            'upload_group_hash' => $guestUpload->hash,
+            'total_files' => $guestUpload->files()->count(),
+            'total_size' => $totalSize,
             'expires_at' => $guestUpload->expires_at->toISOString(),
             'download_url' => url("/download/{$guestUpload->hash}"),
             'share_url' => url("/share/{$guestUpload->hash}"),
@@ -168,7 +209,7 @@ class GuestUploadService
 
         // Get expired uploads (either by expires_at or retention policy)
         $expiredUploads = GuestUpload::withoutGlobalScopes()
-            ->with(['fileEntry', 'shareableLink'])
+            ->with(['files', 'shareableLink'])
             ->where(function ($query) use ($cutoffTime) {
                 $query->where('expires_at', '<', Carbon::now())
                       ->orWhere('created_at', '<', $cutoffTime);
@@ -185,24 +226,25 @@ class GuestUploadService
                     $counters['shareable_links']++;
                 }
                 
-                // Delete physical file from storage
-                if ($upload->fileEntry) {
-                    $disk = Storage::disk($upload->fileEntry->disk_prefix ?: config('common.site.uploads_disk'));
-                    $filePath = $upload->fileEntry->path ? 
-                        $upload->fileEntry->path . '/' . $upload->fileEntry->file_name : 
-                        $upload->fileEntry->file_name;
+                // Loop through all associated files to delete physical files and FileEntry rows
+                foreach ($upload->files as $fileEntry) {
+                    // Delete physical file from storage
+                    $disk = Storage::disk($fileEntry->disk_prefix ?: config('common.site.uploads_disk'));
+                    $filePath = $fileEntry->path ? 
+                        $fileEntry->path . '/' . $fileEntry->file_name : 
+                        $fileEntry->file_name;
                     
                     if ($disk->exists($filePath)) {
                         $disk->delete($filePath);
                         $counters['physical_files']++;
                     }
                     
-                    // Delete FileEntry
-                    $upload->fileEntry->delete();
+                    // Delete FileEntry record
+                    $fileEntry->delete();
                     $counters['file_entries']++;
                 }
                 
-                // Delete GuestUpload record
+                // Delete GuestUpload record (pivot rows will be cascade deleted)
                 $upload->delete();
                 $counters['guest_uploads']++;
                 
@@ -238,6 +280,9 @@ class GuestUploadService
             }
         }
 
+        // Clean up stale rows from guest_upload_files pivot table with orphaned foreign keys
+        $this->cleanupOrphanedPivotRows($counters);
+
         return $counters;
     }
 
@@ -269,6 +314,51 @@ class GuestUploadService
         $maxHours = config('app.guest_upload_max_expiry_hours', 168); // 7 days max
         
         return Carbon::now()->addHours(min($hours, $maxHours));
+    }
+
+    /**
+     * Clean up orphaned pivot table rows where foreign keys no longer exist
+     */
+    private function cleanupOrphanedPivotRows(array &$counters): void
+    {
+        try {
+            // Clean up pivot rows where guest_upload_id doesn't exist
+            $orphanedByGuestUpload = \Illuminate\Support\Facades\DB::table('guest_upload_files as guf')
+                ->leftJoin('guest_uploads as gu', 'guf.guest_upload_id', '=', 'gu.id')
+                ->whereNull('gu.id')
+                ->count();
+
+            if ($orphanedByGuestUpload > 0) {
+                \Illuminate\Support\Facades\DB::table('guest_upload_files as guf')
+                    ->leftJoin('guest_uploads as gu', 'guf.guest_upload_id', '=', 'gu.id')
+                    ->whereNull('gu.id')
+                    ->delete();
+                
+                logger()->info('Cleaned up orphaned guest_upload_files rows (missing guest_upload)', [
+                    'count' => $orphanedByGuestUpload
+                ]);
+            }
+
+            // Clean up pivot rows where file_entry_id doesn't exist
+            $orphanedByFileEntry = \Illuminate\Support\Facades\DB::table('guest_upload_files as guf')
+                ->leftJoin('file_entries as fe', 'guf.file_entry_id', '=', 'fe.id')
+                ->whereNull('fe.id')
+                ->count();
+
+            if ($orphanedByFileEntry > 0) {
+                \Illuminate\Support\Facades\DB::table('guest_upload_files as guf')
+                    ->leftJoin('file_entries as fe', 'guf.file_entry_id', '=', 'fe.id')
+                    ->whereNull('fe.id')
+                    ->delete();
+                
+                logger()->info('Cleaned up orphaned guest_upload_files rows (missing file_entry)', [
+                    'count' => $orphanedByFileEntry
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            logger()->error('Failed to cleanup orphaned pivot rows: ' . $e->getMessage());
+        }
     }
 
     /**

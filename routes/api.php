@@ -121,20 +121,5 @@ Route::group(['prefix' => 'v1'], function() {
     ShareableLinkPasswordController::class,
     'check',
   ]);
-
-  // GUEST UPLOADS (NO AUTH NEEDED) - Rate limiting temporarily disabled
-  Route::post('guest/upload', [GuestUploadController::class, 'store']);
-  Route::post('guest/tus/entries', [GuestTusController::class, 'createEntry']);
-  
-  // Guest upload read operations (no throttling)
-  Route::get('guest/upload/{hash}', [GuestUploadController::class, 'show']);
-  Route::get('guest/upload/{hash}/download', [GuestUploadController::class, 'download']);
-  Route::post('guest/upload/{hash}/verify-password', [GuestUploadController::class, 'verifyPassword']);
-  Route::get('guest/upload/{hash}/preview', [GuestUploadController::class, 'preview']);
-  
-  // QUICK SHARE API ENDPOINTS (NO AUTH NEEDED)
-  Route::post('quick-share/uploads', [QuickShareController::class, 'store']);
-  Route::post('quick-share/email-share', [QuickShareController::class, 'emailShare']);
-  Route::get('quick-share/link/{hash}', [QuickShareController::class, 'showLink']);
-  Route::get('quick-share/link/{hash}/download', [QuickShareController::class, 'download']);
 });
+

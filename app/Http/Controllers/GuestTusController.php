@@ -17,11 +17,19 @@ class GuestTusController extends BaseController
 
     /**
      * Handle TUS upload completion and create GuestUpload record
+     * 
+     * Client Usage Pattern:
+     * 1. First file: POST without upload_group_hash → receives upload_group_hash in response
+     * 2. Subsequent files: POST with upload_group_hash → files are added to same GuestUpload group
+     * 3. Response always echoes the shared hash so client can continue uploading more parts
+     * 
+     * This enables multiple TUS uploads to be grouped into a single downloadable package.
      */
     public function createEntry(Request $request): JsonResponse
     {
         $request->validate([
             'uploadKey' => 'required|string',
+            'upload_group_hash' => 'nullable|string|size:32', // Optional group hash for multi-file uploads
             'password' => 'nullable|string|min:4|max:255',
             'expires_in_hours' => 'nullable|integer|min:1|max:168',
             'max_downloads' => 'nullable|integer|min:1|max:1000',
@@ -67,7 +75,8 @@ class GuestTusController extends BaseController
 
             return response()->json([
                 'message' => 'File uploaded successfully',
-                'fileEntry' => $result // Maintain compatibility with existing TUS frontend
+                'fileEntry' => $result, // Maintain compatibility with existing TUS frontend
+                'upload_group_hash' => $result['upload_group_hash'], // Echo shared hash for client to use in subsequent uploads
             ], 201);
 
         } catch (ValidationException $e) {

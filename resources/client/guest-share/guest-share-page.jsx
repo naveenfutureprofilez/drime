@@ -24,7 +24,7 @@ export function Component() {
               <p>
                 <Trans message="The link you are trying to access is either invalid or has expired." />
               </p>
-            </div> : data ? <GuestDownloadView files={[data.data]} totalSize={data.data.file_size} expiresAt={data.data.expires_at} /> : <div className="text-center">
+            </div> : data ? <GuestDownloadView files={data.files} totalSize={data.files?.reduce((sum, file) => sum + file.size, 0)} expiresAt={data.expires_at} hash={data.hash} hasPassword={data.has_password} /> : <div className="text-center">
               <h1 className="text-2xl font-bold mb-4 text-gray-900">
                 <Trans message="Loading..." />
               </h1>

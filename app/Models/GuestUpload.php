@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Builder;
 use Carbon\Carbon;
 
@@ -49,9 +50,20 @@ class GuestUpload extends Model
         'password'
     ];
 
+    /**
+     * @deprecated Use files() relationship instead for many-to-many support
+     */
     public function fileEntry(): BelongsTo
     {
         return $this->belongsTo(FileEntry::class);
+    }
+
+    public function files(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            FileEntry::class,
+            'guest_upload_files'
+        )->using(GuestUploadFile::class);
     }
 
     public function shareableLink(): BelongsTo
@@ -76,7 +88,34 @@ class GuestUpload extends Model
 
     public function canDownload(): bool
     {
-        return !$this->isExpired() && !$this->hasReachedDownloadLimit();
+        // Check expiration first
+        if ($this->isExpired()) {
+            return false;
+        }
+        
+        // Check download limit regardless of which file is being requested
+        // This prevents bypassing limits by requesting different files
+        if ($this->hasReachedDownloadLimit()) {
+            return false;
+        }
+        
+        return true;
+    }
+
+    /**
+     * Verify password for protected uploads
+     */
+    public function verifyPassword(?string $password): bool
+    {
+        if (!$this->password) {
+            return true; // No password protection
+        }
+        
+        if (!$password) {
+            return false; // Password required but not provided
+        }
+        
+        return password_verify($password, $this->password);
     }
 
     public function incrementDownloadCount(): void
@@ -87,6 +126,14 @@ class GuestUpload extends Model
     public function generateHash(): string
     {
         return $this->hash ?: str()->random(32);
+    }
+
+    /**
+     * Get the total size of all associated files
+     */
+    public function getTotalSizeAttribute(): int
+    {
+        return $this->files()->sum('file_entries.file_size') ?? 0;
     }
 
     protected static function boot()

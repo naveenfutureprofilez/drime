@@ -77,7 +77,7 @@ export function FileUploadWidget({
       });
       setUploadProgress(null);
       console.log('Upload API response:', response.data.data); // Debug log to check API structure
-      onUploadComplete(response.data.data.uploads);
+      onUploadComplete(response.data.data.files);
     } catch (error) {
       console.error('Upload failed:', error);
       setUploadProgress(null);

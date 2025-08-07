@@ -21,6 +21,14 @@ class FileEntry extends CommonFileEntry
         return $this->hasOne(ShareableLink::class, 'entry_id');
     }
 
+    public function guestUploads(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            GuestUpload::class,
+            'guest_upload_files'
+        )->using(GuestUploadFile::class);
+    }
+
     /**
      * Get only entries that are not children of another entry.
      */

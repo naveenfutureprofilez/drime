@@ -143,8 +143,22 @@ function ShareSection({
   onShowEmailPanel
 }) {
   // All files should share the same upload/share URL
-  const shareUrl = files[0]?.share_url || '';
+  const shareUrl = files && files.length > 0 ? files[0]?.share_url || '' : '';
   console.log('ShareSection received files:', files); // Debug log to see all files
+  
+  // Early return if no files are provided
+  if (!files || files.length === 0) {
+    return (
+      <div className="p-8 text-center">
+        <div className="text-red-600">
+          <Trans message="No files to share. Please upload files first." />
+        </div>
+        <button onClick={onNewTransfer} className="px-8 text-primary mt-4">
+          <Trans message="Start new transfer" />
+        </button>
+      </div>
+    );
+  }
   return <div className="p-8">
       <div className="text-center mb-6">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">

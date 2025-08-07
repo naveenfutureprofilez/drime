@@ -216,7 +216,7 @@ class QuickShareController extends BaseController
     }
 
     /**
-     * Fetch lightweight payload for guest share page
+     * Fetch lightweight payload for guest share page (supports multi-file)
      */
     public function showLink(string $hash): JsonResponse
     {
@@ -243,8 +243,21 @@ class QuickShareController extends BaseController
             ], 410);
         }
 
-        $fileEntry = $shareableLink->entry;
-        $guestUpload = GuestUpload::where('link_id', $shareableLink->hash)->first();
+        $guestUpload = GuestUpload::with(['files', 'fileEntry'])
+            ->where('link_id', $shareableLink->hash)
+            ->first();
+
+        if (!$guestUpload) {
+            return response()->json([
+                'message' => 'Upload data not found'
+            ], 404);
+        }
+
+        // Get files from the new many-to-many relationship or fall back to old single file
+        $files = $guestUpload->files;
+        if ($files->isEmpty() && $guestUpload->fileEntry) {
+            $files = collect([$guestUpload->fileEntry]);
+        }
 
         // Lightweight payload for guest share page
         $data = [
@@ -255,26 +268,39 @@ class QuickShareController extends BaseController
                 'allow_edit' => $shareableLink->allow_edit,
                 'has_password' => !is_null($shareableLink->password),
             ],
-            'file' => [
-                'id' => $fileEntry->id,
-                'name' => $fileEntry->name,
-                'size' => $fileEntry->file_size,
-                'mime_type' => $fileEntry->mime,
-                'extension' => $fileEntry->extension,
-                'type' => $fileEntry->type,
-                'created_at' => $fileEntry->created_at,
-            ],
-        ];
-
-        // Add guest upload specific data if available
-        if ($guestUpload) {
-            $data['guest_upload'] = [
+            'files' => $files->map(function ($file) {
+                return [
+                    'id' => $file->id,
+                    'name' => $file->name,
+                    'size' => $file->file_size,
+                    'mime_type' => $file->mime,
+                    'extension' => $file->extension,
+                    'type' => $file->type,
+                    'created_at' => $file->created_at,
+                ];
+            }),
+            'guest_upload' => [
                 'hash' => $guestUpload->hash,
-                'original_filename' => $guestUpload->original_filename,
                 'download_count' => $guestUpload->download_count,
                 'max_downloads' => $guestUpload->max_downloads,
                 'sender_email' => $guestUpload->sender_email,
                 'last_downloaded_at' => $guestUpload->last_downloaded_at,
+                'total_size' => $guestUpload->total_size,
+                'file_count' => $files->count(),
+            ],
+        ];
+
+        // Legacy support: add single 'file' field if only one file exists
+        if ($files->count() === 1) {
+            $file = $files->first();
+            $data['file'] = [
+                'id' => $file->id,
+                'name' => $file->name,
+                'size' => $file->file_size,
+                'mime_type' => $file->mime,
+                'extension' => $file->extension,
+                'type' => $file->type,
+                'created_at' => $file->created_at,
             ];
         }
 
@@ -284,7 +310,7 @@ class QuickShareController extends BaseController
     }
 
     /**
-     * Download file through quick-share link
+     * Download file through quick-share link (legacy single file support)
      */
     public function download(string $hash, Request $request): mixed
     {
@@ -309,43 +335,61 @@ class QuickShareController extends BaseController
             ], 410);
         }
 
-        $guestUpload = GuestUpload::where('link_id', $shareableLink->hash)->first();
+        $guestUpload = GuestUpload::with(['files', 'fileEntry'])
+            ->where('link_id', $shareableLink->hash)
+            ->first();
+            
         if (!$guestUpload || !$guestUpload->canDownload()) {
             return response()->json([
                 'message' => 'This upload has expired or reached download limit'
             ], 410);
         }
 
-        // Check password if required
-        if ($shareableLink->password) {
-            $request->validate([
-                'password' => 'required|string'
-            ]);
-
-            if (!password_verify($request->password, $shareableLink->password)) {
-                return response()->json(['message' => 'Invalid password'], 401);
-            }
+        // Check password using consistent method
+        $password = $request->input('password');
+        if (!$guestUpload->verifyPassword($password)) {
+            return response()->json(['message' => 'Invalid password'], 401);
         }
 
-        try {
-            $fileEntry = $shareableLink->entry;
-            if (!$fileEntry) {
-                return response()->json(['message' => 'File not found'], 404);
-            }
+        // Get files from the new many-to-many relationship or fall back to old single file
+        $files = $guestUpload->files;
+        if ($files->isEmpty() && $guestUpload->fileEntry) {
+            $files = collect([$guestUpload->fileEntry]);
+        }
+        
+        if ($files->isEmpty()) {
+            return response()->json(['message' => 'No files found'], 404);
+        }
 
+        // If multiple files, return as ZIP
+        if ($files->count() > 1) {
+            return $this->downloadAllFilesAsZip($guestUpload, $files);
+        }
+
+        // Single file download
+        $fileEntry = $files->first();
+        
+        try {
             // Get file from storage
             $disk = Storage::disk(config('common.site.uploads_disk'));
             
-            if (!$disk->exists($fileEntry->file_name)) {
+            $filePath = $fileEntry->path ? 
+                $fileEntry->path . '/' . $fileEntry->file_name : 
+                $fileEntry->file_name;
+            
+            if (!$disk->exists($filePath)) {
                 return response()->json(['message' => 'File not found in storage'], 404);
             }
 
-            // Fire event for download tracking and notifications
+            // Increment download count ONCE before initiating download
+            $guestUpload->incrementDownloadCount();
+
+            // Fire event for download tracking and notifications (does not increment count)
             GuestUploadDownloaded::dispatch($guestUpload, $shareableLink);
 
             return $disk->download(
-                $fileEntry->file_name,
-                $guestUpload->original_filename ?: $fileEntry->name
+                $filePath,
+                $fileEntry->getNameWithExtension()
             );
             
         } catch (\Exception $e) {
@@ -354,6 +398,220 @@ class QuickShareController extends BaseController
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Download a specific file by ID through quick-share link
+     */
+    public function downloadFile(string $hash, string $fileId, Request $request): mixed
+    {
+        $shareableLink = ShareableLink::where('hash', $hash)
+            ->where('is_guest', true)
+            ->first();
+
+        if (!$shareableLink) {
+            return response()->json(['message' => 'Shareable link not found'], 404);
+        }
+
+        if ($shareableLink->isExpired()) {
+            return response()->json([
+                'message' => 'This link has expired'
+            ], 410);
+        }
+
+        if ($shareableLink->isGuestDeleted()) {
+            return response()->json([
+                'message' => 'This link is no longer available'
+            ], 410);
+        }
+
+        $guestUpload = GuestUpload::with('files')
+            ->where('link_id', $shareableLink->hash)
+            ->first();
+            
+        if (!$guestUpload || !$guestUpload->canDownload()) {
+            return response()->json([
+                'message' => 'This upload has expired or reached download limit'
+            ], 410);
+        }
+
+        // Check password using consistent method
+        $password = $request->input('password');
+        if (!$guestUpload->verifyPassword($password)) {
+            return response()->json(['message' => 'Invalid password'], 401);
+        }
+
+        // Find the specific file by ID
+        $fileEntry = $guestUpload->files()->where('file_entries.id', $fileId)->first();
+        
+        if (!$fileEntry) {
+            return response()->json(['message' => 'File not found'], 404);
+        }
+
+        try {
+            $disk = Storage::disk(config('common.site.uploads_disk'));
+            
+            $filePath = $fileEntry->path ? 
+                $fileEntry->path . '/' . $fileEntry->file_name : 
+                $fileEntry->file_name;
+            
+            if (!$disk->exists($filePath)) {
+                return response()->json(['message' => 'File not found in storage'], 404);
+            }
+
+            // Increment download count for successful download
+            $guestUpload->incrementDownloadCount();
+
+            // Fire event for download tracking and notifications
+            GuestUploadDownloaded::dispatch($guestUpload, $shareableLink);
+
+            return $disk->download(
+                $filePath,
+                $fileEntry->getNameWithExtension()
+            );
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Download failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Download all files as ZIP through quick-share link
+     */
+    public function downloadAll(string $hash, Request $request): mixed
+    {
+        $shareableLink = ShareableLink::where('hash', $hash)
+            ->where('is_guest', true)
+            ->first();
+
+        if (!$shareableLink) {
+            return response()->json(['message' => 'Shareable link not found'], 404);
+        }
+
+        if ($shareableLink->isExpired()) {
+            return response()->json([
+                'message' => 'This link has expired'
+            ], 410);
+        }
+
+        if ($shareableLink->isGuestDeleted()) {
+            return response()->json([
+                'message' => 'This link is no longer available'
+            ], 410);
+        }
+
+        $guestUpload = GuestUpload::with(['files', 'fileEntry'])
+            ->where('link_id', $shareableLink->hash)
+            ->first();
+            
+        if (!$guestUpload || !$guestUpload->canDownload()) {
+            return response()->json([
+                'message' => 'This upload has expired or reached download limit'
+            ], 410);
+        }
+
+        // Check password using consistent method
+        $password = $request->input('password') ?? $request->query('password');
+        if (!$guestUpload->verifyPassword($password)) {
+            return response()->json(['message' => 'Invalid password'], 401);
+        }
+
+        // Get files from the new many-to-many relationship or fall back to old single file
+        $files = $guestUpload->files;
+        if ($files->isEmpty() && $guestUpload->fileEntry) {
+            $files = collect([$guestUpload->fileEntry]);
+        }
+        
+        if ($files->isEmpty()) {
+            return response()->json(['message' => 'No files found'], 404);
+        }
+
+        return $this->downloadAllFilesAsZip($guestUpload, $files, $shareableLink);
+    }
+
+    /**
+     * Helper method to download multiple files as ZIP
+     */
+    private function downloadAllFilesAsZip($guestUpload, $files, $shareableLink = null)
+    {
+        return response()->stream(
+            function () use ($guestUpload, $files) {
+                $timestamp = Carbon::now()->getTimestamp();
+                $zip = new \ZipArchive();
+                $zipPath = storage_path("app/temp/quickshare-{$guestUpload->hash}-{$timestamp}.zip");
+                
+                // Ensure temp directory exists
+                if (!file_exists(dirname($zipPath))) {
+                    mkdir(dirname($zipPath), 0755, true);
+                }
+
+                if ($zip->open($zipPath, \ZipArchive::CREATE) === TRUE) {
+                    $disk = Storage::disk(config('common.site.uploads_disk'));
+                    $filesInZip = []; // Track duplicate file names
+                    
+                    foreach ($files as $fileEntry) {
+                        try {
+                            $filePath = $fileEntry->path ? 
+                                $fileEntry->path . '/' . $fileEntry->file_name : 
+                                $fileEntry->file_name;
+                            
+                            if (!$disk->exists($filePath)) {
+                                continue; // Skip missing files
+                            }
+
+                            // Handle duplicate file names by adding numbers
+                            $fileName = $fileEntry->getNameWithExtension();
+                            if (isset($filesInZip[$fileName])) {
+                                $filesInZip[$fileName]++;
+                                $pathInfo = pathinfo($fileName);
+                                $fileName = $pathInfo['filename'] . '(' . $filesInZip[$fileName] . ').' . $pathInfo['extension'];
+                            } else {
+                                $filesInZip[$fileName] = 0;
+                            }
+
+                            $fileContent = $disk->get($filePath);
+                            $zip->addFromString($fileName, $fileContent);
+                        } catch (\Exception $e) {
+                            // Log error but continue with other files
+                            logger('Error adding file to ZIP', [
+                                'file_id' => $fileEntry->id,
+                                'error' => $e->getMessage()
+                            ]);
+                            continue;
+                        }
+                    }
+
+                    $zip->close();
+
+                    // Increment download count after successful ZIP creation
+                    $guestUpload->incrementDownloadCount();
+
+                    // Fire event for download tracking and notifications
+                    if ($shareableLink) {
+                        GuestUploadDownloaded::dispatch($guestUpload, $shareableLink);
+                    }
+
+                    // Stream the file and delete it after
+                    $zipContent = file_get_contents($zipPath);
+                    unlink($zipPath);
+                    
+                    echo $zipContent;
+                } else {
+                    http_response_code(500);
+                    echo json_encode(['message' => 'Failed to create ZIP file']);
+                }
+            },
+            200,
+            [
+                'Content-Type' => 'application/zip',
+                'Content-Disposition' => "attachment; filename=\"quickshare-{$guestUpload->hash}.zip\"",
+                'Pragma' => 'public',
+                'Cache-Control' => 'no-cache',
+            ]
+        );
     }
 
 }

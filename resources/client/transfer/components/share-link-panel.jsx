@@ -30,8 +30,8 @@ export function ShareLinkPanel({
       setTimeout(() => setCopied(false), 2000);
     }
   }, [shareUrl]);
-  const totalSize = files.reduce((sum, file) => sum + file.size, 0);
-  const expiresAt = files[0]?.expires_at ? new Date(files[0].expires_at) : null;
+  const totalSize = files && files.length > 0 ? files.reduce((sum, file) => sum + file.size, 0) : 0;
+  const expiresAt = files && files.length > 0 && files[0]?.expires_at ? new Date(files[0].expires_at) : null;
   return <div className="space-y-6">
       {/* Files List */}
       <div className="bg-gray-50 rounded-xl p-4">
@@ -39,7 +39,7 @@ export function ShareLinkPanel({
           <Trans message="Files ready for download" />
         </h3>
         <div className="space-y-2">
-          {files.map((file, index) => <div key={index} className="flex items-center gap-3 bg-white border border-black rounded-lg p-3">
+          {files && files.length > 0 ? files.map((file, index) => <div key={index} className="flex items-center gap-3 bg-white border border-black rounded-lg p-3">
               <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
                 <InsertDriveFileIcon className="w-4 h-4 text-blue-600" />
               </div>
@@ -47,7 +47,9 @@ export function ShareLinkPanel({
                 <div className="text-sm font-medium ">{file.filename}</div>
                 <div className="text-xs ">{prettyBytes(file.size)}</div>
               </div>
-            </div>)}
+            </div>) : <div className="text-gray-500 text-center py-4">
+              <Trans message="No files to display" />
+            </div>}
         </div>
         
         <div className="mt-3 pt-3 border-t border-gray-200 flex justify-between text-sm">

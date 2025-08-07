@@ -5,7 +5,9 @@ import { prettyBytes } from '@ui/utils/files/pretty-bytes';
 export const GuestDownloadView = ({
   files,
   totalSize,
-  expiresAt
+  expiresAt,
+  hash,
+  hasPassword
 }) => {
   return <div className="space-y-6">
       <div className="bg-white text-black rounded-xl p-4">
@@ -38,14 +40,20 @@ export const GuestDownloadView = ({
       {/* Download Button */}
       <div className="flex justify-center pt-4">
         <button className=' text-black' onClick={() => {
+        if (!hash) {
+          alert('Invalid download link.');
+          return;
+        }
+        
         if (files && files.length === 1) {
-          // Single file - direct download
+          // Single file - direct download using file ID
           const file = files[0];
-          const downloadUrl = file.download_url || `/download/${file.hash}`;
+          const downloadUrl = `/download/${hash}/${file.id}`;
           window.open(downloadUrl, '_blank');
         } else if (files && files.length > 1) {
-          // Multiple files - ZIP download (for future enhancement)
-          alert('ZIP download for multiple files will be implemented soon.');
+          // Multiple files - ZIP download 
+          const downloadUrl = `/download/${hash}`;
+          window.open(downloadUrl, '_blank');
         } else {
           alert('No files available for download.');
         }

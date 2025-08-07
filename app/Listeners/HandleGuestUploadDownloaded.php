@@ -18,8 +18,8 @@ class HandleGuestUploadDownloaded implements ShouldQueue
         $guestUpload = $event->guestUpload;
         $shareableLink = $event->shareableLink;
 
-        // Update download count and last downloaded timestamp
-        $guestUpload->increment('download_count');
+        // Only update last downloaded timestamp - download count is handled by controller
+        // to prevent double counting and ensure proper limit enforcement
         $guestUpload->update(['last_downloaded_at' => Carbon::now()]);
 
         // Send notification to sender if email is provided
