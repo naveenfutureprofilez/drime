@@ -51,7 +51,7 @@ class QuickShareController extends BaseController
             ],
             'parentId' => 'nullable|exists:file_entries,id',
             'relativePath' => 'nullable|string',
-            'retention_hours' => 'nullable|integer|min:1|max:168', // Max 7 days
+            'retention_hours' => 'nullable|integer|min:1|max:8760', // Max 1 year
             'sender_email' => 'nullable|email',
         ]);
 
@@ -72,7 +72,7 @@ class QuickShareController extends BaseController
 
             // Calculate expiration time
             $retentionHours = $request->input('retention_hours', config('app.guest_upload_default_expiry_hours', 72));
-            $maxHours = config('app.guest_upload_max_expiry_hours', 168);
+            $maxHours = config('app.guest_upload_max_expiry_hours', 8760);
             $expiresAt = Carbon::now()->addHours(min($retentionHours, $maxHours));
 
             // Immediately create ShareableLink

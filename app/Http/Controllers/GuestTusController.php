@@ -31,7 +31,7 @@ class GuestTusController extends BaseController
             'uploadKey' => 'required|string',
             'upload_group_hash' => 'nullable|string|size:32', // Optional group hash for multi-file uploads
             'password' => 'nullable|string|min:4|max:255',
-            'expires_in_hours' => 'nullable|integer|min:1|max:168',
+            'expires_in_hours' => 'nullable|integer|min:1|max:8760', // Max 1 year
             'max_downloads' => 'nullable|integer|min:1|max:1000',
         ]);
 

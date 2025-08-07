@@ -16,6 +16,7 @@ Route::get('drive/s/{hash}', [ShareableLinksController::class, 'show']);
 // GUEST UPLOAD ROUTES
 Route::get('share/{hash}', [HomeController::class, 'render']); // Share page
 Route::get('download/{hash}', [GuestUploadController::class, 'downloadAll']); // Direct download (download all files)
+Route::get('download/{hash}/{fileId}', [GuestUploadController::class, 'downloadFile']); // Direct download single file
 
 // GUEST UPLOAD API ROUTES (NO AUTH NEEDED - BYPASS SANCTUM MIDDLEWARE)
 Route::prefix('api/v1')->group(function() {
@@ -48,6 +49,27 @@ Route::get('login', [HomeController::class, 'render'])->name('login');
 Route::get('register', [HomeController::class, 'render'])->name('register');
 Route::get('forgot-password', [HomeController::class, 'render']);
 Route::get('pricing', '\Common\Billing\PricingPageController');
+
+// DEMO ROUTES FOR UPLOAD PROGRESS INTERFACE
+Route::get('demo', function () {
+    return view('demo-index');
+})->name('demo.index');
+
+Route::get('demo/upload-progress', function () {
+    return view('upload-demo');
+})->name('demo.upload-progress');
+
+Route::get('demo/upload-progress-basic', function () {
+    return view('upload-progress');
+})->name('demo.upload-progress-basic');
+
+Route::get('demo/upload-progress-blade', function () {
+    return view('demo.upload-blade');
+})->name('demo.upload-progress-blade');
+
+Route::get('demo/upload-progress-improved', function () {
+    return view('demo.upload-improved');
+})->name('demo.upload-progress-improved');
 
 //CATCH ALL ROUTES AND REDIRECT TO HOME
 Route::fallback([HomeController::class, 'render']);

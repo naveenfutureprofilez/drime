@@ -14,25 +14,163 @@ import { SettingsPanel } from './components/settings-panel';
 import { EmailPanel } from './components/email-panel';
 import { Trans } from '@ui/i18n/trans';
 import { DefaultMetaTags } from '@common/seo/default-meta-tags';
+import { DialogTrigger } from '@ui/overlays/dialog/dialog-trigger';
+
+// Helper function to format expiry time in a user-friendly way
+function formatExpiryTime(hours) {
+  if (hours === 1) {
+    return <Trans message="Expires in 1 hour" />;
+  } else if (hours < 24) {
+    return <Trans message="Expires in :hours hours" values={{ hours }} />;
+  } else if (hours === 24) {
+    return <Trans message="Expires in 1 day" />;
+  } else if (hours < 168) {
+    const days = Math.floor(hours / 24);
+    return <Trans message="Expires in :days days" values={{ days }} />;
+  } else if (hours === 168) {
+    return <Trans message="Expires in 1 week" />;
+  } else if (hours < 720) {
+    const days = Math.floor(hours / 24);
+    return <Trans message="Expires in :days days" values={{ days }} />;
+  } else if (hours === 720) {
+    return <Trans message="Expires in 1 month" />;
+  } else if (hours < 8760) {
+    const months = Math.floor(hours / 720);
+    return <Trans message="Expires in :months months" values={{ months }} />;
+  } else {
+    return <Trans message="Expires in 1 year" />;
+  }
+}
 export function TransferHomepage() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [currentStep, setCurrentStep] = useState('upload');
-  const [showSettings, setShowSettings] = useState(false);
   const [showEmailPanel, setShowEmailPanel] = useState(false);
   const [transferSettings, setTransferSettings] = useState({
     password: '',
     expiresInHours: 72,
     maxDownloads: null
   });
+  
+  // Upload progress state
+  const [uploadData, setUploadData] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadSpeed, setUploadSpeed] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState('uploading');
+  const [uploadStartTime, setUploadStartTime] = useState(null);
+  const [abortController, setAbortController] = useState(null);
+  
+  // Debug log when settings change
+  const handleSettingsChange = useCallback((newSettings) => {
+    console.log('Settings being updated:', newSettings);
+    setTransferSettings(newSettings);
+  }, []);
+  
+  // Handle upload start - switch to progress view and start actual upload
+  const handleUploadStart = useCallback(async ({ files, totalSize, settings }) => {
+    setUploadData({ files, totalSize, settings });
+    setCurrentStep('progress');
+    setUploadProgress(0);
+    setUploadSpeed(0);
+    setUploadStatus('uploading');
+    setUploadStartTime(Date.now());
+    
+    try {
+      // Create abort controller for cancellation
+      const controller = new AbortController();
+      setAbortController(controller);
+      
+      const formData = new FormData();
+      files.forEach(file => {
+        const actualFile = file.native || file;
+        formData.append('files[]', actualFile);
+      });
+      
+      if (settings.password) {
+        formData.append('password', settings.password);
+      }
+      formData.append('expires_in_hours', settings.expiresInHours.toString());
+      if (settings.maxDownloads) {
+        formData.append('max_downloads', settings.maxDownloads.toString());
+      }
+      
+      let lastLoaded = 0;
+      let lastTimestamp = Date.now();
+      
+      const { apiClient } = await import('@common/http/query-client');
+      const response = await apiClient.post('guest/upload', formData, {
+        signal: controller.signal,
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(progress);
+            
+            // Calculate upload speed
+            const now = Date.now();
+            const timeDiff = (now - lastTimestamp) / 1000; // seconds
+            const bytesDiff = progressEvent.loaded - lastLoaded;
+            
+            if (timeDiff > 0.5) { // Update speed every 500ms
+              const speed = bytesDiff / timeDiff;
+              setUploadSpeed(speed);
+              lastLoaded = progressEvent.loaded;
+              lastTimestamp = now;
+            }
+          }
+        }
+      });
+      
+      setUploadStatus('success');
+      setUploadedFiles(response.data.data.files);
+      
+      // Auto-continue to share step after success animation
+      setTimeout(() => {
+        setCurrentStep('share');
+      }, 2000);
+      
+    } catch (error) {
+      if (error.name === 'CanceledError') {
+        // Upload was cancelled
+        setCurrentStep('upload');
+      } else {
+        console.error('Upload failed:', error);
+        setUploadStatus('error');
+      }
+    } finally {
+      setAbortController(null);
+    }
+  }, []);
+  
+  // Handle upload cancellation
+  const handleUploadCancel = useCallback(() => {
+    if (abortController) {
+      abortController.abort();
+    }
+  }, [abortController]);
+  
+  // Handle progress completion (continue or retry)
+  const handleProgressComplete = useCallback(() => {
+    if (uploadStatus === 'success') {
+      setCurrentStep('share');
+    } else if (uploadStatus === 'error') {
+      setCurrentStep('upload');
+      setUploadData(null);
+      setUploadProgress(0);
+      setUploadStatus('uploading');
+    }
+  }, [uploadStatus]);
+  
   const handleUploadComplete = useCallback(files => {
     setUploadedFiles(files);
     setCurrentStep('share');
   }, []);
+  
   const handleNewTransfer = useCallback(() => {
     setUploadedFiles([]);
     setCurrentStep('upload');
-    setShowSettings(false);
     setShowEmailPanel(false);
+    setUploadData(null);
+    setUploadProgress(0);
+    setUploadStatus('uploading');
   }, []);
   return <>
       <DefaultMetaTags />
@@ -76,16 +214,33 @@ export function TransferHomepage() {
             </div>
 
             {/* Main Content Area */}
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-              {currentStep === 'upload' && <UploadSection settings={transferSettings} onUploadComplete={handleUploadComplete} onShowSettings={() => setShowSettings(true)} />}
-              
-              {currentStep === 'progress' && <TransferProgress onComplete={() => setCurrentStep('share')} />}
-              
-              {currentStep === 'share' && <ShareSection files={uploadedFiles} onNewTransfer={handleNewTransfer} onShowEmailPanel={() => setShowEmailPanel(true)} />}
-            </div>
-
-            {/* Settings Panel */}
-            {showSettings && <SettingsPanel settings={transferSettings} onSettingsChange={setTransferSettings} onClose={() => setShowSettings(false)} />}
+            {currentStep !== 'progress' && (
+              <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                {currentStep === 'upload' && (
+                  <UploadSection 
+                    settings={transferSettings} 
+                    onSettingsChange={handleSettingsChange} 
+                    onUploadComplete={handleUploadComplete}
+                    onUploadStart={handleUploadStart}
+                  />)}
+                
+                {currentStep === 'share' && <ShareSection files={uploadedFiles} onNewTransfer={handleNewTransfer} onShowEmailPanel={() => setShowEmailPanel(true)} />}
+              </div>
+            )}
+            
+            {/* Progress Screen - Full screen overlay */}
+            {currentStep === 'progress' && uploadData && (
+              <TransferProgress
+                files={uploadData.files}
+                progress={uploadProgress}
+                totalSize={uploadData.totalSize}
+                uploadSpeed={uploadSpeed}
+                timeRemaining={uploadSpeed > 0 ? ((uploadData.totalSize * (100 - uploadProgress)) / 100) / uploadSpeed : 0}
+                onCancel={handleUploadCancel}
+                onComplete={handleProgressComplete}
+                status={uploadStatus}
+              />
+            )}
 
             {/* Email Panel */}
             {showEmailPanel && <EmailPanel files={uploadedFiles} onClose={() => setShowEmailPanel(false)} />}
@@ -96,9 +251,12 @@ export function TransferHomepage() {
 }
 function UploadSection({
   settings,
+  onSettingsChange,
   onUploadComplete,
-  onShowSettings
+  onUploadStart
 }) {
+  const [showSettings, setShowSettings] = useState(false);
+  
   return <div className="shadow-md p-8 rounded-xl">
       {/* Top Actions */}
       <div className="flex justify-between items-center mb-8">
@@ -110,13 +268,20 @@ function UploadSection({
             <EmailIcon /> <Trans message="Email transfer" />
           </button>
         </div>
-        <button onClick={onShowSettings} className="!bg-gray-300 text-black px-2 py-2 rounded-[30px]">
+        <button 
+          onClick={() => setShowSettings(true)}
+          className="!bg-blue-100 text-blue-800 px-3 py-2 rounded-[30px] border border-blue-200 hover:bg-blue-200 transition-colors"
+        >
           <SettingsIcon /> <Trans message="Settings" />
         </button>
       </div>
 
       {/* Upload Widget */}
-      <FileUploadWidget settings={settings} onUploadComplete={onUploadComplete} />
+      <FileUploadWidget 
+        settings={settings} 
+        onUploadComplete={onUploadComplete}
+        onUploadStart={onUploadStart}
+      />
 
       {/* Upload Options */}
       <div className="mt-6 flex justify-center gap-4 text-sm text-gray-500">
@@ -128,13 +293,25 @@ function UploadSection({
         </div>
         <div className="flex items-center gap-1">
           <ScheduleIcon className="w-4 h-4" />
-          <span>
-            <Trans message="Expires in :hours hours" values={{
-            hours: settings.expiresInHours
-          }} />
-          </span>
+          <button 
+            onClick={() => setShowSettings(true)}
+            className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors"
+            title="Click to change expiry time"
+          >
+            {formatExpiryTime(settings.expiresInHours)}
+          </button>
+          <span className="text-xs text-gray-400 ml-1">↑ Click to change</span>
         </div>
       </div>
+      
+      {/* Settings Modal */}
+      {showSettings && (
+        <SettingsPanel 
+          settings={settings} 
+          onSettingsChange={onSettingsChange} 
+          onClose={() => setShowSettings(false)} 
+        />
+      )}
     </div>;
 }
 function ShareSection({

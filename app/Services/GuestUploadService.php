@@ -46,7 +46,7 @@ class GuestUploadService
         // c. Inside the loop keep previous logic for FileEntry creation but do not create GuestUpload rows
         foreach ($files as $file) {
             // Store file using configured disk (Cloudflare R2)
-            $disk = Storage::disk(config('common.site.uploads_disk'));
+            $disk = Storage::disk(config('common.site.uploads_disk', 'uploads'));
             $fileName = $this->generateUniqueFileName($file);
             $path = $disk->putFileAs('guest-uploads', $file, $fileName);
             
@@ -64,7 +64,7 @@ class GuestUploadService
                 'user_id' => null, // Guest upload
                 'parent_id' => null,
                 'path' => 'guest-uploads',
-                'disk_prefix' => config('common.site.uploads_disk'),
+                'disk_prefix' => config('common.site.uploads_disk', 'uploads'),
                 'type' => 'file',
             ]);
 
@@ -78,7 +78,7 @@ class GuestUploadService
                 'filename' => $file->getClientOriginalName(),
                 'size' => $file->getSize(),
                 'mime_type' => $file->getMimeType(),
-                'download_url' => url("/download/{$guestUpload->hash}?file={$fileEntry->id}"),
+                'download_url' => url("/download/{$guestUpload->hash}/{$fileEntry->id}"),
                 'share_url' => url("/share/{$guestUpload->hash}"),
             ];
         }
@@ -229,7 +229,7 @@ class GuestUploadService
                 // Loop through all associated files to delete physical files and FileEntry rows
                 foreach ($upload->files as $fileEntry) {
                     // Delete physical file from storage
-                    $disk = Storage::disk($fileEntry->disk_prefix ?: config('common.site.uploads_disk'));
+                    $disk = Storage::disk($fileEntry->disk_prefix ?: config('common.site.uploads_disk', 'uploads'));
                     $filePath = $fileEntry->path ? 
                         $fileEntry->path . '/' . $fileEntry->file_name : 
                         $fileEntry->file_name;
@@ -311,7 +311,7 @@ class GuestUploadService
     private function calculateExpiryTime(?int $hours): Carbon
     {
         $hours = $hours ?: config('app.guest_upload_default_expiry_hours', 72);
-        $maxHours = config('app.guest_upload_max_expiry_hours', 168); // 7 days max
+        $maxHours = config('app.guest_upload_max_expiry_hours', 8760); // 1 year max (365 * 24)
         
         return Carbon::now()->addHours(min($hours, $maxHours));
     }

@@ -4,15 +4,14 @@ import { FileUploadIcon } from '@ui/icons/material/FileUpload';
 import { AddIcon } from '@ui/icons/material/Add';
 import { Trans } from '@ui/i18n/trans';
 import { openUploadWindow } from '@ui/utils/files/open-upload-window';
-import { ProgressBar } from '@ui/progress/progress-bar';
 import { prettyBytes } from '@ui/utils/files/pretty-bytes';
 import { apiClient } from '@common/http/query-client';
 export function FileUploadWidget({
   settings,
-  onUploadComplete
+  onUploadComplete,
+  onUploadStart // New prop to notify parent about upload start
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(null);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const handleDragOver = useCallback(e => {
     e.preventDefault();
@@ -52,57 +51,20 @@ export function FileUploadWidget({
   }, []);
   const handleUpload = useCallback(async () => {
     if (selectedFiles.length === 0) return;
-    try {
-      setUploadProgress(0);
-      const formData = new FormData();
-      selectedFiles.forEach(file => {
-        // Handle both File and UploadedFile objects
-        const actualFile = file.native || file;
-        formData.append('files[]', actualFile);
-      });
-      if (settings.password) {
-        formData.append('password', settings.password);
-      }
-      formData.append('expires_in_hours', settings.expiresInHours.toString());
-      if (settings.maxDownloads) {
-        formData.append('max_downloads', settings.maxDownloads.toString());
-      }
-      const response = await apiClient.post('guest/upload', formData, {
-        onUploadProgress: progressEvent => {
-          if (progressEvent.total) {
-            const progress = Math.round(progressEvent.loaded * 100 / progressEvent.total);
-            setUploadProgress(progress);
-          }
-        }
-      });
-      setUploadProgress(null);
-      console.log('Upload API response:', response.data.data); // Debug log to check API structure
-      onUploadComplete(response.data.data.files);
-    } catch (error) {
-      console.error('Upload failed:', error);
-      setUploadProgress(null);
-      // TODO: Show error message
-    }
-  }, [selectedFiles, settings, onUploadComplete]);
+    
+    // Calculate total size for progress tracking
+    const totalSize = selectedFiles.reduce((total, file) => total + file.size, 0);
+    
+    // Notify parent that upload is starting
+    onUploadStart?.({ 
+      files: selectedFiles, 
+      totalSize,
+      settings 
+    });
+  }, [selectedFiles, settings, onUploadStart]);
   const removeFile = useCallback(index => {
     setSelectedFiles(files => files.filter((_, i) => i !== index));
   }, []);
-  if (uploadProgress !== null) {
-    return <div className="text-center py-12">
-        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <FileUploadIcon className="w-8 h-8 text-blue-600" />
-        </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
-          <Trans message="Uploading files..." />
-        </h3>
-        <div className="max-w-xs mx-auto">
-          <ProgressBar value={uploadProgress} />
-          <p className="text-sm text-gray-500 mt-2">
-            {uploadProgress}% <Trans message="complete" />
-          </p>
-        </div>
-      </div>;
-  }
   return <div className="text-center">
       {selectedFiles.length === 0 ? <div className={`border-2 border-dashed rounded-2xl p-4 transition-colors ${isDragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}`} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">

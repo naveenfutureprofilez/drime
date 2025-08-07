@@ -1,102 +1,138 @@
-import React from 'react';
-import { Dialog } from '@ui/overlays/dialog/dialog';
-import { DialogHeader } from '@ui/overlays/dialog/dialog-header';
-import { DialogBody } from '@ui/overlays/dialog/dialog-body';
-import { DialogFooter } from '@ui/overlays/dialog/dialog-footer';
-import { Button } from '@ui/buttons/button';
-import { FormTextField } from '@ui/forms/input-field/text-field/text-field';
-import { FormSelect, Option } from '@ui/forms/select/select';
+import React, { useState } from 'react';
 import { Trans } from '@ui/i18n/trans';
+
 export function SettingsPanel({
   settings,
   onSettingsChange,
   onClose
 }) {
-  const handlePasswordChange = value => {
-    onSettingsChange({
-      ...settings,
-      password: value
-    });
+  
+  console.log('Settings received:', settings); // Debug log
+  
+  const [localSettings, setLocalSettings] = useState({
+    password: settings.password || '',
+    expiresInHours: settings.expiresInHours || 72,
+    maxDownloads: settings.maxDownloads || null
+  });
+  
+  const handleSave = () => {
+    console.log('handleSave called with:', localSettings);
+    onSettingsChange(localSettings);
+    onClose();
   };
-  const handleExpiryChange = value => {
-    onSettingsChange({
-      ...settings,
-      expiresInHours: parseInt(value.toString())
-    });
-  };
-  const handleMaxDownloadsChange = value => {
-    const maxDownloads = value ? parseInt(value.toString()) : null;
-    onSettingsChange({
-      ...settings,
-      maxDownloads
-    });
-  };
-  return <Dialog size="md">
-      <DialogHeader>
-        <Trans message="Transfer Settings" />
-      </DialogHeader>
-      
-      <DialogBody>
-        <div className="space-y-6">
-          {/* Password Protection */}
-          <div>
-            <FormTextField name="password" label={<Trans message="Password protection (optional)" />} type="password" value={settings.password} onChange={e => handlePasswordChange(e.target.value)} placeholder="Enter password" description={<Trans message="Add a password to protect your files" />} />
-          </div>
+  
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-900">
+            <Trans message="Transfer Settings" />
+          </h2>
+        </div>
+        
+        {/* Body */}
+        <div className="px-6 py-6">
+          <div className="space-y-6">
+            {/* Password Protection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Trans message="Password protection (optional)" />
+              </label>
+              <input 
+                type="password"
+                value={localSettings.password}
+                onChange={(e) => {
+                  console.log('Password changed to:', e.target.value);
+                  setLocalSettings({...localSettings, password: e.target.value});
+                }}
+                placeholder="Enter password"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                <Trans message="Add a password to protect your files" />
+              </p>
+            </div>
 
-          {/* Expiry Time */}
-          <div>
-            <FormSelect name="expiresInHours" selectionMode="single" label={<Trans message="Delete files after" />} selectedValue={settings.expiresInHours.toString()} onSelectionChange={handleExpiryChange} description={<Trans message="Files will be automatically deleted after this time" />}>
-              <Option value="1">
-                <Trans message="1 hour" />
-              </Option>
-              <Option value="6">
-                <Trans message="6 hours" />
-              </Option>
-              <Option value="24">
-                <Trans message="1 day" />
-              </Option>
-              <Option value="72">
-                <Trans message="3 days" />
-              </Option>
-              <Option value="120">
-                <Trans message="5 days" />
-              </Option>
-              <Option value="168">
-                <Trans message="7 days" />
-              </Option>
-            </FormSelect>
-          </div>
+            {/* Expiry Time */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Trans message="Delete files after" />
+              </label>
+              <select 
+                value={localSettings.expiresInHours}
+                onChange={(e) => {
+                  const newExpiry = parseInt(e.target.value);
+                  console.log('Expiry changed to:', newExpiry);
+                  setLocalSettings({...localSettings, expiresInHours: newExpiry});
+                }}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
+              >
+                <option value={1}>1 hour</option>
+                <option value={6}>6 hours</option>
+                <option value={24}>1 day</option>
+                <option value={72}>3 days</option>
+                <option value={120}>5 days</option>
+                <option value={168}>7 days</option>
+                <option value={240}>10 days</option>
+                <option value={480}>20 days</option>
+                <option value={720}>30 days</option>
+                <option value={8760}>1 year</option>
+              </select>
+              <p className="text-sm text-gray-500 mt-1">
+                <Trans message="Files will be automatically deleted after this time" />
+              </p>
+            </div>
 
-          {/* Download Limit */}
-          <div>
-            <FormSelect name="maxDownloads" selectionMode="single" label={<Trans message="Download limit (optional)" />} selectedValue={settings.maxDownloads?.toString() || ''} onSelectionChange={handleMaxDownloadsChange} description={<Trans message="Limit the number of times files can be downloaded" />}>
-              <Option value="">
-                <Trans message="No limit" />
-              </Option>
-              <Option value="1">
-                <Trans message="1 download" />
-              </Option>
-              <Option value="5">
-                <Trans message="5 downloads" />
-              </Option>
-              <Option value="10">
-                <Trans message="10 downloads" />
-              </Option>
-              <Option value="25">
-                <Trans message="25 downloads" />
-              </Option>
-            </FormSelect>
+            {/* Download Limit */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Trans message="Download limit (optional)" />
+              </label>
+              <select 
+                value={localSettings.maxDownloads || ''}
+                onChange={(e) => {
+                  const newLimit = e.target.value ? parseInt(e.target.value) : null;
+                  console.log('Max downloads changed to:', newLimit);
+                  setLocalSettings({...localSettings, maxDownloads: newLimit});
+                }}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
+              >
+                <option value="">No limit</option>
+                <option value={1}>1 download</option>
+                <option value={5}>5 downloads</option>
+                <option value={10}>10 downloads</option>
+                <option value={25}>25 downloads</option>
+              </select>
+              <p className="text-sm text-gray-500 mt-1">
+                <Trans message="Limit the number of times files can be downloaded" />
+              </p>
+            </div>
           </div>
         </div>
-      </DialogBody>
-
-      <DialogFooter>
-        <Button variant="text" onClick={onClose}>
-          <Trans message="Cancel" />
-        </Button>
-        <Button variant="flat" color="primary" onClick={onClose}>
-          <Trans message="Save settings" />
-        </Button>
-      </DialogFooter>
-    </Dialog>;
+        
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+          <button 
+            onClick={() => {
+              console.log('Cancel clicked');
+              onClose();
+            }}
+            className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+          >
+            <Trans message="Cancel" />
+          </button>
+          <button 
+            onClick={() => {
+              console.log('Save clicked with settings:', localSettings);
+              handleSave();
+            }}
+            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+          >
+            <Trans message="Save settings" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }

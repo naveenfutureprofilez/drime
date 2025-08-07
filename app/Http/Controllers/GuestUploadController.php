@@ -32,7 +32,7 @@ class GuestUploadController extends BaseController
             'files' => 'required|array|min:1',
             'files.*' => 'required|file|max:' . config('app.max_file_size', 3145728), // 3GB default
             'password' => 'nullable|string|min:4|max:255',
-            'expires_in_hours' => 'nullable|integer|min:1|max:168', // Max 7 days
+            'expires_in_hours' => 'nullable|integer|min:1|max:8760', // Max 1 year
             'max_downloads' => 'nullable|integer|min:1|max:1000',
         ]);
 
@@ -244,7 +244,7 @@ class GuestUploadController extends BaseController
             return response()->json(['message' => 'File not found'], 404);
         }
 
-        $disk = Storage::disk(config('common.site.uploads_disk'));
+        $disk = Storage::disk(config('common.site.uploads_disk', 'uploads'));
         
         if (!$disk->exists($fileEntry->file_name)) {
             return response()->json(['message' => 'File not found in storage'], 404);
@@ -260,17 +260,26 @@ class GuestUploadController extends BaseController
      */
     public function downloadFile(string $hash, string $fileId, Request $request): mixed
     {
+        logger('downloadFile called', ['hash' => $hash, 'fileId' => $fileId]);
+        
         // Load GuestUpload with files
         $guestUpload = GuestUpload::with('files')
             ->where('hash', $hash)
             ->first();
+        
+        logger('GuestUpload found', ['found' => !!$guestUpload]);
 
         if (!$guestUpload) {
+            logger('Upload not found');
             return response()->json(['message' => 'Upload not found'], 404);
         }
 
         // Verify password/limits once (not per file)
-        if (!$guestUpload->canDownload()) {
+        $canDownload = $guestUpload->canDownload();
+        logger('Can download check', ['canDownload' => $canDownload]);
+        
+        if (!$canDownload) {
+            logger('Cannot download - expired or limit reached');
             return response()->json([
                 'message' => 'This upload has expired or reached download limit'
             ], 410);
@@ -278,30 +287,46 @@ class GuestUploadController extends BaseController
 
         // Check password using consistent method
         $password = $request->input('password');
-        if (!$guestUpload->verifyPassword($password)) {
+        $passwordVerified = $guestUpload->verifyPassword($password);
+        logger('Password verification', ['hasPassword' => !!$guestUpload->password, 'verified' => $passwordVerified]);
+        
+        if (!$passwordVerified) {
+            logger('Invalid password');
             return response()->json(['message' => 'Invalid password'], 401);
         }
 
         // Find the specific file by ID
         $fileEntry = $guestUpload->files()->where('file_entries.id', $fileId)->first();
+        logger('File entry found', ['found' => !!$fileEntry, 'fileId' => $fileId]);
         
         if (!$fileEntry) {
+            logger('File not found in upload files');
             return response()->json(['message' => 'File not found'], 404);
         }
 
         try {
+            logger('Starting download process');
+            
             // Re-use existing disk logic but lookup FileEntry by id
-            $disk = Storage::disk(config('common.site.uploads_disk'));
+            $disk = Storage::disk(config('common.site.uploads_disk', 'uploads'));
+            logger('Disk loaded', ['disk' => config('common.site.uploads_disk')]);
             
-            // Build the file path
-            $filePath = $fileEntry->path ? 
-                $fileEntry->path . '/' . $fileEntry->file_name : 
+            // Build the file path using raw path to avoid base36 decoding
+            $rawPath = $fileEntry->getRawOriginal('path');
+            $filePath = $rawPath ? 
+                $rawPath . '/' . $fileEntry->file_name : 
                 $fileEntry->file_name;
+            logger('File path built', ['filePath' => $filePath, 'rawPath' => $rawPath, 'file_name' => $fileEntry->file_name]);
             
-            if (!$disk->exists($filePath)) {
+            $fileExists = $disk->exists($filePath);
+            logger('File exists check', ['exists' => $fileExists, 'filePath' => $filePath]);
+            
+            if (!$fileExists) {
+                logger('File not found in storage', ['filePath' => $filePath]);
                 return response()->json(['message' => 'File not found in storage'], 404);
             }
 
+            logger('About to increment download count');
             // Increment download count for successful download
             $guestUpload->incrementDownloadCount();
 
@@ -311,6 +336,7 @@ class GuestUploadController extends BaseController
                 GuestUploadDownloaded::dispatch($guestUpload, $shareableLink);
             }
 
+            logger('About to start download', ['fileName' => $fileEntry->getNameWithExtension()]);
             return $disk->download(
                 $filePath,
                 $fileEntry->getNameWithExtension()
@@ -367,10 +393,12 @@ class GuestUploadController extends BaseController
             $fileEntry = $files->first();
             
             try {
-                $disk = Storage::disk(config('common.site.uploads_disk'));
+                $disk = Storage::disk(config('common.site.uploads_disk', 'uploads'));
                 
-                $filePath = $fileEntry->path ? 
-                    $fileEntry->path . '/' . $fileEntry->file_name : 
+                // Use raw path to avoid base36 decoding
+                $rawPath = $fileEntry->getRawOriginal('path');
+                $filePath = $rawPath ? 
+                    $rawPath . '/' . $fileEntry->file_name : 
                     $fileEntry->file_name;
                 
                 if (!$disk->exists($filePath)) {
@@ -418,13 +446,15 @@ class GuestUploadController extends BaseController
                     outputName: "guest-upload-{$guestUpload->hash}-$timestamp.zip",
                 );
 
-                $disk = Storage::disk(config('common.site.uploads_disk'));
+                $disk = Storage::disk(config('common.site.uploads_disk', 'uploads'));
                 $filesInZip = []; // Track duplicate file names
                 
                 foreach ($files as $fileEntry) {
                     try {
-                        $filePath = $fileEntry->path ? 
-                            $fileEntry->path . '/' . $fileEntry->file_name : 
+                        // Use raw path to avoid base36 decoding
+                        $rawPath = $fileEntry->getRawOriginal('path');
+                        $filePath = $rawPath ? 
+                            $rawPath . '/' . $fileEntry->file_name : 
                             $fileEntry->file_name;
                         
                         if (!$disk->exists($filePath)) {
