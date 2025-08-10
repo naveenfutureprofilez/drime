@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Trans } from '@ui/i18n/trans';
 import { prettyBytes } from '@ui/utils/files/pretty-bytes';
-
 export function TransferProgress({
     files = [],
     progress = 0,
