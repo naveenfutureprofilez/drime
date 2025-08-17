@@ -12,7 +12,6 @@ export function TransferProgress({
     status = 'uploading' // 'uploading', 'success', 'error'
   }) {
   const [displayProgress, setDisplayProgress] = useState(progress);
-  
   // Smooth progress animation
   useEffect(() => {
     const timer = setTimeout(() => {
