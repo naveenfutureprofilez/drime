@@ -108,7 +108,6 @@ export function TransferHomepage() {
             const now = Date.now();
             const timeDiff = (now - lastTimestamp) / 1000; // seconds
             const bytesDiff = progressEvent.loaded - lastLoaded;
-            
             if (timeDiff > 0.5) { // Update speed every 500ms
               const speed = bytesDiff / timeDiff;
               setUploadSpeed(speed);
