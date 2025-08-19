@@ -27,7 +27,7 @@ Thumbs.db
 
 # misc
 .htaccess
-public/.htaccess
+public/.htaccess 
 public/favicon
 public/favicon.ico
 install_files
@@ -37,3 +37,4 @@ Homestead.json
 Homestead.yaml
 .env
 data.ms
+.env.guest-upload-example

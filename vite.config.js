@@ -1,52 +1,43 @@
-import {defineConfig} from 'vite';
-import react from '@vitejs/plugin-react-swc';
-import laravel from 'laravel-vite-plugin';
-import replace from '@rollup/plugin-replace';
+const { defineConfig } = require('vite');
+const react = require('@vitejs/plugin-react-swc');
+const laravel = require('laravel-vite-plugin').default;
+const replace = require('@rollup/plugin-replace');
 
-// override laravel plugin base option (from absolute to relative to html base tag)
 function basePath() {
   return {
     name: 'test',
     enforce: 'post',
-    config: () => {
-      return {
-        base: '',
-      };
-    },
+    config: () => ({ base: '' }),
   };
 }
 
-export default defineConfig({
+module.exports = defineConfig({
   base: '',
   server: {
-    watch: {
-      followSymlinks: true
-    }
+    host: 'localhost',
+    port: 5173,
+    watch: { followSymlinks: true },
+    hmr: {
+      host: 'localhost',
+      protocol: 'ws',
+    },
   },
   resolve: {
     preserveSymlinks: true,
     alias: {
       '@ui': '/common/foundation/resources/client/ui/library',
       '@common': '/common/foundation/resources/client',
-      '@app': '/resources/client'
-    }
+      '@app': '/resources/client',
+    },
   },
   build: {
     sourcemap: true,
-    rollupOptions: {
-      external: ['puppeteer', 'ioredis'],
-    },
+    rollupOptions: { external: ['puppeteer', 'ioredis'] },
   },
   plugins: [
     react(),
-    laravel({
-      input: ['resources/client/main.jsx'],
-      refresh: false,
-    }),
+    laravel({ input: ['resources/client/main.jsx'], refresh: false }),
     basePath(),
-    replace({
-      preventAssignment: true,
-      __SENTRY_DEBUG__: false,
-    }),
+    replace({ preventAssignment: true, __SENTRY_DEBUG__: false }),
   ],
 });
