@@ -14,14 +14,18 @@ function basePath() {
 module.exports = defineConfig({
   base: '',
   server: {
-    host: 'localhost',
+    host: '127.0.0.1',
     port: 5173,
+    strictPort: true,   // don’t auto-switch to another port
     watch: { followSymlinks: true },
     hmr: {
-      host: 'localhost',
       protocol: 'ws',
+      host: '127.0.0.1',
+      port: 5173,
     },
+    origin: 'http://127.0.0.1:5173', // 👈 this fixes the injected script URLs
   },
+
   resolve: {
     preserveSymlinks: true,
     alias: {
