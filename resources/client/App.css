@@ -1,5 +1,6 @@
 @import '../../common/foundation/resources/client/core/common.css';
 @import 'drive/file-view/file-grid/file-grid.css';
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Outfit:wght@100..900&family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -76,4 +77,180 @@ body {
   .landing-container {
     max-width: 1170px;
   }
+}
+
+
+
+
+.bg-main-fade {
+  background: var(--main-fade);
+}
+
+.font-schibsted {
+  font-family: 'Schibsted Grotesk', sans-serif;
+}
+
+body {
+  --white: #ffffff;
+  --bg-sky: #b5e7ff;
+  --black: #000000;
+  --bg-my-green: #08CF65;
+  --gray: #cccccc;
+  --gray2: #4D4D4D;
+  --mint: #05EFB8;
+  --pink: #F94F97;
+  --yellow: #E6EA7B;
+  --lightpink: #FFC4E2;
+  --voilet: #8C52FF;
+  --purple: #8C52FF;
+  --body-font: 'gulfs';
+  --heading-font: 'gulfs';
+  --para-font: 'CeraGRMedium';
+  --parabold-font: 'CeraGRBold';
+  --text-wh: #ffffff;
+  --text-bl: #000000;
+  --text-gray: #616161;
+  --text-graydark: #333333;
+  --text-paragraph: #999999;
+  --linear-gradient: linear-gradient(to right, #f9a8d4, #f9a8d4, #f472b6);
+}
+
+body {
+  font-family: "Inter", sans-serif;
+}
+
+.hero_bg {
+  height: auto;
+  width: auto;
+  background-image: url('../../public/images/banner.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+
+@layer components {
+  .center-align {
+    @apply flex items-center justify-center
+  }
+
+  .between-align {
+    @apply flex items-center justify-between text-center
+  }
+
+  .button {
+    @apply bg-[#08CF65] text-white text-center font-[600] cursor-pointer rounded-[10px] inline-block font-schibsted;
+  }
+
+  .button-sm {
+    @apply button text-[12px] px-2 py-2;
+  }
+
+  .button-md {
+    @apply button text-[14px] px-4 py-2;
+  }
+
+  .button-lg {
+    @apply button text-[16px] px-5 py-2;
+  }
+
+  .boxmodel {
+    @apply flex flex-col h-[90vh] items-center justify-center
+  }
+
+  .box {
+    @apply bg-white rounded-[20px] shadow-lg w-full sm:max-w-[435px] font-schibsted
+  }
+
+  .para {
+    @apply text-[#111111] text-[18px] leading-7 font-normal font-schibsted text-center
+  }
+
+  .normal-para {
+    @apply text-[#999999] text-[16px] leading-6 font-normal font-schibsted text-center
+  }
+
+  .heading {
+    @apply text-black font-[600] font-schibsted
+  }
+
+  .heading-md {
+    @apply heading text-[20px] leading-[16px]
+  }
+
+  .heading-lg {
+    @apply heading text-[22px] leading-[18px]
+  }
+
+  .heading-xl {
+    @apply heading text-[24px] leading-[20px]
+  }
+
+  .normal-heading {
+    @apply text-black text-[18px] font-bold font-schibsted
+  }
+
+  .Add {
+    @apply border-[#08CF65] border-2 text-[#08CF65] text-center font-schibsted
+  }
+
+  .input {
+    @apply justify-center border items-start px-[15px] py-[10px] mt-2.5 mb-2.5 w-full whitespace-nowrap text-[#646A73] rounded-[10px] max-w-full;
+    border-color: #D1D5DB !important;
+    /* Tailwind border-gray-300 */
+  }
+
+
+  .input-sm {
+    @apply input px-[20px] py-[15px] rounded-[10px]
+  }
+
+  .border-apply {
+    @apply border-b border-[#0000001E]
+  }
+
+  .transefer {
+    @apply text-[18px] font-normal leading-6 font-schibsted underline text-black hover:underline text-center
+  }
+
+  .manage-col {
+    @apply flex flex-col justify-center items-center text-center
+  }
+
+  .toggle-checkbox {
+    @apply w-5 h-5 rounded-full appearance-none bg-gray-300 checked:bg-indigo-500 transition;
+  }
+
+  .font-signature {
+    font-family: 'Brush Script MT', cursive;
+  }
+}
+
+.custom-scroll::-webkit-scrollbar {
+  background: #646A73;
+  height: 2px !important;
+  width: 1px !important;
+  border-radius: 6px;
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+  background: #646A73;
+  border-radius: 6px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: #646A73;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0%);
+  }
+}
+
+.animate-slideUp {
+  animation: slideUp 1.5s ease-out;
 }
