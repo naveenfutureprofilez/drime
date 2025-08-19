@@ -11,7 +11,6 @@ npm run dev --force
 php artisan serve
 
 
-
 ## Feature Overview
 
 The guest uploads feature allows unauthenticated users to upload files with configurable expiration and download limits. This provides a flexible way to handle temporary file sharing without requiring user registration.
