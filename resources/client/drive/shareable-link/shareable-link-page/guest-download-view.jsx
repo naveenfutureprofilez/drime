@@ -1,13 +1,10 @@
 import React, { useState } from 'react';
-import { Button } from '@ui/buttons/button';
-import { Trans } from '@ui/i18n/trans';
-import { prettyBytes } from '@ui/utils/files/pretty-bytes';
 import { apiClient } from '@common/http/query-client';
-import { LockIcon } from '@ui/icons/material/Lock';
 import { MdClose } from 'react-icons/md';
 import Download from '@app/components/Download';
 import FileData from '@app/transfer/components/FileData';
 import StoragePopup from '@app/components/StoragePopup';
+import Layout from '@app/components/Layout';
 export const GuestDownloadView = ({
   files,
   totalSize,
@@ -72,14 +69,14 @@ export const GuestDownloadView = ({
       if (files && files.length === 1) {
         // Single file - direct download using file ID
         const file = files[0];
-        console.log("file" ,file)
+        console.log("file", file)
         const downloadUrl = `/download/${hash}/${file.id}${downloadParams}`;
         window.open(downloadUrl, "_blank");
       } else if (files && files.length > 1) {
         // Multiple files - ZIP download
         const downloadUrl = `/download/${hash}${downloadParams}`;
         window.open(downloadUrl, "_blank");
-        console.log("downloadUrl" ,downloadUrl)
+        console.log("downloadUrl", downloadUrl)
       } else {
         alert("No files available for download.");
       }
@@ -217,5 +214,6 @@ export const GuestDownloadView = ({
       </div>
     </>
 
-  </div>;
+  </div>
+    ;
 };

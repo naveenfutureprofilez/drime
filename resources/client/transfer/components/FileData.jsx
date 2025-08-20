@@ -2,11 +2,9 @@ import { MdInsertDriveFile, MdClose, MdDownload } from 'react-icons/md';
 import { IoMdDocument } from 'react-icons/io';
 import { FaImage, FaFileAudio, FaFileVideo } from 'react-icons/fa';
 import { RiEyeLine } from "react-icons/ri";
-import { LuDownload } from "react-icons/lu";
 import { FileSize } from '../../components/FileSize';
 import NoData from '../../components/NoData';
 import { useFileDrop } from '../../components/useFileDrop';
-import FileDownloader from '@app/components/FileDownloader';
 import { useState } from 'react';
 
 export default function FileData({ step, selectedFiles, setSelectedFiles, setStep }) {

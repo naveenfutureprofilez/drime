@@ -22,7 +22,7 @@ const StoragePopup = () => {
         <>
             <button
                 onClick={() => setIsOpen(true)}
-                className="bg-indigo-500 text-white px-6 py-2 rounded-full hover:bg-indigo-700 transition-colors"
+                className="bg-[#f5f5f5] text-black px-6 py-2 rounded-full hover:bg-indigo-700 transition-colors"
             >
                 Open Popup
             </button>
