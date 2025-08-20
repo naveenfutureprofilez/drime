@@ -130,7 +130,7 @@ body {
 
 @layer components {
   .center-align {
-    @apply flex items-center justify-center
+    @apply flex items-center justify-center 
   }
 
   .between-align {
@@ -189,8 +189,8 @@ body {
     @apply text-black text-[18px] font-bold font-schibsted
   }
 
-  .Add {
-    @apply border-[#08CF65] border-2 text-[#08CF65] text-center font-schibsted
+  .btn-border {
+    @apply border-[#08CF65] border-1 text-[#08CF65] text-center font-schibsted
   }
 
   .input {
@@ -212,7 +212,7 @@ body {
     @apply text-[18px] font-normal leading-6 font-schibsted underline text-black hover:underline text-center
   }
 
-  .manage-col {
+  .column-center {
     @apply flex flex-col justify-center items-center text-center
   }
 

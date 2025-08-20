@@ -5,6 +5,7 @@ import Menu from '@app/components/Menu';
 import { useFileDrop } from '@app/components/useFileDrop';
 import { CiSettings } from 'react-icons/ci';
 import { SettingsPanel } from './SettingsPanel';
+import { FileSize } from '@app/components/FileSize';
 
 export function FileUploadWidget({
   settings,
@@ -14,19 +15,16 @@ export function FileUploadWidget({
   const [selectedFiles, setSelectedFiles] = useState([]);
   console.log("selectedFiles", selectedFiles)
 
-  // const handleUpload = useCallback(async () => {
-  //   if (selectedFiles.length === 0) return;
-  //   const totalSize = selectedFiles.reduce((total, file) => total + file.size, 0);
-  //   onUploadStart?.({
-  //     files: selectedFiles,
-  //     totalSize,
-  //     settings
-  //   });
-  // }, [selectedFiles, settings, onUploadStart]);
+  const handleUpload = useCallback(async () => {
+    if (selectedFiles.length === 0) return;
+    const totalSize = selectedFiles.reduce((total, file) => total + file.size, 0);
+    onUploadStart?.({
+      files: selectedFiles,
+      totalSize,
+      settings
+    });
+  }, [selectedFiles, settings, onUploadStart]);
 
-  // const removeFile = useCallback(index => {
-  //   setSelectedFiles(files => files.filter((_, i) => i !== index));
-  // }, []);
 
   const [showSettings, setShowSettings] = useState(false);
   const handleSettingsClick = () => {
@@ -53,10 +51,7 @@ export function FileUploadWidget({
     })
   }
 
-  const handlesubmit = (e) => {
-    e.preventDefault();
-    // setStep(3)
-  }
+  
 
   const addInputRef = useRef(null);
   const folderInputRef = useRef(null);
@@ -97,6 +92,8 @@ export function FileUploadWidget({
   const { isDragging, handleDragOver, handleDragLeave, handleDrop } = useFileDrop(handleDropAction);
   const [activeTab, setActiveTab] = useState('Link');
 
+   const allFiles = selectedFiles.flatMap(item => item.files ? item.files : item);
+    const totalSizeAll = allFiles.reduce((acc, f) => acc + (f.size || 0), 0);
 
   return <div className="text-center">
     {selectedFiles.length === 0 ?
@@ -107,7 +104,7 @@ export function FileUploadWidget({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <div className="manage-col text-center">
+        <div className="column-center text-center">
           <input
             type="file"
             multiple
@@ -126,7 +123,7 @@ export function FileUploadWidget({
           />
           <label
             onClick={() => addInputRef.current.click()}
-            className="Add rounded-[35px] p-4 mb-6 cursor-pointer inline-block"
+            className="btn-border rounded-[35px] p-4 mb-6 cursor-pointer inline-block"
           >
             <MdAdd size={56} />
           </label>
@@ -148,10 +145,10 @@ export function FileUploadWidget({
           <div className='p-[20px] md:p-[30px]'>
             <div className="between-align">
               <div>
-                <h2 className="heading-md mb-1">1 items</h2>
-                <p className="para !text-[#999999]">115.3 KB out of 100 GB</p>
+                <h2 className="heading-md mb-1 !text-left">{selectedFiles?.length} items</h2>
+                <p className="para !text-[#999999]">{FileSize(selectedFiles.size || totalSizeAll)} out of 100 GB</p>
               </div>
-              <div className="Add rounded-[15px] flex items-center justify-center p-2  cursor-pointer " onClick={toggleMenu}>
+              <div className="btn-border rounded-[15px] flex items-center justify-center p-2 cursor-pointer" onClick={toggleMenu}>
                 <MdAdd size={24} />
               </div>
             </div>
@@ -159,7 +156,7 @@ export function FileUploadWidget({
             <div className="flex space-x-8 border-b-1 border-[#999999] mt-3">
               {/* Link Tab */}
               <div
-                className="manage-col cursor-pointer"
+                className="column-center cursor-pointer"
                 onClick={() => setActiveTab('Link')}
               >
                 <span className={`text-[18px] font-medium transition-colors duration-200 ${activeTab === 'Link' ? 'text-[#08CF65] border-b-1 border-[#08CF65]' : 'text-[#999999]'}`}
@@ -169,7 +166,7 @@ export function FileUploadWidget({
               </div>
               {/* Email Tab */}
               <div
-                className="manage-col cursor-pointer"
+                className="column-center cursor-pointer"
                 onClick={() => setActiveTab('Email')}
               >
                 <span
@@ -221,7 +218,7 @@ export function FileUploadWidget({
                 </div>
               </div>
               <button className="button-sm md:button-md lg:button-lg"
-                onClick={handlesubmit}>
+                onClick={handleUpload}>
                 Create Transfer
               </button>
             </div>

@@ -4,6 +4,10 @@ import { Trans } from '@ui/i18n/trans';
 import { prettyBytes } from '@ui/utils/files/pretty-bytes';
 import { apiClient } from '@common/http/query-client';
 import { LockIcon } from '@ui/icons/material/Lock';
+import { MdClose } from 'react-icons/md';
+import Download from '@app/components/Download';
+import FileData from '@app/transfer/components/FileData';
+import StoragePopup from '@app/components/StoragePopup';
 export const GuestDownloadView = ({
   files,
   totalSize,
@@ -12,19 +16,27 @@ export const GuestDownloadView = ({
   hasPassword
 }) => {
   const [password, setPassword] = useState('');
+  const [ispassword, setIspassword] = useState(false)
+
+
+  const handleInputChange = (event) => {
+    setPassword(event.target.value);
+  };
+
+
   const [isVerifying, setIsVerifying] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(!hasPassword);
   const [passwordError, setPasswordError] = useState('');
-  
+
   console.log('GuestDownloadView props:', { files, totalSize, expiresAt, hash, hasPassword });
-  
+
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     if (!password.trim()) return;
-    
+
     setIsVerifying(true);
     setPasswordError('');
-    
+
     try {
       const response = await apiClient.post(`guest/upload/${hash}/verify-password`, { password });
       if (response.data.valid) {
@@ -38,58 +50,98 @@ export const GuestDownloadView = ({
       setIsVerifying(false);
     }
   };
-  
+
+  const handleCreateTransfer = () => {
+    console.log('Create a transfer link clicked!');
+  };
+
+  const [loading, setLoading] = useState(false);
+
+  const handleDownload = () => {
+    if (!hash) {
+      alert("Invalid download link.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const downloadParams =
+        hasPassword && password ? `?password=${encodeURIComponent(password)}` : "";
+
+      if (files && files.length === 1) {
+        // Single file - direct download using file ID
+        const file = files[0];
+        console.log("file" ,file)
+        const downloadUrl = `/download/${hash}/${file.id}${downloadParams}`;
+        window.open(downloadUrl, "_blank");
+      } else if (files && files.length > 1) {
+        // Multiple files - ZIP download
+        const downloadUrl = `/download/${hash}${downloadParams}`;
+        window.open(downloadUrl, "_blank");
+        console.log("downloadUrl" ,downloadUrl)
+      } else {
+        alert("No files available for download.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // If password protected and not unlocked, show password form
   if (hasPassword && !isUnlocked) {
     return (
-      <div className="max-w-md mx-auto">
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-          <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <LockIcon className="w-8 h-8 text-yellow-600" />
+      <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="box">
+          {/* Modal Header */}
+          <div className="flex justify-between items-center p-4 border-b">
+            <h3 className="text-lg font-bold text-gray-800">Enter the password</h3>
+            <button onClick={() => setIspassword(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+              <MdClose className="h-6 w-6" />
+            </button>
           </div>
-          
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            <Trans message="Password Protected" />
-          </h2>
-          
-          <p className="text-gray-600 mb-6">
-            <Trans message="This file share is password protected. Please enter the password to access the files." />
-          </p>
-          
-          <form onSubmit={handlePasswordSubmit} className="space-y-4">
-            <div>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                disabled={isVerifying}
-                autoFocus
-              />
-              {passwordError && (
-                <p className="text-red-600 text-sm mt-2">{passwordError}</p>
-              )}
-            </div>
-            
+          {/* Modal Body */}
+          <div className="p-4">
+            <p className="text-sm text-gray-600 mb-4">
+              To access this link, you will need its password. If you do not have
+              the password, contact the creator of the link.
+            </p>
+            <input
+              type="password"
+              placeholder="Enter the password"
+              value={password}
+              onChange={handleInputChange}
+              className="inut-sm  sm:input"
+            />
+          </div>
+          {/* Modal Footer */}
+          <div className="flex justify-end items-center p-4 space-x-2 border-t">
+            <button onClick={() => setIspassword(false)} className="px-4 py-2 text-white bg-red-600 rounded-lg font-medium hover:bg-red-500 transition-colors">
+              Cancel
+            </button>
             <button
-              type="submit"
               disabled={isVerifying || !password.trim()}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+              onClick={handlePasswordSubmit}
+              className="button-sm md:button-md lg:button-lg "
             >
               {isVerifying ? (
-                <Trans message="Verifying..." />
+                <p>
+                  Verifying..
+                </p>
               ) : (
-                <Trans message="Access Files" />
+                <p>
+                  Access Files
+                </p>
               )}
             </button>
-          </form>
+          </div>
         </div>
       </div>
     );
   }
+
   return <div className="space-y-6">
-      <div className="bg-white text-black rounded-xl p-4">
+    {/* <div className="bg-white text-black rounded-xl p-4">
         <h3 className="font-medium  mb-3">
           <Trans message="Download Files" />
         </h3>
@@ -116,7 +168,7 @@ export const GuestDownloadView = ({
           </div>}
       </div>
 
-      {/* Download Button */}
+      Download Button
       <div className="flex justify-center pt-4">
         <button 
           className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg transition-colors" 
@@ -144,6 +196,26 @@ export const GuestDownloadView = ({
         >
           <Trans message="Download all" />
         </button>
+      </div> */}
+
+    <>
+      <Download />
+      <div className='!pt-0 p-[20px] md:p-[30px]'>
+        <FileData step={4} selectedFiles={files} />
+        <div className="between-align mt-6 pb-4">
+          <button onClick={handleCreateTransfer} className="text-[14px] md:text-[18px] text-black font-[600] leading-5 underline">
+            Create a transfer
+          </button>
+          <button
+            onClick={handleDownload}
+            className="button-sm md:button-md lg:-button-lg"
+          >
+            Download
+          </button>
+        </div>
+        <StoragePopup />
       </div>
-    </div>;
+    </>
+
+  </div>;
 };

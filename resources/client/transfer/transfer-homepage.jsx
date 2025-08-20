@@ -8,7 +8,7 @@ import { LockIcon } from '@ui/icons/material/Lock';
 import { ScheduleIcon } from '@ui/icons/material/Schedule';
 import { Navbar } from '@common/ui/navigation/navbar/navbar';
 import { FileUploadWidget } from './components/FileUploadWidget';
-import { TransferProgress } from './components/transfer-progress';
+import { TransferProgress } from './components/TransferProgress';
 import { ShareLinkPanel } from './components/share-link-panel';
 import { SettingsPanel } from './components/SettingsPanel';
 import { EmailPanel } from './components/email-panel';
@@ -16,6 +16,7 @@ import { Trans } from '@ui/i18n/trans';
 import { DefaultMetaTags } from '@common/seo/default-meta-tags';
 import { DialogTrigger } from '@ui/overlays/dialog/dialog-trigger';
 import Layout from '@app/components/Layout';
+import TransferSuccessPage from './components/TransferSuccessPage';
 
 // Helper function to format expiry time in a user-friendly way
 function formatExpiryTime(hours) {
@@ -175,10 +176,10 @@ export function TransferHomepage() {
   return <>
     <DefaultMetaTags />
     <Layout>
-    <div className=" bg-white text-black">
-      {/* <Navbar color="transparent" className="bg-white shadow-sm" menuPosition="homepage-navbar" /> */}
+      <div className=" bg-white text-black">
+        {/* <Navbar color="transparent" className="bg-white shadow-sm" menuPosition="homepage-navbar" /> */}
 
-      {/* <main className="container mx-auto px-4 py-8">
+        {/* <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           Header
           <div className="text-center mb-8">
@@ -213,38 +214,38 @@ export function TransferHomepage() {
               </div>
             </div>
           </div> */}
-          {/* Main Content Area */}
-          {currentStep !== 'progress' && (
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-              {currentStep === 'upload' && (
-                <UploadSection
-                  settings={transferSettings}
-                  onSettingsChange={handleSettingsChange}
-                  onUploadComplete={handleUploadComplete}
-                  onUploadStart={handleUploadStart}
-                />)}
+        {/* Main Content Area */}
+        {currentStep !== 'progress' && (
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            {currentStep === 'upload' && (
+              <UploadSection
+                settings={transferSettings}
+                onSettingsChange={handleSettingsChange}
+                onUploadComplete={handleUploadComplete}
+                onUploadStart={handleUploadStart}
+              />)}
 
-              {currentStep === 'share' && <ShareSection files={uploadedFiles} onNewTransfer={handleNewTransfer} onShowEmailPanel={() => setShowEmailPanel(true)} />}
-            </div>
-          )}
-          {/* Progress Screen - Full screen overlay */}
-          {currentStep === 'progress' && uploadData && (
-            <TransferProgress
-              files={uploadData.files}
-              progress={uploadProgress}
-              totalSize={uploadData.totalSize}
-              uploadSpeed={uploadSpeed}
-              timeRemaining={uploadSpeed > 0 ? ((uploadData.totalSize * (100 - uploadProgress)) / 100) / uploadSpeed : 0}
-              onCancel={handleUploadCancel}
-              onComplete={handleProgressComplete}
-              status={uploadStatus}
-            />
-          )}
-          {/* Email Panel */}
-          {showEmailPanel && <EmailPanel files={uploadedFiles} onClose={() => setShowEmailPanel(false)} />}
+            {currentStep === 'share' && <ShareSection files={uploadedFiles} onNewTransfer={handleNewTransfer} onShowEmailPanel={() => setShowEmailPanel(true)} />}
+          </div>
+        )}
+        {/* Progress Screen - Full screen overlay */}
+        {currentStep === 'progress' && uploadData && (
+          <TransferProgress
+            files={uploadData.files}
+            progress={uploadProgress}
+            totalSize={uploadData.totalSize}
+            uploadSpeed={uploadSpeed}
+            timeRemaining={uploadSpeed > 0 ? ((uploadData.totalSize * (100 - uploadProgress)) / 100) / uploadSpeed : 0}
+            onCancel={handleUploadCancel}
+            onComplete={handleProgressComplete}
+            status={uploadStatus}
+          />
+        )}
+        {/* Email Panel */}
+        {showEmailPanel && <EmailPanel files={uploadedFiles} onClose={() => setShowEmailPanel(false)} />}
         {/* </div>
       </main> */}
-    </div> 
+      </div>
     </Layout>
   </>;
 }
@@ -278,7 +279,7 @@ function UploadSection({
       >
         <SettingsIcon /> <Trans message="Settings" />
       </button>
-    </div> */}
+    </div>  */}
 
     {/* Upload Widget */}
     <FileUploadWidget
@@ -344,7 +345,7 @@ function ShareSection({
     );
   }
   return <div className="p-8">
-    <div className="text-center mb-6">
+    {/* <div className="text-center mb-6">
       <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
         <FileUploadIcon className="w-8 h-8 text-green-600" />
       </div>
@@ -354,14 +355,11 @@ function ShareSection({
       <p className="text-gray-600">
         <Trans message="Your files have been uploaded successfully" />
       </p>
-    </div>
+    </div> */}
+    <TransferSuccessPage downloadLink={shareUrl} onEmailTransfer={onShowEmailPanel} files={files} onNewTransfer={onNewTransfer} />
 
-    <ShareLinkPanel shareUrl={shareUrl} files={files} onEmailTransfer={onShowEmailPanel} />
+    {/* <ShareLinkPanel shareUrl={shareUrl} files={files}  onEmailTransfer={onShowEmailPanel}  /> */}
 
-    <div className="mt-2 text-center">
-      <button onClick={onNewTransfer} className="px-8 text-primary">
-        <Trans message="Send another transfer" />
-      </button>
-    </div>
+    
   </div>;
 }
