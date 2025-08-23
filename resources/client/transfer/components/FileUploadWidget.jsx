@@ -1,10 +1,12 @@
 import React, { useState, useCallback, useRef } from 'react';
 import FileData from './FileData';
-import { MdAdd } from 'react-icons/md';
+import { VscAdd } from "react-icons/vsc";
+
 import Menu from '@app/components/Menu';
 import { useFileDrop } from '@app/components/useFileDrop';
 import { CiSettings } from 'react-icons/ci';
 import { SettingsPanel } from './SettingsPanel';
+import { FileSize } from '@app/components/FileSize';
 
 export function FileUploadWidget({
   settings,
@@ -14,19 +16,42 @@ export function FileUploadWidget({
   const [selectedFiles, setSelectedFiles] = useState([]);
   console.log("selectedFiles", selectedFiles)
 
-  // const handleUpload = useCallback(async () => {
-  //   if (selectedFiles.length === 0) return;
-  //   const totalSize = selectedFiles.reduce((total, file) => total + file.size, 0);
-  //   onUploadStart?.({
-  //     files: selectedFiles,
-  //     totalSize,
-  //     settings
-  //   });
-  // }, [selectedFiles, settings, onUploadStart]);
 
-  // const removeFile = useCallback(index => {
-  //   setSelectedFiles(files => files.filter((_, i) => i !== index));
-  // }, []);
+  function formatExpiryTime(hours) {
+    if (hours === 1) {
+      return "Expires in 1 hour";
+    } else if (hours < 24) {
+      return `Expires in ${hours} hours`;
+    } else if (hours === 24) {
+      return "Expires in 1 day";
+    } else if (hours < 168) {
+      const days = Math.floor(hours / 24);
+      return `Expires in ${days} days`;
+    } else if (hours === 168) {
+      return "Expires in 1 week";
+    } else if (hours < 720) {
+      const days = Math.floor(hours / 24);
+      return `Expires in ${days} days`;
+    } else if (hours === 720) {
+      return "Expires in 1 month";
+    } else if (hours < 8760) {
+      const months = Math.floor(hours / 720);
+      return `Expires in ${months} months`;
+    } else {
+      return "Expires in 1 year";
+    }
+  }
+
+  const handleUpload = useCallback(async () => {
+    if (selectedFiles.length === 0) return;
+    const totalSize = selectedFiles.reduce((total, file) => total + file.size, 0);
+    onUploadStart?.({
+      files: selectedFiles,
+      totalSize,
+      settings
+    });
+  }, [selectedFiles, settings, onUploadStart]);
+
 
   const [showSettings, setShowSettings] = useState(false);
   const handleSettingsClick = () => {
@@ -53,10 +78,7 @@ export function FileUploadWidget({
     })
   }
 
-  const handlesubmit = (e) => {
-    e.preventDefault();
-    // setStep(3)
-  }
+  
 
   const addInputRef = useRef(null);
   const folderInputRef = useRef(null);
@@ -97,17 +119,19 @@ export function FileUploadWidget({
   const { isDragging, handleDragOver, handleDragLeave, handleDrop } = useFileDrop(handleDropAction);
   const [activeTab, setActiveTab] = useState('Link');
 
+   const allFiles = selectedFiles.flatMap(item => item.files ? item.files : item);
+    const totalSizeAll = allFiles.reduce((acc, f) => acc + (f.size || 0), 0);
 
   return <div className="text-center">
     {selectedFiles.length === 0 ?
       <div
-        className={` center-align  flex-col  h-[450px] md:!h-[576px] rounded-[15px] transition
+        className={` center-align flex-col h-[60vh] max-h-[500px] rounded-[15px] transition
                 ${isDragging ? "border-green-500 bg-green-50" : "border-gray-300"}`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <div className="manage-col text-center">
+        <div className="column-center text-center p-12">
           <input
             type="file"
             multiple
@@ -125,13 +149,13 @@ export function FileUploadWidget({
           />
           <label
             onClick={() => addInputRef.current.click()}
-            className="Add rounded-[35px] p-4 mb-6 cursor-pointer inline-block"
+            className="btn-border rounded-[35px] p-4 mb-6 cursor-pointer inline-block"
           >
-            <MdAdd size={56} />
+            <VscAdd size={56} />
           </label>
 
 
-          <p className="para mt-[10px]">Let us begin by adding some files or folders</p>
+          <p className="para mt-[10px]">Let us begin by adding some files</p>
 
           <p
             onClick={() => folderInputRef.current.click()}
@@ -147,32 +171,30 @@ export function FileUploadWidget({
           <div className='p-[20px] md:p-[30px]'>
             <div className="between-align">
               <div>
-                <h2 className="heading-md mb-1">1 items</h2>
-                <p className="para !text-[#999999]">115.3 KB out of 100 GB</p>
+                <h2 className="heading-md mb-1 !text-left">{selectedFiles?.length} items</h2>
+                <p className="para !text-[#999999]">{FileSize(selectedFiles.size || totalSizeAll)} out of 100 GB</p>
               </div>
-              <div className="Add rounded-[15px] flex items-center justify-center p-2  cursor-pointer " onClick={toggleMenu}>
-                <MdAdd size={24} />
+              <div className="btn-border border-[3px] !bg-[#fff]  rounded-[18px] flex items-center justify-center p-2 py-[9px] cursor-pointer" onClick={toggleMenu}>
+                <VscAdd size={24} color='#08cf65' />
               </div>
             </div>
             {isMenuOpen && <Menu setSelectedFiles={setSelectedFiles} toggleMenu={toggleMenu} />}
-            <div className="flex space-x-8 border-b-1 border-[#999999] mt-3">
-              {/* Link Tab */}
+            <div className="flex space-x-8 border-b border-[#0002] border-b-[2px]   mt-3">
               <div
-                className="manage-col cursor-pointer"
+                className="column-center cursor-pointer mb-[-2px]"
                 onClick={() => setActiveTab('Link')}
               >
-                <span className={`text-[18px] font-medium transition-colors duration-200 ${activeTab === 'Link' ? 'text-[#08CF65] border-b-1 border-[#08CF65]' : 'text-[#999999]'}`}
+                <span className={`text-lg p-1 font-medium transition-colors duration-200 ${activeTab === 'Link' ? 'text-[#08CF65] border-b-[2px] border-[#08CF65]' : 'text-[#999999]'}`}
                 >
                   Link
                 </span>
               </div>
-              {/* Email Tab */}
               <div
-                className="manage-col cursor-pointer"
+                className="column-center cursor-pointer mb-[-2px]"
                 onClick={() => setActiveTab('Email')}
               >
                 <span
-                  className={`text-lg font-medium transition-colors duration-200 ${activeTab === 'Email' ? 'text-[#08CF65] border-b-1 border-[#08CF65]' : 'text-[#999999]'
+                  className={`text-lg p-1 font-medium transition-colors duration-200 ${activeTab === 'Email' ? 'text-[#08CF65] border-b-[2px] border-[#08CF65]' : 'text-[#999999]'
                     }`} >
                   Email
                 </span>
@@ -186,41 +208,41 @@ export function FileUploadWidget({
                   name='email'
                   value={data?.email}
                   onChange={handleChange}
-                  placeholder="please provide email"
+                  placeholder="Email"
                   className="input"
                 />
               </>
             )}
             <input
               type="text"
-              placeholder="please provide Title"
+              placeholder="Title"
               className="input"
               name='name'
               value={data?.name}
               onChange={handleChange}
             />
             <textarea
-              rows={5}
+              rows={3}
               placeholder="Message"
-              className="border-gray-300 border rounded-[15px] p-2 w-full resize-none"
+              className="textarea"
               name='message'
               value={data?.message}
               onChange={handleChange}
             />
             <div className='between-align pt-[20px] gap-5 md:gap-0'>
-              <div className='flex items-top space-x-1' onClick={handleSettingsClick}>
+              <div className='flex items-center space-x-1' onClick={handleSettingsClick}>
                 <CiSettings size={28} className="text-black" />
                 <div>
-                  <h6 className="heading !font-[700]">
-                    Expire on 2/6/2025
+                  <h6 className="heading !font-[700] ps-0 text-start text-sm">
+                    {formatExpiryTime(settings.expiresInHours)}
                   </h6>
-                  <p className="normal-para ">
-                    No password added
+                  <p className="normal-para text-sm ">
+                    {settings.password ? "Password protected" : "No password added"}
                   </p>
                 </div>
               </div>
-              <button className="button-sm md:button-md lg:button-lg"
-                onClick={handlesubmit}>
+              <button className="button-sm md:button-md"
+                onClick={handleUpload}>
                 Create Transfer
               </button>
             </div>
@@ -233,20 +255,7 @@ export function FileUploadWidget({
             onClose={() => setShowSettings(false)}
           />
         )}
-        {/* <div className="flex gap-3 justify-center">
-          <button className="border-2 border-dashed rounded-2xl p-4 transition-colors" onClick={handleAddMoreFiles}>
-              <Trans message="Add more files" />
-            </button>
-          <div className=" border-2 border-dashed rounded-2xl Add rounded-[15px] flex items-center justify-center p-2  cursor-pointer " onClick={toggleMenu}>
-            <MdAdd size={24} />
-          </div>{isMenuOpen && (<Menu setSelectedFiles={setSelectedFiles} toggleMenu={toggleMenu} />)}
-          <button className="border-2 border-dashed rounded-2xl p-4 transition-colors" onClick={() => setSelectedFiles([])}>
-            <Trans message="Clear all" />
-          </button>
-          <button className="border-2 border-dashed rounded-2xl p-4 transition-colors" onClick={handleUpload}>
-            <Trans message="Upload files" />
-          </button>
-        </div> */}
+        
       </div>}
   </div>;
 }

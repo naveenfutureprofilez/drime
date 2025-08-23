@@ -31,7 +31,7 @@ const Menu = ({ setSelectedFiles, toggleMenu }) => {
 
 
   return (
-    <div className="absolute left-1 bottom-[60px] mt-2 w-64 bg-white rounded-lg shadow-xl p-2 z-50">
+    <div className="absolute right-1 top-[60px] mt-2 w-64 bg-white rounded-lg shadow-xl p-2 z-50">
       {/* Hidden Inputs */}
       <input
         type="file"

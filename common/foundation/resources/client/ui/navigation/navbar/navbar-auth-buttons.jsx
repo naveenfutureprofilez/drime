@@ -30,9 +30,9 @@ function DesktopButtons({
       {!registration?.disable && <Button elementType={Link} to="/register" variant="text" className="mr-10">
           <Trans message="Register" />
         </Button>}
-      <Button elementType={Link} to="/login" variant="raised" color={primaryButtonColor}>
+      {/* <Button elementType={Link} to="/login" variant="raised" color={primaryButtonColor}>
         <Trans message="Login" />
-      </Button>
+      </Button> */}
     </div>;
 }
 function MobileButtons() {
