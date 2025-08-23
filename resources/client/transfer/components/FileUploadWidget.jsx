@@ -156,7 +156,6 @@ export function FileUploadWidget({
 
 
           <p className="para mt-[10px]">Let us begin by adding some files</p>
-
           <p
             onClick={() => folderInputRef.current.click()}
             className="transefer mt-1 inline-block cursor-pointer"
