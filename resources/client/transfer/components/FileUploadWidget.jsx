@@ -118,7 +118,6 @@ export function FileUploadWidget({
           <input
             type="file"
             webkitdirectory=""
-            directory=""
             multiple
             ref={folderInputRef}
             className="hidden"
@@ -139,7 +138,7 @@ export function FileUploadWidget({
             className="transefer mt-1 inline-block cursor-pointer"
           >
             Or select folder
-          </p>
+          </p> 
         </div>
       </div>
       :

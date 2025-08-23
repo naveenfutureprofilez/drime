@@ -8,7 +8,7 @@ export default function Layout({ children }) {
                 <Header />
                 <div className="boxmodel">
                     <div className="box">
-                        {children}
+                        {children} 
                     </div>
                 </div>
 
