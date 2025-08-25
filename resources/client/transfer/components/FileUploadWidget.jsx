@@ -246,7 +246,6 @@ export function FileUploadWidget({
               </button>
             </div>
           </div>
-        </div>
         {showSettings && (
           <SettingsPanel
             settings={settings}
@@ -254,6 +253,7 @@ export function FileUploadWidget({
             onClose={() => setShowSettings(false)}
           />
         )}
+        </div>
         
       </div>}
   </div>;

@@ -11,7 +11,6 @@ export default function Layout({ children }) {
                         {children} 
                     </div>
                 </div>
-
             </div>
         </div>
     );
