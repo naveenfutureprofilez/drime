@@ -166,7 +166,7 @@ export function FileUploadWidget({
       </div>
       :
       <div>
-        <div className=" overflow-hidden relative " onClick={() => showSettings && handleModalClose()}>
+        <div className=" overflow-hidden relative ">
           <div className='p-[20px] md:p-[30px]'>
             <div className="between-align">
               <div>
@@ -229,7 +229,7 @@ export function FileUploadWidget({
               onChange={handleChange}
             />
             <div className='between-align pt-[20px] gap-5 md:gap-0'>
-              <div className='flex items-center space-x-1' onClick={handleSettingsClick}>
+              <div className='flex items-center space-x-1 cursor-pointer hover:opacity-75 transition-opacity' onClick={handleSettingsClick}>
                 <CiSettings size={28} className="text-black" />
                 <div>
                   <h6 className="heading !font-[700] ps-0 text-start text-sm">

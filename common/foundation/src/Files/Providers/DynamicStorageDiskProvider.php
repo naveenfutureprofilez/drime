@@ -40,7 +40,10 @@ class DynamicStorageDiskProvider extends ServiceProvider
             $initialConfig,
             config("services.$driverName") ?? [],
         );
-        $config['driver'] = $driverName;
+        
+        // Map S3-compatible services to s3 driver
+        $actualDriver = $this->mapToActualDriver($driverName);
+        $config['driver'] = $actualDriver;
 
         // set root based on drive type and name
         $config['root'] =
@@ -64,5 +67,26 @@ class DynamicStorageDiskProvider extends ServiceProvider
         Config::set("filesystems.disks.{$dynamicConfigKey}", $config);
 
         return Storage::disk($dynamicConfigKey);
+    }
+
+    /**
+     * Map service names to actual Laravel filesystem drivers
+     */
+    private function mapToActualDriver(string $driverName): string
+    {
+        // Map S3-compatible services to s3 driver
+        $s3CompatibleServices = [
+            'cloudflare',
+            'digitalocean',
+            'wasabi',
+            'backblaze',
+            'minio',
+        ];
+        
+        if (in_array($driverName, $s3CompatibleServices)) {
+            return 's3';
+        }
+        
+        return $driverName;
     }
 }

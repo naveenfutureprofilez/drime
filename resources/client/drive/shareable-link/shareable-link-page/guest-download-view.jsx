@@ -54,6 +54,7 @@ export const GuestDownloadView = ({
 
   const [loading, setLoading] = useState(false);
 
+  const [isOpenStorageModal, setIsOpenStorageModal] = useState(false);
   const handleDownload = () => {
     if (!hash) {
       alert("Invalid download link.");
@@ -65,7 +66,6 @@ export const GuestDownloadView = ({
     try {
       const downloadParams =
         hasPassword && password ? `?password=${encodeURIComponent(password)}` : "";
-
       if (files && files.length === 1) {
         // Single file - direct download using file ID
         const file = files[0];
@@ -82,6 +82,9 @@ export const GuestDownloadView = ({
       }
     } finally {
       setLoading(false);
+      setTimeout(() => {
+        setIsOpenStorageModal(true);
+      }, 3000);
     }
   };
 
@@ -138,71 +141,14 @@ export const GuestDownloadView = ({
   }
 
   return <div className="space-y-6">
-    {/* <div className="bg-white text-black rounded-xl p-4">
-        <h3 className="font-medium  mb-3">
-          <Trans message="Download Files" />
-        </h3>
-        <div className="space-y-2">
-          {files?.map((file, index) => <div key={index} className="flex items-center gap-3 bg-white border border-black rounded-lg p-3">
-              <div className="flex-1 text-left">
-                <div className="text-sm font-medium ">{file.name || file.filename || file.original_filename}</div>
-                <div className="text-xs ">{prettyBytes(file.file_size || file.size || 0)}</div>
-              </div>
-            </div>) || []}
-        </div>
-
-        <div className="mt-3 pt-3 border-t border-gray-200 flex justify-between text-sm">
-          <span className="text-gray-600">
-            <Trans message="Total size:" />
-          </span>
-          <span className="font-medium">{prettyBytes(totalSize)}</span>
-        </div>
-
-        {expiresAt && <div className="mt-2 text-xs ">
-            <Trans message="Expires on :date" values={{
-          date: new Date(expiresAt).toLocaleDateString()
-        }} />
-          </div>}
-      </div>
-
-      Download Button
-      <div className="flex justify-center pt-4">
-        <button 
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg transition-colors" 
-          onClick={() => {
-            if (!hash) {
-              alert('Invalid download link.');
-              return;
-            }
-            
-            const downloadParams = hasPassword && password ? `?password=${encodeURIComponent(password)}` : '';
-            
-            if (files && files.length === 1) {
-              // Single file - direct download using file ID
-              const file = files[0];
-              const downloadUrl = `/download/${hash}/${file.id}${downloadParams}`;
-              window.open(downloadUrl, '_blank');
-            } else if (files && files.length > 1) {
-              // Multiple files - ZIP download 
-              const downloadUrl = `/download/${hash}${downloadParams}`;
-              window.open(downloadUrl, '_blank');
-            } else {
-              alert('No files available for download.');
-            }
-          }}
-        >
-          <Trans message="Download all" />
-        </button>
-      </div> */}
-
     <>
       <Download />
       <div className='!pt-0 p-[20px] md:p-[30px]'>
         <FileData step={4} selectedFiles={files} />
         <div className="between-align mt-6 pb-4">
-          <button onClick={handleCreateTransfer} className="text-[14px] md:text-[18px] text-black font-[600] leading-5 underline">
+          <a href='/' className="text-[14px] md:text-[18px] text-black font-[600] leading-5 underline">
             Create a transfer
-          </button>
+          </a>
           <button
             onClick={handleDownload}
             className="button-sm md:button-md lg:-button-lg"
@@ -210,7 +156,7 @@ export const GuestDownloadView = ({
             Download
           </button>
         </div>
-        <StoragePopup />
+        <StoragePopup isOpen={isOpenStorageModal} />
       </div>
     </>
 

@@ -23,8 +23,14 @@ export function SettingsPanel({
   };
 
   return (
-    <div className="mx-auto inset-0 w-full max-w-[435px] bg-gray-600 bg-opacity-50 flex items-center justify-center p-[3px] z-50 absolute h-[500px]" >
-      <div className="bg-white w-full max-w-[435px] rounded-[15px] shadow-xl p-6 animate-slideUp">
+    <div 
+      className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50 transition-all duration-300 ease-in-out" 
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white w-full max-w-md rounded-lg shadow-xl p-6 animate-slideUpModal"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* <div className="flex items-center justify-between space-x-3 text-center mb-2"> */}
         {/* Header */}
         <div className="flex items-center justify-between space-x-3 text-center mb-2">
@@ -48,9 +54,10 @@ export function SettingsPanel({
               console.log('Password changed to:', e.target.value);
               setLocalSettings({ ...localSettings, password: e.target.value });
             }}
+            onClick={(e) => e.stopPropagation()}
+            onFocus={(e) => e.stopPropagation()}
             placeholder="Enter password"
-            className="w-2/3 input-sm sm:input px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-
+            className="w-2/3 input-sm sm:input px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
           />
           <p className="text-sm text-gray-500 mt-1">
             Add a password to protect your files
@@ -73,9 +80,9 @@ export function SettingsPanel({
               console.log('Expiry changed to:', newExpiry);
               setLocalSettings({ ...localSettings, expiresInHours: newExpiry });
             }}
-            className="w-2/3 input-sm sm:input px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-
-
+            onClick={(e) => e.stopPropagation()}
+            onFocus={(e) => e.stopPropagation()}
+            className="w-2/3 input-sm sm:input px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
           >
             <option value={1}>1 hour</option>
             <option value={6}>6 hours</option>

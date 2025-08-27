@@ -76,7 +76,12 @@ class ValidateFileUpload
 
     protected function validateMaximumFileSize(): ?string
     {
+        // First check settings database, then fallback to config
         $maxSize = app(Settings::class)->get('uploads.max_size');
+        if (is_null($maxSize)) {
+            $maxSize = config('uploads.max_size', config('uploads.guest_max_size', 3145728000));
+        }
+        
         if (is_null($maxSize) || !isset($this->fileData['size'])) {
             return null;
         }

@@ -597,6 +597,6 @@ return [
     ['name' => 'guest_uploads.enabled', 'value' => env('GUEST_UPLOADS_ENABLED', true)],
     ['name' => 'guest_uploads.default_expiry', 'value' => env('GUEST_UPLOAD_DEFAULT_EXPIRY_HOURS', 72)],
     ['name' => 'guest_uploads.max_expiry', 'value' => env('GUEST_UPLOAD_MAX_EXPIRY_HOURS', 168)],
-    ['name' => 'guest_uploads.max_size', 'value' => env('GUEST_UPLOAD_MAX_FILE_SIZE', 3145728)], // 3GB in KB
+    ['name' => 'guest_uploads.max_size', 'value' => intval(env('GUEST_UPLOAD_MAX_FILE_SIZE', 3145728000) / 1024)], // Convert bytes to KB
     ['name' => 'guest_uploads.retention_days', 'value' => 30],
 ];

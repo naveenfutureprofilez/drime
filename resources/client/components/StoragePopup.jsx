@@ -1,9 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FaCheck } from 'react-icons/fa';
 import { RiCloseFill } from 'react-icons/ri';
 import storage from "../../../public/images/storage.png"
-const StoragePopup = () => {
-    const [isOpen, setIsOpen] = useState(false);
+const StoragePopup = ({isOpen}) => {
+    const [Open, setOpen] = useState(false);
+    useEffect(() => {
+        setOpen(isOpen);
+    }, [isOpen]);
+
     const features = [
         {
             title: '20GB of secure, high-quality storage',
@@ -20,20 +24,14 @@ const StoragePopup = () => {
     ];
     return (
         <>
-            <button
-                onClick={() => setIsOpen(true)}
-                className="bg-[#f5f5f5] text-black px-6 py-2 rounded-full hover:bg-indigo-700 transition-colors"
-            >
-                Open Popup
-            </button>
-            {isOpen && (
+            {Open && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-black/50">
                     <div className="bg-white rounded-none md:rounded-3xl shadow-2xl w-full h-full md:max-w-4xl md:h-auto flex flex-col lg:flex-row overflow-auto">
                         {/* Left image section */}
                         <div className="flex-1 flex flex-col relative h-1/3 md:h-auto">
                             <button
                                 className="absolute top-4 left-4 text-black hover:text-red-500 z-10"
-                                onClick={() => setIsOpen(false)}
+                                onClick={() => setOpen(false)}
                             >
                                 <RiCloseFill size={32} />
                             </button>

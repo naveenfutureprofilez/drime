@@ -28,4 +28,16 @@ return [
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],
+
+    'cloudflare' => [
+        'key' => env('CLOUDFLARE_R2_KEY'),
+        'secret' => env('CLOUDFLARE_R2_SECRET'),
+        'endpoint' => env('CLOUDFLARE_R2_ENDPOINT'),
+        'region' => env('CLOUDFLARE_R2_REGION', 'auto'),
+        'bucket' => env('CLOUDFLARE_R2_BUCKET'),
+        'url' => env('CLOUDFLARE_R2_URL'),
+        'visibility' => 'private',
+        'throw' => true,
+        'use_path_style_endpoint' => false,
+    ],
 ];

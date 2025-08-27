@@ -28,9 +28,12 @@ class GuestUploadController extends BaseController
     {
         logger('GuestUploadController::store called', ['request' => $request->all()]);
         
+        // Get max file size in KB for Laravel validation (Laravel expects KB)
+        $maxFileSizeKB = intval(config('uploads.guest_max_size', 3145728000) / 1024);
+        
         $validator = Validator::make($request->all(), [
             'files' => 'required|array|min:1',
-            'files.*' => 'required|file|max:' . config('app.max_file_size', 3145728), // 3GB default
+            'files.*' => 'required|file|max:' . $maxFileSizeKB,
             'password' => 'nullable|string|min:4|max:255',
             'expires_in_hours' => 'nullable|integer|min:1|max:8760', // Max 1 year
             'max_downloads' => 'nullable|integer|min:1|max:1000',
@@ -311,18 +314,76 @@ class GuestUploadController extends BaseController
             $disk = Storage::disk(config('common.site.uploads_disk', 'uploads'));
             logger('Disk loaded', ['disk' => config('common.site.uploads_disk')]);
             
-            // Build the file path using raw path to avoid base36 decoding
+            // Build the file path - try multiple possible paths
             $rawPath = $fileEntry->getRawOriginal('path');
-            $filePath = $rawPath ? 
-                $rawPath . '/' . $fileEntry->file_name : 
-                $fileEntry->file_name;
-            logger('File path built', ['filePath' => $filePath, 'rawPath' => $rawPath, 'file_name' => $fileEntry->file_name]);
+            $fileName = $fileEntry->file_name;
             
-            $fileExists = $disk->exists($filePath);
-            logger('File exists check', ['exists' => $fileExists, 'filePath' => $filePath]);
+            $possiblePaths = [
+                // Try with raw path if it exists
+                $rawPath ? $rawPath . '/' . $fileName : null,
+                // Try direct file name
+                $fileName,
+                // Try in guest-uploads directory (common location)
+                'guest-uploads/' . $fileName,
+                // Try to find files that start with this name (for cases where extension was added)
+                null // We'll handle this separately
+            ];
+            
+            $filePath = null;
+            $fileExists = false;
+            
+            // Check each possible path
+            foreach (array_filter($possiblePaths) as $path) {
+                if ($disk->exists($path)) {
+                    $filePath = $path;
+                    $fileExists = true;
+                    break;
+                }
+            }
+            
+            // If still not found, try to find files that start with the stored filename
+            // For S3 compatibility, we'll use a more efficient approach
+            if (!$fileExists) {
+                // Try with common extensions for the partial filename
+                $commonExtensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'txt', 'doc', 'docx', 'zip', 'mp4', 'mp3'];
+                foreach ($commonExtensions as $ext) {
+                    $testPath = 'guest-uploads/' . $fileName . '.' . $ext;
+                    if ($disk->exists($testPath)) {
+                        $filePath = $testPath;
+                        $fileExists = true;
+                        break;
+                    }
+                }
+                
+                // If still not found, try a prefix-based search (works for both S3 and local)
+                if (!$fileExists) {
+                    try {
+                        $files = $disk->files('guest-uploads');
+                        foreach ($files as $file) {
+                            if (strpos(basename($file), $fileName) === 0) {
+                                $filePath = $file;
+                                $fileExists = true;
+                                break;
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        logger('Error searching files: ' . $e->getMessage());
+                    }
+                }
+            }
+            
+            logger('File path search result', [
+                'filePath' => $filePath, 
+                'rawPath' => $rawPath, 
+                'file_name' => $fileName,
+                'exists' => $fileExists
+            ]);
             
             if (!$fileExists) {
-                logger('File not found in storage', ['filePath' => $filePath]);
+                logger('File not found in storage after all attempts', [
+                    'fileName' => $fileName,
+                    'checkedPaths' => array_filter($possiblePaths)
+                ]);
                 return response()->json(['message' => 'File not found in storage'], 404);
             }
 
@@ -395,13 +456,60 @@ class GuestUploadController extends BaseController
             try {
                 $disk = Storage::disk(config('common.site.uploads_disk', 'uploads'));
                 
-                // Use raw path to avoid base36 decoding
+                // Build the file path - try multiple possible paths (same as downloadFile)
                 $rawPath = $fileEntry->getRawOriginal('path');
-                $filePath = $rawPath ? 
-                    $rawPath . '/' . $fileEntry->file_name : 
-                    $fileEntry->file_name;
+                $fileName = $fileEntry->file_name;
                 
-                if (!$disk->exists($filePath)) {
+                $possiblePaths = [
+                    $rawPath ? $rawPath . '/' . $fileName : null,
+                    $fileName,
+                    'guest-uploads/' . $fileName,
+                ];
+                
+                $filePath = null;
+                $fileExists = false;
+                
+                // Check each possible path
+                foreach (array_filter($possiblePaths) as $path) {
+                    if ($disk->exists($path)) {
+                        $filePath = $path;
+                        $fileExists = true;
+                        break;
+                    }
+                }
+                
+                // If still not found, try to find files that start with the stored filename
+                // For S3 compatibility, we'll use a more efficient approach
+                if (!$fileExists) {
+                    // Try with common extensions for the partial filename
+                    $commonExtensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'txt', 'doc', 'docx', 'zip', 'mp4', 'mp3'];
+                    foreach ($commonExtensions as $ext) {
+                        $testPath = 'guest-uploads/' . $fileName . '.' . $ext;
+                        if ($disk->exists($testPath)) {
+                            $filePath = $testPath;
+                            $fileExists = true;
+                            break;
+                        }
+                    }
+                    
+                    // If still not found, try a prefix-based search (works for both S3 and local)
+                    if (!$fileExists) {
+                        try {
+                            $files = $disk->files('guest-uploads');
+                            foreach ($files as $file) {
+                                if (strpos(basename($file), $fileName) === 0) {
+                                    $filePath = $file;
+                                    $fileExists = true;
+                                    break;
+                                }
+                            }
+                        } catch (\Exception $e) {
+                            logger('Error searching files: ' . $e->getMessage());
+                        }
+                    }
+                }
+                
+                if (!$fileExists) {
                     return response()->json(['message' => 'File not found in storage'], 404);
                 }
 

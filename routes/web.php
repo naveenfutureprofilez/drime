@@ -8,6 +8,7 @@ use App\Http\Controllers\QuickShareController;
 use Common\Core\Controllers\HomeController;
 use Common\Pages\CustomPageController;
 use Illuminate\Support\Facades\Route;
+use App\Helpers\SizeFormatter;
 
 //FRONT-END ROUTES THAT NEED TO BE PRE-RENDERED
 Route::get('/', LandingPageController::class);
@@ -70,6 +71,34 @@ Route::get('demo/upload-progress-blade', function () {
 Route::get('demo/upload-progress-improved', function () {
     return view('demo.upload-improved');
 })->name('demo.upload-progress-improved');
+
+// TEST ROUTE FOR UPLOAD LIMITS
+Route::get('test-upload-limits', function () {
+    $data = [
+        'environment' => [
+            'GUEST_UPLOAD_MAX_FILE_SIZE' => env('GUEST_UPLOAD_MAX_FILE_SIZE'),
+        ],
+        'php_ini' => [
+            'upload_max_filesize' => ini_get('upload_max_filesize'),
+            'post_max_size' => ini_get('post_max_size'),
+            'memory_limit' => ini_get('memory_limit'),
+            'max_execution_time' => ini_get('max_execution_time'),
+            'max_input_time' => ini_get('max_input_time'),
+            'max_file_uploads' => ini_get('max_file_uploads'),
+        ],
+        'converted_bytes' => [
+            'upload_max_filesize' => SizeFormatter::iniToBytes(ini_get('upload_max_filesize')),
+            'post_max_size' => SizeFormatter::iniToBytes(ini_get('post_max_size')),
+            'memory_limit' => SizeFormatter::iniToBytes(ini_get('memory_limit')),
+        ],
+        'config' => [
+            'uploads.guest_max_size' => config('uploads.guest_max_size'),
+            'app.max_file_size' => config('app.max_file_size'),
+        ],
+    ];
+    
+    return response()->json($data, 200, [], JSON_PRETTY_PRINT);
+});
 
 //CATCH ALL ROUTES AND REDIRECT TO HOME
 Route::fallback([HomeController::class, 'render']);

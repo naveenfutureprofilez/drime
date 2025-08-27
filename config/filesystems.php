@@ -64,7 +64,7 @@ return [
                 'PRIVATE_UPLOADS_LOCAL_ROOT',
                 storage_path('app/uploads'),
             ),
-            'remote_root' => env('PRIVATE_UPLOADS_REMOTE_ROOT', 'uploads'),
+            'remote_root' => env('PRIVATE_UPLOADS_REMOTE_ROOT', ''),
             'throw' => true,
         ],
 

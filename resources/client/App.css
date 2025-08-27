@@ -249,13 +249,31 @@ body {
 @keyframes slideUp {
   from {
     transform: translateY(100%);
+    opacity: 0;
   }
 
   to {
     transform: translateY(0%);
+    opacity: 1;
   }
 }
 
 .animate-slideUp {
-  animation: slideUp 1.5s ease-out;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUpModal {
+  from {
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-slideUpModal {
+  animation: slideUpModal 0.2s ease-out;
 }
