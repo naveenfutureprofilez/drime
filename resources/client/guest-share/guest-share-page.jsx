@@ -4,6 +4,7 @@ import { apiClient } from '@common/http/query-client';
 import { GuestDownloadView } from '@app/drive/shareable-link/shareable-link-page/guest-download-view';
 import { Navbar } from '@common/ui/navigation/navbar/navbar';
 import { Trans } from '@ui/i18n/trans';
+import Layout from '@app/components/Layout';
 export function Component() {
   const {
     hash
@@ -13,23 +14,23 @@ export function Component() {
   useEffect(() => {
     apiClient.get(`guest/upload/${hash}`).then(response => setData(response.data)).catch(err => setError(err));
   }, [hash]);
-  return <div className="min-h-screen ">
-      <Navbar color="transparent" className="bg-white shadow-sm" menuPosition="homepage-navbar" />
-      <main className=" px-4 w-full py-8  bg-white">
-        <div className="max-w-2xl mx-auto">
-          {error ? <div className="text-center text-red-500">
-              <h1 className="text-2xl font-bold mb-4">
-                <Trans message="Link not found" />
-              </h1>
-              <p>
-                <Trans message="The link you are trying to access is either invalid or has expired." />
-              </p>
-            </div> : data ? <GuestDownloadView files={data.files} totalSize={data.files?.reduce((sum, file) => sum + file.size, 0)} expiresAt={data.expires_at} hash={data.hash} hasPassword={data.has_password} /> : <div className="text-center">
-              <h1 className="text-2xl font-bold mb-4 text-gray-900">
-                <Trans message="Loading..." />
-              </h1>
-            </div>}
-        </div>
-      </main>
-    </div>;
+  return <Layout>
+    <main className=" px-4 w-full py-8  ">
+      <div className="max-w-2xl mx-auto">
+        {error ? <div className="text-center text-red-500">
+          <h1 className="text-2xl font-bold mb-4 normal-heading">
+            Link not found
+          </h1>
+          <p className='normal-para'>
+            The link you are trying to access is either invalid or has expired.
+          </p>
+        </div> : data ? <GuestDownloadView files={data.files} totalSize={data.files?.reduce((sum, file) => sum + file.size, 0)} expiresAt={data.expires_at} hash={data.hash} hasPassword={data.has_password} /> : <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4 text-gray-900">
+            <Trans message="Loading..." />
+          </h1>
+        </div>}
+      </div>
+    </main>
+  </Layout>
+    ;
 }

@@ -78,7 +78,7 @@ export function FileUploadWidget({
     })
   }
 
-  
+
 
   const addInputRef = useRef(null);
   const folderInputRef = useRef(null);
@@ -119,8 +119,8 @@ export function FileUploadWidget({
   const { isDragging, handleDragOver, handleDragLeave, handleDrop } = useFileDrop(handleDropAction);
   const [activeTab, setActiveTab] = useState('Link');
 
-   const allFiles = selectedFiles.flatMap(item => item.files ? item.files : item);
-    const totalSizeAll = allFiles.reduce((acc, f) => acc + (f.size || 0), 0);
+  const allFiles = selectedFiles.flatMap(item => item.files ? item.files : item);
+  const totalSizeAll = allFiles.reduce((acc, f) => acc + (f.size || 0), 0);
 
   return <div className="text-center">
     {selectedFiles.length === 0 ?
@@ -161,7 +161,7 @@ export function FileUploadWidget({
             className="transefer mt-1 inline-block cursor-pointer"
           >
             Or select folder
-          </p> 
+          </p>
         </div>
       </div>
       :
@@ -246,15 +246,14 @@ export function FileUploadWidget({
               </button>
             </div>
           </div>
-        {showSettings && (
-          <SettingsPanel
-            settings={settings}
-            onSettingsChange={onSettingsChange}
-            onClose={() => setShowSettings(false)}
-          />
-        )}
+          {showSettings && (
+            <SettingsPanel
+              settings={settings}
+              onSettingsChange={onSettingsChange}
+              onClose={() => setShowSettings(false)}
+            />
+          )}
         </div>
-        
       </div>}
   </div>;
 }
