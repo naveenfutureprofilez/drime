@@ -21,9 +21,9 @@ export const IconButton = forwardRef(({
     variant
   }), className, badge && 'relative');
   return <ButtonBase {...other} ref={ref} radius={radius} variant={variant} className={mergedClassName}>
-        {cloneElement(children, {
+    {cloneElement(children, {
       size: iconSize
     })}
-        {badge}
-      </ButtonBase>;
+    {badge}
+  </ButtonBase>;
 });

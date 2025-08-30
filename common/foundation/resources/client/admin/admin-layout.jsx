@@ -1,9 +1,6 @@
 import { Outlet } from 'react-router';
 import { AdminSidebar } from './admin-sidebar';
-import { DashboardLayout } from '@common/ui/dashboard-layout/dashboard-layout';
 import { DashboardContent } from '@common/ui/dashboard-layout/dashboard-content';
-import { DashboardSidenav } from '@common/ui/dashboard-layout/dashboard-sidenav';
-import { DashboardNavbar } from '@common/ui/dashboard-layout/dashboard-navbar';
 import { useAdminSetupAlerts } from '@common/admin/use-admin-setup-alerts';
 import { SectionHelper } from '@common/ui/other/section-helper';
 import { ErrorIcon } from '@ui/icons/material/Error';

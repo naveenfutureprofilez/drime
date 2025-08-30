@@ -22,10 +22,10 @@ export function Sidebar({
   } = useSettings();
   return <div className={clsx(className, 'flex flex-col gap-20 border-r bg-alt text-sm font-medium text-muted')}>
       <div className="compact-scrollbar flex-auto overflow-y-auto">
-        <CreateNewButton className="px-12 pt-28 text-center" />
+        <CreateNewButton className="px-2 pt-2 text-center" />
         <SidebarMenu />
         <StorageMeter />
-        {billing.enable ? <div className="mt-14 pl-60">
+        {billing.enable ? <div className="mt-2 pl-60">
             <Button elementType={Link} to={isSubscribed ? '/billing/change-plan' : '/pricing'} variant="outline" color="primary" size="xs">
               <Trans message="Upgrade" />
             </Button>

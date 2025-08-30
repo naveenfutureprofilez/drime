@@ -39,6 +39,6 @@ export const ButtonBase = forwardRef((props, ref) => {
     display,
     shadow
   }), radius, justify, className)} {...domProps}>
-      {children}
-    </Element>;
+    {children}
+  </Element>;
 });

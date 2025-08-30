@@ -21,7 +21,7 @@ export function CreateNewButton({
   } = useDriveUploadQueue();
   const button = isCompact ? <IconButton size="md" disabled={!activePage?.canUpload}>
       <AddIcon />
-    </IconButton> : <Button className="min-w-160" color="primary" variant="flat" size="sm" startIcon={<FileUploadIcon />} disabled={!activePage?.canUpload}>
+    </IconButton> : <Button color="primary" variant="flat" size="sm" startIcon={<FileUploadIcon />} disabled={!activePage?.canUpload}>
       <Trans message="Upload" />
     </Button>;
   return <div className={className}>

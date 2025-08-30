@@ -69,8 +69,8 @@ export function getInputFieldClassNames(props = {}) {
     }),
     inputWrapper: clsx('isolate relative', inputWrapperClassName, isInputGroup && 'flex items-stretch'),
     size: sizeClass,
-    description: `text-muted ${descriptionPosition === 'bottom' ? 'pt-10' : 'pb-10'} text-xs`,
-    error: 'text-danger pt-10 text-xs'
+    description: `text-muted ${descriptionPosition === 'bottom' ? 'pt-4' : 'pb-4'} text-xs`,
+    error: 'text-danger pt-4 text-xs'
   };
 }
 function getInputBorder({

@@ -60,11 +60,11 @@ export function LoginPage({
         }
       });
     }}>
-        <FormTextField className="mb-32" name="email" type="email" label={<Trans message="Email" />} disabled={!!searchParamsEmail} invalid={isInvalid} required />
-        <FormTextField className="mb-12" name="password" type="password" label={<Trans message="Password" />} invalid={isInvalid} labelSuffix={<Link className={LinkStyle} to="/forgot-password" tabIndex={-1}>
+        <FormTextField className="mb-4" name="email" type="email" label={<Trans message="Email" />} disabled={!!searchParamsEmail} invalid={isInvalid} required />
+        <FormTextField className="mb-4" name="password" type="password" label={<Trans message="Password" />} invalid={isInvalid} labelSuffix={<Link className={LinkStyle} to="/forgot-password" tabIndex={-1}>
               <Trans message="Forgot your password?" />
             </Link>} required />
-        <FormCheckbox name="remember" className="mb-32 block">
+        <FormCheckbox name="remember" className="mb-4 block">
           <Trans message="Stay signed in for a month" />
         </FormCheckbox>
         <Button className="block w-full" type="submit" variant="flat" color="primary" size="md" disabled={login.isPending}>

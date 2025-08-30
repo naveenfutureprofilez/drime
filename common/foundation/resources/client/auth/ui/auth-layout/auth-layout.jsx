@@ -16,19 +16,38 @@ export function AuthLayout({
   const {
     trans
   } = useTrans();
-  return <main className="flex h-screen flex-col items-center overflow-y-auto bg-alt px-14 pt-70 dark:bg-none md:px-10vw" style={{
-    backgroundImage: isDarkMode ? undefined : `url("${authBgSvg}")`
-  }}>
-      <Link to="/" className="mb-40 block flex-shrink-0" aria-label={trans({
-      message: 'Go to homepage'
-    })}>
-        <img src={isDarkMode ? branding.logo_light : branding?.logo_dark} className="m-auto block h-42 w-auto" alt="" />
-      </Link>
-      <div className="mx-auto w-full max-w-440 rounded-lg bg px-40 pb-32 pt-40 shadow md:shadow-xl">
-        {heading && <h1 className="mb-20 text-xl">{heading}</h1>}
-        {children}
+  return (
+    <main
+      className="flex w-full h-screen flex-col items-center justify-center bg-alt px-4 dark:bg-none md:px-10vw"
+      style={{
+        backgroundImage: isDarkMode ? undefined : `url("${authBgSvg}")`,
+      }}
+    >
+      <div className=''>
+        <Link
+          to="/"
+          className="mb-4 block flex-shrink-0"
+          aria-label={trans({
+            message: "Go to homepage",
+          })}
+        >
+          <img
+            src={isDarkMode ? branding.logo_light : branding?.logo_dark}
+            className="m-auto block h-42 w-auto"
+            alt=""
+          />
+        </Link>
+
+        <div className="w-full rounded-lg bg px-4 pb-4 pt-4 shadow md:shadow-xl">
+          {heading && <h1 className="mb-4 text-xl">{heading}</h1>}
+          {children}
+        </div>
+
+        {message && <div className="mt-4 text-sm">{message}</div>}
+        <AuthLayoutFooter />
       </div>
-      {message && <div className="mt-36 text-sm">{message}</div>}
-      <AuthLayoutFooter />
-    </main>;
+    </main>
+  );
+
+  ;
 }

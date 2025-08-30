@@ -5,7 +5,7 @@ export function AuthLayoutFooter() {
   const {
     branding
   } = useSettings();
-  return <div className="mt-auto flex items-center gap-30 pb-32 pt-42 text-sm text-muted">
+  return <div className="mt-auto flex items-center gap-2 pb-4 pt-4 text-sm text-muted">
       <Link className="transition-colors hover:text-fg-base" to="/">
         © {branding.site_name}
       </Link>

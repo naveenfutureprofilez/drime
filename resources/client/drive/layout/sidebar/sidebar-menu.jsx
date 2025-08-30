@@ -6,7 +6,7 @@ import { FolderTree } from '@app/drive/layout/sidebar/folder-tree';
 import { useDeleteEntries } from '@app/drive/files/queries/use-delete-entries';
 import { useDroppable } from '@common/ui/library/interactions/dnd/use-droppable';
 export function SidebarMenu() {
-  return <div className="mt-26 px-12 text-muted">
+  return <div className="mt-2 px-2 text-muted">
       <FolderTree />
       <CustomMenu menu={MenuPositions.DriveSidebar} orientation="vertical" gap="gap-0">
         {item => {

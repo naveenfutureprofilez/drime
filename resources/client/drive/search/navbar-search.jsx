@@ -30,7 +30,7 @@ export function NavbarSearch() {
       }
     }} startAdornment={<IconButton type="submit">
             <SearchIcon />
-          </IconButton>} className="max-w-620 flex-auto" placeholder={trans({
+          </IconButton>} className="max-w-420 flex-auto" placeholder={trans({
       message: 'Search'
     })} aria-label={trans({
       message: 'Search files and folders'
