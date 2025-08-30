@@ -9,48 +9,34 @@ import { Badge } from '@ui/badge/badge';
 import { NotificationsDialog } from '@common/notifications/dialog/notification-dialog-trigger';
 import { NavbarAuthMenu } from '@common/ui/navigation/navbar/navbar-auth-menu';
 import { UserAvatar } from '@common/auth/user-avatar';
-import { DashboardLayoutContext } from '@common/ui/dashboard-layout/dashboard-layout-context';
 import { KeyboardArrowUpIcon } from '@ui/icons/material/KeyboardArrowUp';
+
 export function AdminSidebar(props) {
-  const {
-    version
-  } = useSettings();
-  const {
-    isMobileMode,
-    leftSidenavStatus
-  } = useContext(DashboardLayoutContext);
-  const isCompactMode = isMobileMode || leftSidenavStatus === 'compact' || false;
-  const bottomContent = <Fragment>
-      {props.variant === 'withoutNavbar' && <Fragment>
-          <AdminSidebarNotificationsItem isCompact={isCompactMode} />
-          <AdminSidebarAuthUserItem isCompact={isCompactMode} />
-        </Fragment>}
-      {!props.isCompactMode ? <span>
-          <div className="mt-16 overflow-hidden text-ellipsis whitespace-nowrap px-16 text-xs">
-            <Trans message="Version: :number" values={{
-          number: version
-        }} />
-          </div>
-        </span> : undefined}
-    </Fragment>;
-  return <DashboardLeftSidebar {...props} matchDescendants={to => to === '/admin'} menuName="admin-sidebar" bottomContent={bottomContent} />;
+  const isCompactMode = false;
+  return <DashboardLeftSidebar 
+    {...props} 
+    matchDescendants={to => to === '/admin'} 
+    menuName="admin-sidebar" 
+    bottomContent={<AdminSidebarAuthUserItem isCompact={isCompactMode} />}
+    />;
 }
-export function AdminSidebarNotificationsItem({
-  isCompact
-}) {
-  const {
-    user
-  } = useAuth();
-  const hasUnread = !!user?.unread_notifications_count;
-  return <DialogTrigger type="popover" placement="top">
-      <DashboardLeftSidebarItem isCompact={isCompact} className="relative">
-        <NotificationsIcon />
-        <Trans message="Notifications" />
-        {hasUnread ? <Badge>{user?.unread_notifications_count}</Badge> : undefined}
-      </DashboardLeftSidebarItem>
-      <NotificationsDialog />
-    </DialogTrigger>;
-}
+// export function AdminSidebarNotificationsItem({
+//   isCompact
+// }) {
+//   const {
+//     user
+//   } = useAuth();
+//   const hasUnread = !!user?.unread_notifications_count;
+//   return <DialogTrigger type="popover" placement="top">
+//       <DashboardLeftSidebarItem isCompact={isCompact} className="relative">
+//         <NotificationsIcon />
+//         <Trans message="Notifications" />
+//         {hasUnread ? <Badge>{user?.unread_notifications_count}</Badge> : undefined}
+//       </DashboardLeftSidebarItem>
+//       <NotificationsDialog />
+//     </DialogTrigger>;
+// }
+
 export function AdminSidebarAuthUserItem({
   isCompact,
   avatar: propsAvatar

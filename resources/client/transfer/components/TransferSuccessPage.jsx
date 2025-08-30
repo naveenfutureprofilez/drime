@@ -6,7 +6,46 @@ import Shared from "../../../../public/images/Shared.png"
 import Mail from "../../../../public/images/Mail.png"
 import { EmailIcon } from '@ui/icons/material/Email';
 
-const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer , onNewTransfer  }) => {
+// Helper function to calculate and format expiry message
+const getExpiryMessage = (files, expiresInHours) => {
+    // Try to get expiry date from files data (from server response)
+    if (files && files.length > 0 && files[0]?.expires_at) {
+        const expiryDate = new Date(files[0].expires_at);
+        const currentDate = new Date();
+        const timeDiff = expiryDate.getTime() - currentDate.getTime();
+        const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+        
+        const formattedDate = expiryDate.toLocaleDateString('en-US');
+        
+        if (daysRemaining <= 0) {
+            return `The download link has expired.`;
+        } else if (daysRemaining === 1) {
+            return `The download link expires tomorrow (${formattedDate}).`;
+        } else {
+            return `The download link expires in ${daysRemaining} days (${formattedDate}).`;
+        }
+    }
+    
+    // Fallback: calculate expiry based on expiresInHours if files data not available
+    if (expiresInHours) {
+        const currentDate = new Date();
+        const expiryDate = new Date(currentDate.getTime() + (expiresInHours * 60 * 60 * 1000));
+        const formattedDate = expiryDate.toLocaleDateString('en-US');
+        
+        if (expiresInHours < 24) {
+            const hours = expiresInHours;
+            return `The download link expires in ${hours} hour${hours === 1 ? '' : 's'} (${formattedDate}).`;
+        } else {
+            const days = Math.floor(expiresInHours / 24);
+            return `The download link expires in ${days} day${days === 1 ? '' : 's'} (${formattedDate}).`;
+        }
+    }
+    
+    // Ultimate fallback
+    return `The download link for your transfer is available for a limited time.`;
+};
+
+const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onNewTransfer, files, expiresInHours }) => {
     const headingText = type === 'Link'
         ? 'Your link is ready'
         : 'Your transfer has been sent to your recipient(s)';
@@ -36,34 +75,27 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer , on
                     )}
                 </div>
 
-                <div className="mb-3 md:mb-6 text-center">
+                <div className="mb-2 text-center">
                     <h2 className="normal-heading">{headingText}</h2>
                 </div>
 
                 {type === 'Link' && (
                     <>
-                        <p className="normal-para mb-4 md:mb-8 p-1 md:p-3">
-                            The download link for your transfer is available for X days.
+                        <p className="normal-para mb-4 md:p-3">
+                            {getExpiryMessage(files, expiresInHours)}
                         </p>
-                        <div className="center-align space-x-2 p-2 md:p-5 ">
+                        <div className="center-align ">
                             <div className="w-full max-w-xl">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Share this link
-                                </label>
-
                                 <div className="relative flex items-center">
-                                    {/* Input */}
                                     <input
                                         type="text"
                                         readOnly
                                         value={downloadLink}
-                                        className="w-full pr-12 pl-4 py-3 rounded-lg border border-gray-300 bg-gray-50 font-mono text-sm text-gray-700 focus:ring-2 focus:ring-[#08CF65] focus:border-[#08CF65] transition"
+                                        className="w-full pr-12 pl-4 py-3 rounded-[13px] border border-gray-300 bg-gray-50 font-mono text-sm text-gray-700 pe-[60px] focus:outline-none transition"
                                     />
-
-                                    {/* Copy button */}
                                     <button
                                         onClick={copyToClipboard}
-                                        className="absolute right-2 p-2 rounded-md bg-[#08CF65] text-white hover:bg-green-600 transition-colors flex items-center justify-center"
+                                        className="absolute right-0 p-3 px-4 rounded-[13px] bg-[#08CF65] text-white hover:bg-green-600 transition-colors flex items-center justify-center"
                                     >
                                         <AiOutlineCopy className="h-5 w-5" />
                                     </button>
@@ -72,7 +104,7 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer , on
 
                         </div>
                         {copied && (
-                            <p className="normal-para mb-4 md:mb-8 p-1 md:p-3">
+                            <p className="normal-para text-[13px] mt-1">
                                 Link copied to clipboard!
                             </p>
                         )}
@@ -90,14 +122,15 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer , on
             </div>
         </div>
 
-            <div className="between-align  gap-1  pt-4">
-                <button onClick={() => window.open(downloadLink, '_blank')}>
+            <div className="justify-center  pt-4">
+                <p className='text-black font-semibold text-center'>Need to send more files? <button onClick={onNewTransfer} className=" text-black underline">
+                    Start new transfer
+                </button> </p>
+                {/* <button onClick={() => window.open(downloadLink, '_blank')}>
                     Open download page
-                </button>
+                </button> */}
 
-                <button onClick={onNewTransfer} className=" text-primary">
-                    Send another transfer
-                </button>
+                
             </div>
             {/* <p className="pt-[30px] md:pt-[69px] text-[14px] md:text-[16px] text-black font-[600] leading-5 text-center">
                             Need to send more files?{' '}

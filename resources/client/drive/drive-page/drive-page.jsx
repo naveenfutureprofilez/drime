@@ -4,7 +4,7 @@ import timeManagement from './time-management.svg';
 import fileSearching from './file-searching.svg';
 import throwAwaySvg from './throw-away.svg';
 import lovingItSvg from './loving-it.svg';
-import shareSvg from './../shareable-link/shareable-link-page/folder-preview/share.svg';
+import shareSvg from '../shareable-link/shareable-link-page/folder-preview/share.svg';
 import { getBootstrapData } from '@ui/bootstrap-data/bootstrap-data-store';
 const defaultSortDescriptor = {
   orderBy: 'updated_at',

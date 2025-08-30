@@ -7,7 +7,7 @@ import NoData from '../../components/NoData';
 import { useFileDrop } from '../../components/useFileDrop';
 import { useState } from 'react';
 
-export default function FileData({ step, selectedFiles, setSelectedFiles, setStep }) {
+export default function FileData({ step, selectedFiles, setSelectedFiles, setStep, hash, hasPassword, password }) {
 
     const handleDropAction = (newItems) => {
         setSelectedFiles((prev) => [...prev, ...newItems]);
@@ -41,6 +41,25 @@ export default function FileData({ step, selectedFiles, setSelectedFiles, setSte
         if (file instanceof File) {
             // const fileURL = URL?.createObjectURL(file);
             window.open(file, '_blank');
+        }
+    };
+
+    const handleIndividualDownload = (file) => {
+        if (!hash || !file.id) {
+            alert("Invalid download link or file.");
+            return;
+        }
+
+        try {
+            const downloadParams = hasPassword && password 
+                ? `?password=${encodeURIComponent(password)}` 
+                : "";
+            
+            const downloadUrl = `/download/${hash}/${file.id}${downloadParams}`;
+            window.open(downloadUrl, "_blank");
+        } catch (error) {
+            console.error("Individual download error:", error);
+            alert("Something went wrong while downloading this file.");
         }
     };
     console.log("selectedFiles", selectedFiles)
@@ -119,10 +138,10 @@ export default function FileData({ step, selectedFiles, setSelectedFiles, setSte
             <div
                 className={`
        ${isDragging ? "bg-green-50" : "bg-white"}
-       ${step === 4 ? "max-h-[400px]" : "max-h-[130px]"}
+       ${step === 4 ? "max-h-[33vh]" : "max-h-[130px]"}
          mt-2
          custom-scroll
-         overflow-y-auto
+         overflow-y-auto pe-[20px]
         `}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -132,22 +151,22 @@ export default function FileData({ step, selectedFiles, setSelectedFiles, setSte
                     <NoData />
                 ) : (
                     selectedFiles.map((file, index) => (
-                        <div key={index} className="between-align  space-x-2 py-2">
-                            <div className="flex items-center space-x-2">
+                        <div key={index} className="between-align  py-2">
+                            <div className="flex items-center space-x-2 ">
                                 <div>{fileIcons[getMime(file.type)]}</div>
-                                <div>
-                                    <h6 className="heading !text-left font-bold">{file.filename || file.folderName || file?.name}</h6>
-                                    <p className="normal-para !text-left">
-                                        {FileSize(file.size || file.files.reduce((acc, f) => acc + (f.size || 0), 0))}
-                                        {file.files?.length > 0 && <span className="ml-1">{file.files.length} files</span>}
+                                <div className='max-w-[90%]'>
+                                    <h6 className="heading text-start break-all line-clamp-2 font-bold">{file.filename || file.folderName || file?.name}</h6>
+                                    <p className="normal-para !text-left ">
+                                        Size : {FileSize(file.size || file.files.reduce((acc, f) => acc + (f.size || 0), 0))}
+                                        {/* {file.files?.length > 0 && <span className="ml-1">{file.files.length} files</span>} */}
                                     </p>
                                 </div>
                             </div>
-                            <div className="ml-auto flex items-center gap-3">
+                            <div className="ml-auto ps-3 flex items-center gap-3">
                                 {step === 4 && !file.files && (
                                     <>
                                         <button onClick={() => handleView(file)}><RiEyeLine size={24} className='text-gray-700 hover:text-gray-400' /></button>
-                                        <button onClick={() => handleView(file)}><MdDownload size={24} className='text-gray-700 hover:text-gray-400' /></button>
+                                        <button onClick={() => handleIndividualDownload(file)}><MdDownload size={24} className='text-gray-700 hover:text-gray-400' /></button>
 
                                     </>
                                 )}

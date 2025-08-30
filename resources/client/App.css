@@ -154,7 +154,7 @@ body {
   }
 
   .boxmodel {
-    @apply flex flex-col h-[90vh] items-center justify-center
+    @apply flex flex-col h-[88vh] items-center justify-center
   }
 
   .box {
@@ -234,15 +234,16 @@ body {
   background: #646A73;
   height: 2px !important;
   width: 1px !important;
-  border-radius: 6px;
+  border-radius: 12px;
 }
 
 .custom-scroll::-webkit-scrollbar-track {
   background: #646A73;
-  border-radius: 6px;
+  border-radius: 12px;
 }
 
 .custom-scroll::-webkit-scrollbar-thumb {
+  border-radius: 12px;
   background: #646A73;
 }
 

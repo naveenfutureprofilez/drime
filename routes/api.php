@@ -17,6 +17,7 @@ use App\Http\Controllers\GuestUploadController;
 use App\Http\Controllers\GuestTusController;
 use App\Http\Controllers\QuickShareController;
 use App\Http\Controllers\Admin\GuestUploadStatsController;
+use App\Http\Controllers\Admin\TransferFilesController;
 use Illuminate\Support\Facades\Route;
 
 // prettier-ignore
@@ -110,6 +111,13 @@ Route::group(['prefix' => 'v1'], function() {
     // ADMIN GUEST UPLOADS MANAGEMENT
     Route::get('admin/guest-uploads/stats', [GuestUploadStatsController::class, 'stats']);
     Route::post('admin/guest-uploads/cleanup', [GuestUploadStatsController::class, 'cleanup']);
+    
+    // ADMIN TRANSFER FILES MANAGEMENT
+    Route::get('admin/transfer-files', [TransferFilesController::class, 'index']);
+    Route::delete('admin/transfer-files/{id}', [TransferFilesController::class, 'destroy']);
+    Route::post('admin/transfer-files/bulk-delete', [TransferFilesController::class, 'bulkDestroy']);
+    Route::get('admin/transfer-files/stats', [TransferFilesController::class, 'stats']);
+    Route::post('admin/transfer-files/cleanup', [TransferFilesController::class, 'cleanup']);
   });
 
   //SHAREABLE LINKS PREVIEW (NO AUTH NEEDED)

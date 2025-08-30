@@ -5,3 +5,4 @@ export { LandingPageSectionGeneral } from '@app/admin/appearance/sections/landin
 export { LandingPageSectionActionButtons } from '@app/admin/appearance/sections/landing-page-section/landing-page-section-action-buttons';
 export { LandingPageSectionPrimaryFeatures } from '@app/admin/appearance/sections/landing-page-section/landing-page-section-primary-features';
 export { LandingPageSecondaryFeatures } from '@app/admin/appearance/sections/landing-page-section/landing-page-section-secondary-features';
+export { TransferFilesPage } from '@app/admin/transfer-files/transfer-files-page';

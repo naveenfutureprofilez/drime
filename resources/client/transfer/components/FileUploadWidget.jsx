@@ -16,30 +16,22 @@ export function FileUploadWidget({
   const [selectedFiles, setSelectedFiles] = useState([]);
   console.log("selectedFiles", selectedFiles)
 
+  // Form data state - moved up to avoid temporal dead zone
+  const [data, setData] = useState({
+    email: "",
+    name: "",
+    message: ""
+  });
 
   function formatExpiryTime(hours) {
-    if (hours === 1) {
-      return "Expires in 1 hour";
-    } else if (hours < 24) {
-      return `Expires in ${hours} hours`;
-    } else if (hours === 24) {
-      return "Expires in 1 day";
-    } else if (hours < 168) {
-      const days = Math.floor(hours / 24);
-      return `Expires in ${days} days`;
-    } else if (hours === 168) {
-      return "Expires in 1 week";
-    } else if (hours < 720) {
-      const days = Math.floor(hours / 24);
-      return `Expires in ${days} days`;
-    } else if (hours === 720) {
-      return "Expires in 1 month";
-    } else if (hours < 8760) {
-      const months = Math.floor(hours / 720);
-      return `Expires in ${months} months`;
-    } else {
-      return "Expires in 1 year";
-    }
+    // Calculate the expiry date by adding hours to current date
+    const currentDate = new Date();
+    const expiryDate = new Date(currentDate.getTime() + (hours * 60 * 60 * 1000));
+    
+    // Format the date as MM/DD/YYYY
+    const formattedDate = expiryDate.toLocaleDateString('en-US');
+    
+    return `Expires on ${formattedDate}`;
   }
 
   const handleUpload = useCallback(async () => {
@@ -48,9 +40,10 @@ export function FileUploadWidget({
     onUploadStart?.({
       files: selectedFiles,
       totalSize,
-      settings
+      settings,
+      formData: data // Include form data (email, name, message)
     });
-  }, [selectedFiles, settings, onUploadStart]);
+  }, [selectedFiles, settings, onUploadStart, data]);
 
 
   const [showSettings, setShowSettings] = useState(false);
@@ -64,11 +57,6 @@ export function FileUploadWidget({
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
-  const [data, setData] = useState({
-    email: "",
-    name: "",
-    message: ""
-  })
   const handleChange = (e) => {
     setData((prevalue) => {
       return {
@@ -149,7 +137,7 @@ export function FileUploadWidget({
           />
           <label
             onClick={() => addInputRef.current.click()}
-            className="btn-border rounded-[35px] p-4 mb-6 cursor-pointer inline-block"
+            className="btn-border rounded-[30px] p-4 mb-6 cursor-pointer inline-block"
           >
             <VscAdd size={56} />
           </label>
@@ -173,7 +161,7 @@ export function FileUploadWidget({
                 <h2 className="heading-md mb-1 !text-left">{selectedFiles?.length} items</h2>
                 <p className="para !text-[#999999]">{FileSize(selectedFiles.size || totalSizeAll)} out of 100 GB</p>
               </div>
-              <div className="btn-border border-[3px] !bg-[#fff]  rounded-[18px] flex items-center justify-center p-2 py-[9px] cursor-pointer" onClick={toggleMenu}>
+              <div className="btn-border border-[3px] !bg-[#fff]  rounded-[16px] flex items-center justify-center p-2 py-[9px] cursor-pointer" onClick={toggleMenu}>
                 <VscAdd size={24} color='#08cf65' />
               </div>
             </div>
@@ -235,7 +223,7 @@ export function FileUploadWidget({
                   <h6 className="heading !font-[700] ps-0 text-start text-sm">
                     {formatExpiryTime(settings.expiresInHours)}
                   </h6>
-                  <p className="normal-para text-sm ">
+                  <p className="normal-para text-start text-sm ">
                     {settings.password ? "Password protected" : "No password added"}
                   </p>
                 </div>

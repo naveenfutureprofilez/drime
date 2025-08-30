@@ -26,7 +26,7 @@
             content="width=device-width, initial-scale=1, maximum-scale=5"
             data-keep="true"
         />
-        <link
+        <!-- <link
             rel="icon"
             type="image/x-icon"
             href="{{url('favicon/icon-144x144.png')}}"
@@ -36,7 +36,10 @@
             rel="apple-touch-icon"
             href="{{url('favicon/icon-192x192.png')}}"
             data-keep="true"
-        />
+        /> -->
+         <link href="https://framerusercontent.com/images/LZNCznA6dwo81JAN24sbVeuI.png" rel="icon" media="(prefers-color-scheme: light)">
+    <link href="https://framerusercontent.com/images/LZNCznA6dwo81JAN24sbVeuI.png" rel="icon" media="(prefers-color-scheme: dark)">
+    <link rel="apple-touch-icon" href="https://framerusercontent.com/images/ugfXdCxxtJpz377n7aBChaIQRUA.png">
         <link rel="manifest" href="{{url('manifest.json')}}" data-keep="true" />
         <meta
             name="theme-color"

@@ -142,16 +142,30 @@ export const GuestDownloadView = ({
 
   return <div className="space-y-6">
     <>
-      <Download />
-      <div className='!pt-0 p-[20px] md:p-[30px]'>
-        <FileData step={4} selectedFiles={files} />
-        <div className="between-align mt-6 pb-4">
-          <a href='/' className="text-[14px] md:text-[18px] text-black font-[600] leading-5 underline">
+      <Download 
+        expiresAt={expiresAt} 
+        totalSize={totalSize} 
+        itemCount={files ? files.length : 0}
+      />
+      <div className='!pt-0 p-[5px] lg:p-[30px]'>
+        {/* <div className='ma÷x-h-[32vh] overflow-y-auto'> */}
+          {/* <div className='pe-[20px]'> */}
+            <FileData 
+              step={4} 
+              selectedFiles={files} 
+              hash={hash} 
+              hasPassword={hasPassword} 
+              password={password} 
+            />
+          {/* </div> */}
+        {/* </div> */}
+        <div className="between-align mt-6">
+          <a href='/' className="text-[16px]  text-black font-[600] leading-5 underline">
             Create a transfer
           </a>
           <button
             onClick={handleDownload}
-            className="button-sm md:button-md lg:-button-lg"
+            className="button-md "
           >
             Download
           </button>

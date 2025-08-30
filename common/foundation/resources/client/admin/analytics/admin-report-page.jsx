@@ -21,7 +21,7 @@ export function Component() {
   return <div className="min-h-full gap-12 overflow-x-hidden p-12 md:gap-18 md:p-18">
       <div className="mb-24 items-center justify-between gap-24 md:flex">
         <StaticPageTitle>{title}</StaticPageTitle>
-        <h1 className="mb-24 text-3xl font-light md:mb-0">{title}</h1>
+        <h1 className="mb-24 text-3xl font-light md:mb-0">{title} asdsd</h1>
         <ReportDateSelector value={dateRange} onChange={setDateRange} />
       </div>
       <div className="chart-grid">

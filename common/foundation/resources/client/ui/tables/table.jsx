@@ -68,7 +68,7 @@ export function Table({
 
   // add checkbox columns to config, if selection is enabled
   const columns = useMemo(() => {
-    const filteredColumns = userColumns.filter(c => {
+    const filteredColumns = (userColumns || []).filter(c => {
       const visibleInMode = c.visibleInMode || 'regular';
       if (visibleInMode === 'all') {
         return true;
@@ -110,7 +110,7 @@ export function Table({
   };
   const navProps = useGridNavigation({
     cellCount: enableSelection ? columns.length + 1 : columns.length,
-    rowCount: data.length + 1
+    rowCount: (data || []).length + 1
   });
   const tableBodyProps = {
     renderRowAs: renderRowAs
@@ -156,7 +156,7 @@ export function Table({
           }
         }
       }
-    })} role="grid" tabIndex={0} aria-rowcount={data.length + 1} aria-colcount={columns.length + 1} ref={tableRef} aria-multiselectable={enableSelection ? true : undefined} aria-labelledby={ariaLabelledBy} className={clsx(className, 'isolate select-none text-sm outline-none focus-visible:ring-2')}>
+    })} role="grid" tabIndex={0} aria-rowcount={(data || []).length + 1} aria-colcount={columns.length + 1} ref={tableRef} aria-multiselectable={enableSelection ? true : undefined} aria-labelledby={ariaLabelledBy} className={clsx(className, 'isolate select-none text-sm outline-none focus-visible:ring-2')}>
         {!hideHeaderRow && <TableHeaderRow />}
         {tableBody}
       </div>

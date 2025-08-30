@@ -27,6 +27,8 @@ class GuestUpload extends Model
         'total_size',
         'sender_email',
         'recipient_emails',
+        'title',
+        'message',
         'last_downloaded_at'
     ];
 
@@ -39,11 +41,11 @@ class GuestUpload extends Model
         'expires_at' => 'datetime',
         'last_downloaded_at' => 'datetime',
         'metadata' => 'array',
-        'recipient_emails' => 'array',
+        // recipient_emails is now a string, not array
     ];
 
     protected $attributes = [
-        'recipient_emails' => '[]',
+        'recipient_emails' => null,
     ];
 
     protected $hidden = [

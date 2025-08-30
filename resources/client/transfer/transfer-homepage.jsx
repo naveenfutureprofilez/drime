@@ -26,14 +26,11 @@ export function TransferHomepage() {
   const [uploadStartTime, setUploadStartTime] = useState(null);
   const [abortController, setAbortController] = useState(null);
 
-  // Debug log when settings change
   const handleSettingsChange = useCallback((newSettings) => {
-    console.log('Settings being updated:', newSettings);
     setTransferSettings(newSettings);
   }, []);
 
-  // Handle upload start - switch to progress view and start actual upload
-  const handleUploadStart = useCallback(async ({ files, totalSize, settings }) => {
+  const handleUploadStart = useCallback(async ({ files, totalSize, settings, formData: uploadFormData }) => {
     setUploadData({ files, totalSize, settings });
     setCurrentStep('progress');
     setUploadProgress(0);
@@ -58,6 +55,19 @@ export function TransferHomepage() {
       formData.append('expires_in_hours', settings.expiresInHours.toString());
       if (settings.maxDownloads) {
         formData.append('max_downloads', settings.maxDownloads.toString());
+      }
+      
+      // Add form data (email, name/title, message)
+      if (uploadFormData) {
+        if (uploadFormData.email) {
+          formData.append('sender_email', uploadFormData.email);
+        }
+        if (uploadFormData.name) {
+          formData.append('sender_name', uploadFormData.name);
+        }
+        if (uploadFormData.message) {
+          formData.append('message', uploadFormData.message);
+        }
       }
 
       let lastLoaded = 0;
@@ -106,14 +116,12 @@ export function TransferHomepage() {
     }
   }, []);
 
-  // Handle upload cancellation
   const handleUploadCancel = useCallback(() => {
     if (abortController) {
       abortController.abort();
     }
   }, [abortController]);
 
-  // Handle progress completion (continue or retry)
   const handleProgressComplete = useCallback(() => {
     if (uploadStatus === 'success') {
       setCurrentStep('share');
@@ -152,7 +160,7 @@ export function TransferHomepage() {
                 onUploadStart={handleUploadStart}
               />)}
 
-            {currentStep === 'share' && <SHARE_SECTION files={uploadedFiles} onNewTransfer={handleNewTransfer} onShowEmailPanel={() => setShowEmailPanel(true)} />}
+            {currentStep === 'share' && <SHARE_SECTION files={uploadedFiles} transferSettings={transferSettings} onNewTransfer={handleNewTransfer} onShowEmailPanel={() => setShowEmailPanel(true)} />}
           </div>
         )}
 
@@ -211,6 +219,7 @@ function UPLOAD_SECTION({
 
 function SHARE_SECTION({
   files,
+  transferSettings,
   onNewTransfer,
   onShowEmailPanel
 }) {
@@ -232,7 +241,13 @@ function SHARE_SECTION({
     );
   }
   return <div className="p-8">
-    <TransferSuccessPage downloadLink={shareUrl} onEmailTransfer={onShowEmailPanel} files={files} onNewTransfer={onNewTransfer} />
+    <TransferSuccessPage 
+      downloadLink={shareUrl} 
+      onEmailTransfer={onShowEmailPanel} 
+      files={files} 
+      expiresInHours={transferSettings?.expiresInHours}
+      onNewTransfer={onNewTransfer} 
+    />
     {/* <ShareLinkPanel shareUrl={shareUrl} files={files}  onEmailTransfer={onShowEmailPanel}  /> */}
   </div>;
 }

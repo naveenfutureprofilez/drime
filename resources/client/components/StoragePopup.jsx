@@ -54,9 +54,9 @@ const StoragePopup = ({isOpen}) => {
                                     </div>
                                 </div>
                             ))}
-                            <button className="button-sm md:button-md lg:button-lg w-full md:w-auto">
+                            <a href='https://drime.cloud/' className="button-sm md:button-md lg:button-lg w-full md:w-auto !py-3 ">
                                 Get started for free
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>

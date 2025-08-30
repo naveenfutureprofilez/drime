@@ -22,21 +22,40 @@ class GuestUploadService
         
         $files = $request->file('files');
         
+        logger('GuestUploadService::handleUpload - Files received', [
+            'file_count' => $files ? count($files) : 0,
+            'file_names' => $files ? array_map(fn($f) => $f->getClientOriginalName(), $files) : []
+        ]);
+        
         // b. Create the GuestUpload *before* iterating files. Populate all non-file fields once.
         $expiresAt = $this->calculateExpiryTime($request->integer('expires_in_hours', 72)); // Default 3 days
         $password = $request->string('password')->toString();
         $maxDownloads = $request->integer('max_downloads');
         
+        // Process form data - map frontend fields correctly
+        $recipientEmail = $request->string('sender_email')->toString(); // Frontend sends as 'sender_email' but it's actually recipient
+        $title = $request->string('sender_name')->toString(); // Frontend sends as 'sender_name' but it's actually title
+        $message = $request->string('message')->toString();
+        
+        logger('Form data processed', [
+            'recipient_email' => $recipientEmail,
+            'title' => $title,
+            'message' => $message
+        ]);
+        
         $guestUpload = GuestUpload::create([
             'password' => $password ?: null,
             'expires_at' => $expiresAt,
             'max_downloads' => $maxDownloads,
+            'sender_email' => null, // This is for the actual sender, not the form email
+            'title' => $title ?: null, // Store the title from form in dedicated title column
+            'message' => $message ?: null,
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
             'metadata' => [
                 'upload_method' => 'direct', // Will be 'tus' for resumable uploads
             ],
-            'recipient_emails' => [],
+            'recipient_emails' => $recipientEmail ?: null, // Store the email from form as string
             'total_size' => 0, // Will be updated after processing all files
         ]);
         
@@ -138,16 +157,23 @@ class GuestUploadService
                 $request->integer('expires_in_hours', 72)
             );
             
+            // Process form data for TUS uploads too
+            $recipientEmail = $request->string('sender_email')->toString();
+            $title = $request->string('sender_name')->toString(); // Frontend sends as 'sender_name' but it's actually title
+            
             $guestUpload = GuestUpload::create([
                 'password' => $request->string('password')->toString() ?: null,
                 'expires_at' => $expiresAt,
                 'max_downloads' => $request->integer('max_downloads'),
+                'sender_email' => null,
+                'title' => $title ?: null,
+                'message' => $request->string('message')->toString() ?: null,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
                 'metadata' => [
                     'upload_method' => 'tus',
                 ],
-                'recipient_emails' => [],
+                'recipient_emails' => $recipientEmail ?: null, // Store as string
                 'total_size' => 0, // Will be updated after attaching files
             ]);
         }

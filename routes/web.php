@@ -44,6 +44,28 @@ Route::prefix('api/v1')->group(function() {
     Route::get('quick-share/link/{hash}/download-all', [QuickShareController::class, 'downloadAll']);
 });
 
+// Manifest.json route with CORS support
+Route::get('manifest.json', function() {
+    $manifestPath = public_path('manifest.json.backup');
+    if (file_exists($manifestPath)) {
+        $manifest = json_decode(file_get_contents($manifestPath), true);
+        return response()->json($manifest)
+            ->header('Access-Control-Allow-Origin', '*')
+            ->header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+            ->header('Access-Control-Allow-Headers', 'Origin, Content-Type, Accept, Authorization, X-Requested-With');
+    }
+    return response()->json(['error' => 'Manifest not found'], 404);
+});
+
+// OPTIONS route for manifest.json preflight requests
+Route::options('manifest.json', function() {
+    return response('')
+        ->header('Access-Control-Allow-Origin', '*')
+        ->header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        ->header('Access-Control-Allow-Headers', 'Origin, Content-Type, Accept, Authorization, X-Requested-With')
+        ->header('Access-Control-Max-Age', '3600');
+});
+
 Route::get('contact', [HomeController::class, 'render']);
 Route::get('pages/{slugOrId}', [CustomPageController::class, 'show']);
 Route::get('login', [HomeController::class, 'render'])->name('login');
@@ -71,6 +93,43 @@ Route::get('demo/upload-progress-blade', function () {
 Route::get('demo/upload-progress-improved', function () {
     return view('demo.upload-improved');
 })->name('demo.upload-progress-improved');
+
+// DEBUG ROUTE FOR GUEST UPLOADS
+Route::get('debug/guest-upload/{hash}', function ($hash) {
+    $upload = \App\Models\GuestUpload::where('hash', $hash)->with('files')->first();
+    if (!$upload) {
+        return response()->json(['error' => 'Upload not found'], 404);
+    }
+    
+    return response()->json([
+        'upload_id' => $upload->id,
+        'hash' => $upload->hash,
+        'total_size' => $upload->total_size,
+        'created_at' => $upload->created_at,
+        'sender_email' => $upload->sender_email,
+        'title' => $upload->title, // This stores the title from form
+        'message' => $upload->message,
+        'recipient_emails' => $upload->recipient_emails, // This should contain the email from form
+        'files_count' => $upload->files()->count(),
+        'files' => $upload->files->map(fn($f) => [
+            'id' => $f->id,
+            'name' => $f->name,
+            'file_name' => $f->file_name,
+            'size' => $f->file_size,
+            'path' => $f->path,
+        ]),
+        'pivot_records' => \Illuminate\Support\Facades\DB::table('guest_upload_files')
+            ->where('guest_upload_id', $upload->id)
+            ->get(),
+    ]);
+});
+
+// DEBUG ROUTE FOR API SHOW METHOD
+Route::get('debug/api/guest-upload/{hash}', function ($hash) {
+    $controller = new \App\Http\Controllers\GuestUploadController(new \App\Services\GuestUploadService());
+    $response = $controller->show($hash);
+    return $response;
+});
 
 // TEST ROUTE FOR UPLOAD LIMITS
 Route::get('test-upload-limits', function () {

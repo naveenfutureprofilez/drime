@@ -13,10 +13,20 @@ import { useIsMobileMediaQuery } from '@ui/utils/hooks/is-mobile-media-query';
 export function AdminLayout() {
   const isMobile = useIsMobileMediaQuery();
   const variant = isMobile ? 'withNavbar' : 'withoutNavbar';
-  return <DashboardLayout name="admin" leftSidenavCanBeCompact className="bg-alt">
+  return <>
+  <div className='layout flex'>
+        <AdminSidebar variant={variant} />
+        <DashboardContent>
+          <div className={clsx(variant === 'withoutNavbar' ? 'relative bg ring-divider dark:bg-alt md:mt-6 md:rounded-tl-md md:shadow-sm md:ring md:ring-1' : 'border-l bg dark:bg-alt')}>
+            <SetupAlertsList />
+            <Outlet />
+          </div>
+        </DashboardContent>
+  </div>
+    {/* <DashboardLayout name="admin" leftSidenavCanBeCompact className="bg-alt">
       {variant === 'withNavbar' && <DashboardNavbar size="sm" menuPosition="admin-navbar" />}
       <DashboardSidenav position="left" size="sm">
-        <AdminSidebar variant="withoutNavbar" />
+        <AdminSidebar variant={variant} />
       </DashboardSidenav>
       <DashboardContent>
         <div className={clsx(variant === 'withoutNavbar' ? 'relative bg ring-divider dark:bg-alt md:mt-6 md:rounded-tl-md md:shadow-sm md:ring md:ring-1' : 'border-l bg dark:bg-alt')}>
@@ -24,7 +34,8 @@ export function AdminLayout() {
           <Outlet />
         </div>
       </DashboardContent>
-    </DashboardLayout>;
+    </DashboardLayout> */}
+  </> 
 }
 function SetupAlertsList() {
   const {

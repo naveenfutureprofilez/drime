@@ -26,7 +26,13 @@ class GuestUploadController extends BaseController
      */
     public function store(Request $request): JsonResponse
     {
-        logger('GuestUploadController::store called', ['request' => $request->all()]);
+        logger('GuestUploadController::store called', [
+            'request_all' => $request->all(),
+            'sender_email' => $request->get('sender_email'),
+            'sender_name' => $request->get('sender_name'), 
+            'message' => $request->get('message'),
+            'form_data_keys' => array_keys($request->all())
+        ]);
         
         // Get max file size in KB for Laravel validation (Laravel expects KB)
         $maxFileSizeKB = intval(config('uploads.guest_max_size', 3145728000) / 1024);
@@ -121,68 +127,12 @@ class GuestUploadController extends BaseController
     }
 
     /**
-     * Download file
+     * Download file (legacy method - now redirects to downloadAll for compatibility)
      */
     public function download(string $hash, Request $request): mixed
     {
-        $guestUpload = GuestUpload::with('fileEntry')
-            ->where('hash', $hash)
-            ->first();
-
-        if (!$guestUpload) {
-            return response()->json(['message' => 'Upload not found'], 404);
-        }
-
-        if (!$guestUpload->canDownload()) {
-            return response()->json([
-                'message' => 'This upload has expired or reached download limit'
-            ], 410);
-        }
-
-        // Check password using consistent method
-        $password = $request->input('password');
-        if (!$guestUpload->verifyPassword($password)) {
-            return response()->json(['message' => 'Invalid password'], 401);
-        }
-
-        try {
-            $fileEntry = $guestUpload->fileEntry;
-            if (!$fileEntry) {
-                return response()->json(['message' => 'File not found'], 404);
-            }
-
-            // Get file from storage (Cloudflare R2)
-            $disk = Storage::disk(config('common.site.uploads_disk'));
-            
-            // Build the file path - files are stored in guest-uploads folder
-            $filePath = $fileEntry->path ? 
-                $fileEntry->path . '/' . $fileEntry->file_name : 
-                $fileEntry->file_name;
-            
-            if (!$disk->exists($filePath)) {
-                return response()->json(['message' => 'File not found in storage'], 404);
-            }
-
-            // Increment download count ONCE before initiating download
-            $guestUpload->incrementDownloadCount();
-
-            // Fire event for download tracking and notifications (does not increment count)
-            $shareableLink = $guestUpload->shareableLink;
-            if ($shareableLink) {
-                GuestUploadDownloaded::dispatch($guestUpload, $shareableLink);
-            }
-
-            return $disk->download(
-                $filePath,
-                $guestUpload->original_filename
-            );
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Download failed',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        // Redirect to the new downloadAll method which handles both single and multi-file downloads
+        return $this->downloadAll($hash, $request);
     }
 
     /**

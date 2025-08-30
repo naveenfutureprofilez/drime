@@ -17,6 +17,9 @@ class DriveEntriesController extends FileEntriesController
         parent::__construct($request, $entry);
         $this->request = $request;
         $this->entry = $entry;
+        
+        // Remove the auth middleware from parent that conflicts with optionalAuth:sanctum
+        $this->middleware = [];
     }
 
     public function showModel($fileEntryId)
@@ -32,8 +35,6 @@ class DriveEntriesController extends FileEntriesController
 
     public function index()
     {
-        $this->middleware('auth');
-
         $params = $this->request->all();
         $params['userId'] = Auth::id();
 

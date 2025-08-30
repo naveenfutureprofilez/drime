@@ -1,12 +1,10 @@
 import clsx from 'clsx';
-import React, { cloneElement, forwardRef, Fragment, useContext } from 'react';
+import React, { cloneElement, forwardRef, Fragment } from 'react';
 import { CustomMenu } from '@common/menus/custom-menu';
 import { Logo } from '@common/ui/navigation/navbar/logo';
-import { DashboardLayoutContext } from '@common/ui/dashboard-layout/dashboard-layout-context';
 import { KeyboardArrowLeftIcon } from '@ui/icons/material/KeyboardArrowLeft';
-import { KeyboardArrowRightIcon } from '@ui/icons/material/KeyboardArrowRight';
 import { useIsDarkMode } from '@ui/themes/use-is-dark-mode';
-import { setInLocalStorage } from '@ui/utils/hooks/local-storage';
+
 export function DashboardLeftSidebar({
   className,
   isCompactMode = false,
@@ -24,32 +22,28 @@ export function DashboardLeftSidebar({
           <SidebarToggleButton />
         </Fragment>}
 
-      <CustomMenu matchDescendants={matchDescendants} menu={menuName} orientation="vertical" onlyShowIcons={isCompactMode} iconSize={isCompactMode ? 'md' : 'sm'} gap={isCompactMode ? 'gap-2' : 'gap-4'} itemClassName={({
-      isActive
-    }) => dashboardLeftSidebarItemClassName({
-      isActive,
-      isCompactMode
-    })}>
-        {customMenuRender}
-      </CustomMenu>
+        <CustomMenu matchDescendants={matchDescendants} menu={menuName} orientation="vertical" onlyShowIcons={isCompactMode} iconSize={isCompactMode ? 'md' : 'sm'} gap={isCompactMode ? 'gap-2' : 'gap-4'} itemClassName={({ isActive }) => dashboardLeftSidebarItemClassName({ isActive,
+            isCompactMode
+          })} >
+          {customMenuRender}
+        </CustomMenu>
+
+
       <div className={clsx('mt-auto space-y-2', isCompactMode && 'mx-auto')}>
         {bottomContent}
       </div>
     </div>;
 }
+
 function SidebarToggleButton() {
-  const {
-    leftSidenavStatus,
-    setLeftSidenavStatus,
-    name
-  } = useContext(DashboardLayoutContext);
+  // const{leftSidenavStatus,setLeftSidenavStatus,name} = useContext(DashboardLayoutContext);
   const handleToggle = () => {
-    const newStatus = leftSidenavStatus === 'open' ? 'compact' : 'open';
-    setLeftSidenavStatus(newStatus);
-    setInLocalStorage(`${name}.sidenav.compact`, newStatus === 'compact');
+    // const newStatus = leftSidenavStatus === 'open' ? 'compact' : 'open';
+    // setLeftSidenavStatus(newStatus);
+    // setInLocalStorage(`${name}.sidenav.compact`, newStatus === 'compact');
   };
-  return <button className={clsx('fixed bottom-180 z-10 flex select-none appearance-none items-center justify-center rounded-full border bg align-middle outline-none transition-[left,color,shadow] duration-200 hover:text-primary focus-visible:ring', leftSidenavStatus === 'open' ? 'left-[212px]' : 'left-48')} onClick={() => handleToggle()}>
-      {leftSidenavStatus === 'open' ? <KeyboardArrowLeftIcon size="sm" /> : <KeyboardArrowRightIcon size="sm" />}
+  return <button className={clsx(' bottom-180 z-10 flex select-none appearance-none items-center justify-center rounded-full border bg align-middle outline-none transition-[left,color,shadow] duration-200 hover:text-primary focus-visible:ring  ')} onClick={() => handleToggle()}>
+      <KeyboardArrowLeftIcon size="sm" />
     </button>;
 }
 export const DashboardLeftSidebarItem = forwardRef(({
@@ -73,6 +67,8 @@ export const DashboardLeftSidebarItem = forwardRef(({
         {otherChildren}
       </Element>;
 });
+
+
 export function dashboardLeftSidebarItemClassName({
   isActive,
   isCompactMode
