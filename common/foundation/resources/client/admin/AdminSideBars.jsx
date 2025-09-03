@@ -39,6 +39,15 @@ function AdminSidebars() {
                     {/* Menu Items */}
                     <nav className="flex flex-col space-y-2 mt-10 xl:mt-0">
                         <a
+                            href="/admin"
+                            onClick={handleLinkClick}
+                            className="flex items-center gap-3 p-3 rounded-lg 
+                         text-black hover:bg-[#e5e7eb] transition"
+                        >
+                            <MdFileOpen className="text-pink-500 text-xl" />
+                            <span>Home</span>
+                        </a>
+                        <a
                             href="/admin/transfer-files"
                             onClick={handleLinkClick}
                             className="flex items-center gap-3 p-3 rounded-lg 
