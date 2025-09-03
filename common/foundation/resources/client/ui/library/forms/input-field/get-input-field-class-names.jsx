@@ -146,7 +146,7 @@ function inputSizeClass({
     case 'sm':
       return {
         font: 'text-sm',
-        height: flexibleHeight ? 'min-h-36' : 'h-36'
+        height: flexibleHeight ? 'min-h-36' : 'h-12'
       };
     case 'lg':
       return {

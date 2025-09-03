@@ -12,7 +12,7 @@ export function getButtonSizeStyle(size, {
       return `text-xs h-30 ${equalWidth ? 'w-30' : padding || 'px-14'}`;
     case 'sm':
       if (variant === 'link') return 'text-sm';
-      return `text-sm h-36 ${equalWidth ? 'w-36' : padding || 'px-18'}`;
+      return `text-sm h-12 rounded-lg ${equalWidth ? 'w-12' : padding || 'px-18'}`;
     case 'md':
       if (variant === 'link') return 'text-base';
       return `text-base h-42 ${equalWidth ? 'w-42' : padding || 'px-22'}`;

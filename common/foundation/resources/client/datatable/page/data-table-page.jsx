@@ -12,11 +12,11 @@ export function DataTablePage({
   ...dataTableProps
 }) {
   const titleId = useId();
-  return <div className={clsx(padding ?? variant === 'fullPage' ? 'p-0' : 'p-12 md:p-24', className)}>
-      {title && <div className={clsx(variant === 'fullPage' ? 'mb-6 border-b px-24 py-12' : 'mb-16', headerContent && `flex ${headerItemsAlign} gap-4`)}>
+  return <div className={clsx(padding ?? variant === 'fullPage' ? 'p-0' : 'p-4', className)}>
+      {title && <div className={clsx(variant === 'fullPage' ? 'mb-6 px-24 py-12' : 'mb-8', headerContent && `flex ${headerItemsAlign} gap-4`)}>
           <StaticPageTitle>{title}</StaticPageTitle>
-          <h1 className="text-3xl font-light first:capitalize" id={titleId}>
-            {title}
+          <h1 className="heading text-[24px] capitalize" id={titleId}>
+            {title} 
           </h1>
           {headerContent}
         </div>}

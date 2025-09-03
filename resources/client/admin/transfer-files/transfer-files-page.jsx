@@ -2,9 +2,6 @@ import React from 'react';
 import { DatatableDataQueryKey } from '@common/datatable/requests/paginated-resources';
 import { DataTablePage } from '@common/datatable/page/data-table-page';
 import { DataTableEmptyStateMessage } from '@common/datatable/page/data-table-emty-state-message';
-import { InsertDriveFileIcon } from '@ui/icons/material/InsertDriveFile';
-import { prettyBytes } from '@ui/utils/files/pretty-bytes';
-import { FormattedDate } from '@ui/i18n/formatted-date';
 import { Trans } from '@ui/i18n/trans';
 import { DataTableContext } from '@common/datatable/page/data-table-context';
 import { useDeleteTransferFiles } from './requests/use-delete-transfer-files';
@@ -66,7 +63,7 @@ const columnConfig = [
       <div className="text-sm">
         {file.message ? (
           <Tooltip label={file.message}>
-            <div className="truncate max-w-[200px]">
+            <div className="truncate ">
               {file.message}
             </div>
           </Tooltip>
@@ -187,7 +184,7 @@ export function TransferFilesPage() {
   return (
     <DataTablePage
       endpoint="admin/transfer-files"
-      title={<Trans message="Transfer Files" />}
+      title={<Trans message="Transfer Files " />}
       queryKey={DatatableDataQueryKey('admin-transfer-files')}
       columns={columnConfig}
       searchPlaceholder={<Trans message="Search files..." />}
@@ -248,6 +245,7 @@ function PageActions() {
 
 function SelectedItemsActions() {
   const { selectedRows } = React.useContext(DataTableContext);
+  console.log("selectedRows", selectedRows)
   const bulkDeleteFiles = useBulkDeleteTransferFiles();
 
   return (

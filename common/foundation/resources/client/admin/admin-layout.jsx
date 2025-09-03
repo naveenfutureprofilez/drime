@@ -7,14 +7,16 @@ import { ErrorIcon } from '@ui/icons/material/Error';
 import { setInLocalStorage, useLocalStorage } from '@ui/utils/hooks/local-storage';
 import clsx from 'clsx';
 import { useIsMobileMediaQuery } from '@ui/utils/hooks/is-mobile-media-query';
+import AdminSidebars from './AdminSideBars';
 export function AdminLayout() {
   const isMobile = useIsMobileMediaQuery();
   const variant = isMobile ? 'withNavbar' : 'withoutNavbar';
   return <>
   <div className='layout flex'>
-        <AdminSidebar variant={variant} />
+        {/* <AdminSidebar variant={variant} /> */}
+<AdminSidebars variant={variant}/>
         <DashboardContent>
-          <div className={clsx(variant === 'withoutNavbar' ? 'relative bg ring-divider dark:bg-alt md:mt-6 md:rounded-tl-md md:shadow-sm md:ring md:ring-1' : 'border-l bg dark:bg-alt')}>
+          <div className={clsx(variant === 'withoutNavbar' ? 'relative' : 'bg dark:bg-alt')}>
             <SetupAlertsList />
             <Outlet />
           </div>

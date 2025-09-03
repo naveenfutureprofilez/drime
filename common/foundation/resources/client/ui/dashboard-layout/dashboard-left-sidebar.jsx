@@ -22,11 +22,11 @@ export function DashboardLeftSidebar({
           <SidebarToggleButton />
         </Fragment>}
 
-        <CustomMenu matchDescendants={matchDescendants} menu={menuName} orientation="vertical" onlyShowIcons={isCompactMode} iconSize={isCompactMode ? 'md' : 'sm'} gap={isCompactMode ? 'gap-2' : 'gap-4'} itemClassName={({ isActive }) => dashboardLeftSidebarItemClassName({ isActive,
+         <CustomMenu matchDescendants={matchDescendants} menu={menuName} orientation="vertical" onlyShowIcons={isCompactMode} iconSize={isCompactMode ? 'md' : 'sm'} gap={isCompactMode ? 'gap-2' : 'gap-4'} itemClassName={({ isActive }) => dashboardLeftSidebarItemClassName({ isActive,
             isCompactMode
           })} >
           {customMenuRender}
-        </CustomMenu>
+        </CustomMenu> 
 
 
       <div className={clsx('mt-auto space-y-2', isCompactMode && 'mx-auto')}>

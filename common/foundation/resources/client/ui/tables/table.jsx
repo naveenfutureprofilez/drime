@@ -57,14 +57,14 @@ export function Table({
     onSelectionChange(newValues);
   }, [selectedRows, onSelectionChange]);
   const selectRow = useCallback(
-  // allow deselecting all rows by passing in null
-  (item, merge) => {
-    let newValues = [];
-    if (item) {
-      newValues = merge ? [...selectedRows?.filter(id => id !== item.id), item.id] : [item.id];
-    }
-    onSelectionChange(newValues);
-  }, [selectedRows, onSelectionChange]);
+    // allow deselecting all rows by passing in null
+    (item, merge) => {
+      let newValues = [];
+      if (item) {
+        newValues = merge ? [...selectedRows?.filter(id => id !== item.id), item.id] : [item.id];
+      }
+      onSelectionChange(newValues);
+    }, [selectedRows, onSelectionChange]);
 
   // add checkbox columns to config, if selection is enabled
   const columns = useMemo(() => {
@@ -127,14 +127,14 @@ export function Table({
     ref: tableRef,
     onInteractOutside: e => {
       if (closeOnInteractOutside && enableSelection && selectedRows?.length &&
-      // don't deselect if clicking on a dialog (for example is table row has a context menu)
-      !e.target.closest('[role="dialog"]')) {
+        // don't deselect if clicking on a dialog (for example is table row has a context menu)
+        !e.target.closest('[role="dialog"]')) {
         onSelectionChange([]);
       }
     }
   });
   return <TableContext.Provider value={contextValue}>
-      <div {...mergeProps(domProps, navProps, {
+    <div {...mergeProps(domProps, navProps, {
       onKeyDown: e => {
         if (e.key === 'Escape') {
           e.preventDefault();
@@ -157,10 +157,10 @@ export function Table({
         }
       }
     })} role="grid" tabIndex={0} aria-rowcount={(data || []).length + 1} aria-colcount={columns.length + 1} ref={tableRef} aria-multiselectable={enableSelection ? true : undefined} aria-labelledby={ariaLabelledBy} className={clsx(className, 'isolate select-none text-sm outline-none focus-visible:ring-2')}>
-        {!hideHeaderRow && <TableHeaderRow />}
-        {tableBody}
-      </div>
-    </TableContext.Provider>;
+      {!hideHeaderRow && <TableHeaderRow />}
+      {tableBody}
+    </div>
+  </TableContext.Provider>;
 }
 function BasicTableBody({
   renderRowAs
@@ -169,6 +169,6 @@ function BasicTableBody({
     data
   } = useContext(TableContext);
   return <Fragment>
-      {data.map((item, rowIndex) => <TableRow item={item} index={rowIndex} key={item.id} renderAs={renderRowAs} />)}
-    </Fragment>;
+    {data.map((item, rowIndex) => <TableRow item={item} index={rowIndex} key={item.id} renderAs={renderRowAs} />)}
+  </Fragment>;
 }

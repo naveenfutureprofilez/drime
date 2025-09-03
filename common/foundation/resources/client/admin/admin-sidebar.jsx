@@ -12,6 +12,7 @@ import { UserAvatar } from '@common/auth/user-avatar';
 import { KeyboardArrowUpIcon } from '@ui/icons/material/KeyboardArrowUp';
 
 export function AdminSidebar(props) {
+  console.log("props" ,props)
   const isCompactMode = false;
   return <DashboardLeftSidebar 
     {...props} 
@@ -47,15 +48,18 @@ export function AdminSidebarAuthUserItem({
   if (!user) return null;
   const ItemAvatar = propsAvatar || UserAvatar;
   const avatar = <ItemAvatar user={user} size="w-32 h-32" />;
-  return <NavbarAuthMenu placement="top">
+  return <>
+  <NavbarAuthMenu placement="top">
       {isCompact ? <button aria-label="toggle authentication menu" className="flex h-48 w-48 items-center justify-center rounded-button hover:bg-hover">
           {avatar}
         </button> : <button className="flex w-full items-center rounded-button px-12 py-8 hover:bg-hover">
-          {avatar}
+          {avatar} 
           <span className="ml-8 block min-w-0 overflow-x-hidden overflow-ellipsis whitespace-nowrap text-sm">
-            {user.name}
+            {user.name} 
           </span>
           <KeyboardArrowUpIcon size="xs" className="ml-auto block" />
         </button>}
-    </NavbarAuthMenu>;
+    </NavbarAuthMenu>
+  </>
+  
 }

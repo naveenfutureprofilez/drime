@@ -17,5 +17,5 @@ export function useTableRowStyle({
     onAction
   } = useContext(TableContext);
   const isFirst = index === 0;
-  return clsx('flex gap-x-16 break-inside-avoid outline-none border border-transparent', onAction && 'cursor-pointer', isMobile && collapseOnMobile && hideBorder ? 'mb-8 pl-8 pr-0 rounded' : 'px-16', !hideBorder && 'border-b-divider', !hideBorder && isFirst && 'border-t-divider', isSelected && !isDarkMode && 'bg-primary/selected hover:bg-primary/focus focus-visible:bg-primary/focus', isSelected && isDarkMode && 'bg-selected hover:bg-focus focus-visible:bg-focus', !isSelected && !isHeader && (enableSelection || onAction) && 'focus-visible:bg-focus hover:bg-hover');
+  return clsx('flex gap-x-8 break-inside-avoid outline-none border border-transparent', onAction && 'cursor-pointer', isMobile && collapseOnMobile && hideBorder ? 'mb-8 pl-8 pr-0 rounded' : 'px-16', !hideBorder && 'border-b-divider', !hideBorder && isFirst && 'border-t-divider', isSelected && !isDarkMode && 'bg-primary/selected hover:bg-primary/focus focus-visible:bg-primary/focus', isSelected && isDarkMode && 'bg-selected hover:bg-focus focus-visible:bg-focus', !isSelected && !isHeader && (enableSelection || onAction) && 'focus-visible:bg-focus hover:bg-hover');
 }
