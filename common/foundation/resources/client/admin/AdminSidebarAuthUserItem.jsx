@@ -1,3 +1,5 @@
+import { useAuth } from "@common/auth/use-auth";
+import { UserAvatar } from "@common/auth/user-avatar";
 import { NavbarAuthMenu } from "@common/ui/navigation/navbar/navbar-auth-menu";
 import { KeyboardArrowUpIcon } from "@ui/icons/material/KeyboardArrowUp";
 

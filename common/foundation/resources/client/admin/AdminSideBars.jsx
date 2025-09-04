@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { MdClose, MdFileOpen } from "react-icons/md";
+import { MdClose, MdDashboard, MdFileOpen, MdLogout, MdSettings } from "react-icons/md";
 import { IoReorderThreeOutline } from "react-icons/io5";
-import { AdminSidebarAuthUserItem } from "./admin-sidebar";
+import { AdminSidebarAuthUserItem } from "./AdminSidebarAuthUserItem";
+import { useLogout } from "@common/auth/requests/logout";
+import { FaFile } from "react-icons/fa";
 
 function AdminSidebars() {
     const [isOpen, setIsOpen] = useState(false);
@@ -14,7 +16,7 @@ function AdminSidebars() {
         }
     };
 
-    const isCompactMode = false;
+    const logout = useLogout();
 
     return (
         <>
@@ -44,8 +46,8 @@ function AdminSidebars() {
                             className="flex items-center gap-3 p-3 rounded-lg 
                          text-black hover:bg-[#e5e7eb] transition"
                         >
-                            <MdFileOpen className="text-pink-500 text-xl" />
-                            <span>Home</span>
+                            <MdDashboard className="text-pink-500 text-xl" />
+                            <span>Dashboard </span>
                         </a>
                         <a
                             href="/admin/transfer-files"
@@ -53,15 +55,33 @@ function AdminSidebars() {
                             className="flex items-center gap-3 p-3 rounded-lg 
                          text-black hover:bg-[#e5e7eb] transition"
                         >
-                            <MdFileOpen className="text-pink-500 text-xl" />
+                            <FaFile className="text-pink-500 text-xl" />
                             <span>Transfer Files</span>
+                        </a>
+                        <a
+                            href="/account-settings"
+                            onClick={handleLinkClick}
+                            className="flex items-center gap-3 p-3 rounded-lg 
+                         text-black hover:bg-[#e5e7eb] transition"
+                        >
+                            <MdSettings className="text-pink-500 text-xl" />
+                            <span>Account Settings</span>
                         </a>
                     </nav>
                 </div>
-
                 {/* Bottom Auth/User Item */}
                 <div className="mt-auto">
-                    <AdminSidebarAuthUserItem isCompact={isCompactMode} />
+                    <div
+                        onClick={() => {
+                            logout.mutate();
+                        }}
+                        className="flex items-center gap-3 p-3 rounded-lg 
+             text-black hover:bg-[#e5e7eb] transition cursor-pointer"
+                    >
+                        <MdLogout className="text-pink-500 text-xl" />
+                        <span>Logout</span>
+                    </div>
+
                 </div>
             </div>
         </>

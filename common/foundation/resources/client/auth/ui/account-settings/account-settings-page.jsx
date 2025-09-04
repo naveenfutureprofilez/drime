@@ -30,7 +30,7 @@ export function AccountSettingsPage() {
       </StaticPageTitle>
       <Navbar menuPosition="account-settings-page" />
       <div>
-        <div className="container mx-auto px-24 py-24">
+        <div className=" mx-auto px-4 py-4">
           <h1 className="text-3xl">
             <Trans message="Account settings" />
           </h1>

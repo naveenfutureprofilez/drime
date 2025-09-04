@@ -38,12 +38,12 @@ export function Table({
   headerCellHeight,
   ...domProps
 }) {
-  const isMobile = useIsMobileMediaQuery();
-  const isCollapsedMode = !!isMobile && collapseOnMobile;
-  if (isCollapsedMode) {
-    hideHeaderRow = true;
-    hideBorder = true;
-  }
+  // const isMobile = useIsMobileMediaQuery();
+  // const isCollapsedMode = !!isMobile && collapseOnMobile;
+  // if (isCollapsedMode) {
+  //   hideHeaderRow = true;
+  //   hideBorder = true;
+  // }
   const [selectedRows, onSelectionChange] = useControlledState(propsSelectedRows, propsDefaultSelectedRows || [], propsOnSelectionChange);
   const [sortDescriptor, onSortChange] = useControlledState(propsSortDescriptor, undefined, propsOnSortChange);
   const toggleRow = useCallback(item => {
@@ -73,21 +73,20 @@ export function Table({
       if (visibleInMode === 'all') {
         return true;
       }
-      if (visibleInMode === 'compact' && isCollapsedMode) {
+      if (visibleInMode === 'compact') {
         return true;
       }
-      if (visibleInMode === 'regular' && !isCollapsedMode) {
+      if (visibleInMode === 'regular') {
         return true;
       }
     });
-    const showCheckboxCell = enableSelection && selectionStyle !== 'highlight' && !isMobile;
+    const showCheckboxCell = enableSelection && selectionStyle !== 'highlight';
     if (showCheckboxCell) {
       filteredColumns.unshift(CheckboxColumnConfig);
     }
     return filteredColumns;
-  }, [isMobile, userColumns, enableSelection, selectionStyle, isCollapsedMode]);
+  }, [userColumns, enableSelection, selectionStyle,]);
   const contextValue = {
-    isCollapsedMode,
     cellHeight,
     headerCellHeight,
     hideBorder,

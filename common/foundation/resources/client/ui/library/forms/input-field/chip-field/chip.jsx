@@ -89,7 +89,7 @@ function sizeClassNames({
           size: 'xs',
           margin: '-ml-3'
         },
-        chip: clsx('pl-8 h-20 text-xs font-medium w-max', !onRemove && 'pr-8'),
+        chip: clsx('pl-4 h-8 text-xs font-medium text-center w-max', !onRemove && 'pr-4'),
         closeButton: 'mr-4 w-14 h-14'
       };
     case 'sm':

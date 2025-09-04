@@ -182,6 +182,7 @@ function RowActions({ file }) {
 export function TransferFilesPage() {
 
   return (
+   <>
     <DataTablePage
       endpoint="admin/transfer-files"
       title={<Trans message="Transfer Files " />}
@@ -222,6 +223,7 @@ export function TransferFilesPage() {
         />
       }
     />
+   </>
   );
 }
 

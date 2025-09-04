@@ -7,8 +7,8 @@ export function useTableCellStyle({
 }) {
   const {
     columns,
-    cellHeight = 'h-46',
-    headerCellHeight = 'h-46'
+    cellHeight = 'h-32',
+    headerCellHeight = 'h-32'
   } = useContext(TableContext);
   const column = columns[index];
   const userPadding = column?.padding;
@@ -18,5 +18,5 @@ export function useTableCellStyle({
   } else if (column?.align === 'end') {
     justify = 'justify-end';
   }
-  return clsx('flex items-center overflow-hidden whitespace-nowrap overflow-ellipsis outline-none focus-visible:outline focus-visible:outline-offset-2', isHeader ? headerCellHeight : cellHeight, column?.width ?? 'flex-1', column?.maxWidth, column?.minWidth, justify, userPadding, column?.className);
+  return clsx('flex items-center whitespace-nowrap overflow-ellipsis outline-none focus-visible:outline focus-visible:outline-offset-2', isHeader ? headerCellHeight : cellHeight, column?.width ?? 'flex-1', column?.maxWidth, column?.minWidth, justify, userPadding, column?.className);
 }

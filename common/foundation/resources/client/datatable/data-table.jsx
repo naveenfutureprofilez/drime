@@ -67,6 +67,7 @@ export function DataTable({
       isPlaceholder: true
     };
   }) : []);
+  console.log("data" ,data)
   return <DataTableContext.Provider value={{
     selectedRows,
     setSelectedRows,

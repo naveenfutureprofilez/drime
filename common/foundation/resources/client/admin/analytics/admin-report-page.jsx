@@ -18,13 +18,13 @@ export function Component() {
     dateRange
   });
   const title = <Trans message="Visitors report" />;
-  return <div className="min-h-full gap-12 overflow-x-hidden p-12 md:gap-18 md:p-18">
-      <div className="mb-24 items-center justify-between gap-24 md:flex">
+  return <div className="min-h-full gap-6 overflow-x-hidden p-4 mt-[12px] md:mt-0 md:gap-18 md:p-18">
+      <div className="mb-2 md:mb-6 flex items-center justify-between gap-2  md:gap-24 ">
         <StaticPageTitle>{title}</StaticPageTitle>
-        <h1 className="mb-24 text-3xl font-light md:mb-0">{title} asdsd</h1>
+        <h1 className="md:mb-24 text-lg md:text-3xl font-light md:mb-0">{title} </h1>
         <ReportDateSelector value={dateRange} onChange={setDateRange} />
       </div>
-      <div className="chart-grid">
+      <div className="chart-grid mt-3">
         <AdminReportCardRow report={data?.headerReport} />
         <VisitorsReportCharts report={data?.visitorsReport} isLoading={isLoading} />
       </div>

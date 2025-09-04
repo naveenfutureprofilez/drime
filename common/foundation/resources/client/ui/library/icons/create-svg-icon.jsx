@@ -2,8 +2,8 @@ import React from 'react';
 import { SvgIcon } from '@ui/icons/svg-icon';
 export function createSvgIcon(path, displayName = '', viewBox) {
   const Component = (props, ref) => <SvgIcon data-testid={`${displayName}Icon`} ref={ref} viewBox={viewBox} {...props} size={props.size || 'md'}>
-      {path}
-    </SvgIcon>;
+    {path}
+  </SvgIcon>;
   if (process.env.NODE_ENV !== 'production') {
     // Need to set `displayName` on the inner component for React.memo.
     // React prior to 16.14 ignores `displayName` on the wrapper.

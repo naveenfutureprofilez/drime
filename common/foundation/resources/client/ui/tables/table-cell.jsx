@@ -24,8 +24,8 @@ export function TableCell({
     isHeader: false
   });
   return <div tabIndex={-1} role="gridcell" aria-colindex={index + 1} id={id} className={style}>
-      <div className="w-full min-w-0 overflow-hidden overflow-ellipsis">
-        {column.body(item, rowContext)}
-      </div>
-    </div>;
+    <div className="w-full overflow-hidden overflow-ellipsis">
+      {column.body(item, rowContext)}
+    </div>
+  </div>;
 }

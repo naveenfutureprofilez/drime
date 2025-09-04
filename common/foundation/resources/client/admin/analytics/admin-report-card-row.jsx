@@ -15,7 +15,7 @@ export function AdminReportCardRow({
   report,
   isLoading
 }) {
-  if (!report) return <div className="col-span-12 row-span-3" />;
+  if (!report) return <div className="col-span-12 row-span-3 mt-3 mb-3" />;
   return <Fragment>
       {report?.map(data => <ReportCard key={data.name} icon={data.icon} type={data.type} currentValue={data.currentValue} previousValue={data.previousValue} percentageChange={data.percentageChange} isLoading={isLoading}>
           <Trans message={data.name} />
@@ -44,7 +44,7 @@ export function ReportCard({
       icon = <IconEl size="sm" />;
     }
   }
-  return <div className={clsx('compact-scrollbar flex flex-col justify-between overflow-x-auto overflow-y-hidden whitespace-nowrap rounded-panel border px-20 py-14', colSpan, rowSpan)}>
+  return <div className={clsx('compact-scrollbar flex flex-wrap flex-col p-2 justify-left items-left overflow-x-auto  mb-4 overflow-y-hidden whitespace-nowrap rounded-panel border', colSpan, rowSpan)}>
       <div className="flex items-center gap-6">
         {icon}
         <h2 className="text-sm font-semibold">{children}</h2>

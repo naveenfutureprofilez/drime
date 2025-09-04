@@ -25,6 +25,7 @@ export function NavbarAuthMenu({
   } = useContext(SiteConfigContext);
   const logout = useLogout();
   const menu = useCustomMenu('auth-dropdown');
+  console.log("menu" ,menu)
   const {
     notifications,
     themes

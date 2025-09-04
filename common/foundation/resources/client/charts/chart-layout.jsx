@@ -9,7 +9,7 @@ export function ChartLayout(props) {
     contentClassName,
     contentRef
   } = props;
-  return <div className={clsx('flex h-full flex-auto flex-col rounded-panel border bg p-20 dark:bg-alt', className)}>
+  return <div className={clsx('flex h-full flex-auto flex-col rounded-panel border bg p-10 dark:bg-alt', className)}>
       <div className="flex flex-shrink-0 items-center justify-between pb-10 text-xs">
         <div className="text-sm font-semibold">{title}</div>
         {description && <div className="text-muted">{description}</div>}
