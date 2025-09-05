@@ -8,14 +8,37 @@ import { setInLocalStorage, useLocalStorage } from '@ui/utils/hooks/local-storag
 import clsx from 'clsx';
 import { useIsMobileMediaQuery } from '@ui/utils/hooks/is-mobile-media-query';
 import AdminSidebars from './AdminSideBars';
+import { AccountSettingsPage } from '@common/auth/ui/account-settings/account-settings-page';
+import { useUser } from '@common/auth/ui/use-user';
+import { BasicInfoPanel } from '@common/auth/ui/account-settings/basic-info-panel/basic-info-panel';
+import { SocialLoginPanel } from '@common/auth/ui/account-settings/social-login-panel';
+import { ChangePasswordPanel } from '@common/auth/ui/account-settings/change-password-panel/change-password-panel';
+import { TwoFactorPanel } from '@common/auth/ui/account-settings/two-factor-panel';
+import { SessionsPanel } from '@common/auth/ui/account-settings/sessions-panel/sessions-panel';
+import { LocalizationPanel } from '@common/auth/ui/account-settings/localization-panel';
+import { AccessTokenPanel } from '@common/auth/ui/account-settings/access-token-panel/access-token-panel';
+import { DangerZonePanel } from '@common/auth/ui/account-settings/danger-zone-panel/danger-zone-panel';
 export function AdminLayout() {
   const isMobile = useIsMobileMediaQuery();
   const variant = isMobile ? 'withNavbar' : 'withoutNavbar';
+
+  const { data, isLoading } = useUser('me', { with: ['roles', 'social_profiles', 'tokens'] });
+
+  console.log("data" ,data);
+
   return <>
   <div className='layout flex'>
-        {/* <AdminSidebar variant={variant} /> */}
-<AdminSidebars variant={variant}/>
+        <AdminSidebars variant={variant}/>
         <DashboardContent>
+          {/* <AccountSettingsPage /> */}
+          <BasicInfoPanel user={data?.user||null} />
+          <SocialLoginPanel user={data?.user||null} />
+          <ChangePasswordPanel />
+          <TwoFactorPanel user={data?.user||null} />
+          <SessionsPanel />
+          <LocalizationPanel user={data?.user||null} />
+          <AccessTokenPanel user={data?.user||null} />
+          <DangerZonePanel />
           <div className={clsx(variant === 'withoutNavbar' ? 'relative' : 'bg dark:bg-alt')}>
             <SetupAlertsList />
             <Outlet />

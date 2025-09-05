@@ -28,7 +28,10 @@ try {
     
     $payload = new FileEntryPayload([
         'filename' => $testFileName,
+        'clientName' => $testFileName,
         'clientMime' => 'text/plain',
+        'clientExtension' => 'txt',
+        'size' => strlen($testContent),
         'public' => false,
         'visibility' => 'private',
         'diskPrefix' => 'test-uploads'

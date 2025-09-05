@@ -6,6 +6,6 @@ export function DashboardContent({
   stableScrollbar = true
 }) {
   return cloneElement(children, {
-    className: clsx(children.props.className, isScrollable && 'w-full overflow-y-auto', isScrollable && stableScrollbar && 'stable-scrollbar', 'dashboard-grid-content', 'has-[.dashboard-stable-scrollbar]:stable-scrollbar')
+    className: clsx(children?.props?.className, isScrollable && 'w-full overflow-y-auto', isScrollable && stableScrollbar && 'stable-scrollbar', 'dashboard-grid-content', 'has-[.dashboard-stable-scrollbar]:stable-scrollbar')
   });
 }

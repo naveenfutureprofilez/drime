@@ -15,15 +15,8 @@ import { useContext } from 'react';
 import { SiteConfigContext } from '@common/core/settings/site-config-context';
 import { TwoFactorPanel } from '@common/auth/ui/account-settings/two-factor-panel';
 export function AccountSettingsPage() {
-  const {
-    auth
-  } = useContext(SiteConfigContext);
-  const {
-    data,
-    isLoading
-  } = useUser('me', {
-    with: ['roles', 'social_profiles', 'tokens']
-  });
+  const { auth } = useContext(SiteConfigContext);
+  const { data, isLoading } = useUser('me', { with: ['roles', 'social_profiles', 'tokens'] });
   return <div className="min-h-screen bg-alt">
       <StaticPageTitle>
         <Trans message="Account Settings" />
