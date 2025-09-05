@@ -9,12 +9,26 @@ import { setBootstrapData } from '@ui/bootstrap-data/bootstrap-data-store';
 import { getFromLocalStorage } from '@ui/utils/hooks/local-storage';
 export function useLogin(form) {
   const handleSuccess = useHandleLoginSuccess();
+  const location = useLocation();
+  
   return useMutation({
     mutationFn: login,
     onSuccess: response => {
-      if (!response.two_factor) {
-        handleSuccess(response);
+      // Store the login path at the moment of successful login attempt
+      // This ensures it's captured before any navigation happens
+      if (location.pathname === '/admin/login' || location.pathname === '/login') {
+        console.log('Storing login path during login success:', location.pathname);
+        localStorage.setItem('loginPath', location.pathname);
       }
+      
+      if (!response.two_factor) {
+        console.log('No 2FA required, proceeding to handleSuccess');
+        handleSuccess(response);
+      } else {
+        console.log('2FA required, stored login path:', localStorage.getItem('loginPath'));
+      }
+      // If two_factor is true, the user will be redirected to 2FA page
+      // but the loginPath is already stored
     },
     onError: r => onFormQueryError(r, form)
   });
@@ -28,6 +42,8 @@ export function useHandleLoginSuccess() {
     if (location.pathname === '/admin/login' || location.pathname === '/login') {
       localStorage.setItem('loginPath', location.pathname);
     }
+    // Don't clear the stored path during 2FA challenge
+    // The 2FA challenge page should preserve the original login context
   }, [location.pathname]);
   
   return useCallback(response => {
@@ -46,15 +62,20 @@ export function useHandleLoginSuccess() {
     const loginPath = localStorage.getItem('loginPath') || '/login';
     localStorage.removeItem('loginPath'); // Clean up
     
-    // Determine redirect URI based on login route used
+    // Determine redirect URI based on login route used or current context
     let redirectUri = '/drive'; // default redirect for /login
     
     // Debug: log the stored login path
     console.log('Login redirect - Stored login path:', loginPath);
     console.log('Login redirect - Current pathname:', location.pathname);
+    console.log('Login redirect - Current URL:', window.location.href);
     
-    // Only redirect to /admin if user came from /admin/login
-    if (loginPath === '/admin/login') {
+    // Check multiple ways to determine if this should redirect to admin
+    const shouldRedirectToAdmin = loginPath === '/admin/login' || 
+                                 location.pathname.includes('/admin') || 
+                                 window.location.href.includes('/admin');
+    
+    if (shouldRedirectToAdmin) {
       console.log('Admin login detected, redirecting to /admin');
       redirectUri = '/admin';
     } else {
