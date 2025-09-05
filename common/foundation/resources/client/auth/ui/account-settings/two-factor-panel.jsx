@@ -6,8 +6,10 @@ export function TwoFactorPanel({
   user
 }) {
   return <AccountSettingsPanel id={AccountSettingsId.TwoFactor} title={<Trans message="Two factor authentication" />}>
-      <div className="max-w-580">
+    <div className="flex justify-center items-center ">
+      <div className="w-full max-w-xl p-4 bg-white">
         <TwoFactorStepper user={user} />
       </div>
-    </AccountSettingsPanel>;
+    </div>
+  </AccountSettingsPanel>;
 }

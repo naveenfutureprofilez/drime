@@ -38,23 +38,27 @@ export function LocalizationPanel({
   return <AccountSettingsPanel id={AccountSettingsId.LocationAndLanguage} title={<Trans message="Date, time and language" />} actions={<Button type="submit" variant="flat" color="primary" form={formId} disabled={updateDetails.isPending || !form.formState.isValid}>
           <Trans message="Save" />
         </Button>}>
-      <Form form={form} onSubmit={newDetails => {
+<div className="flex justify-center items-center ">
+    <Form 
+      className="w-full max-w-xl p-4 bg-white "
+    form={form} onSubmit={newDetails => {
       updateDetails.mutate(newDetails);
       changeLocale.mutate({
         locale: newDetails.language
       });
     }} id={formId}>
-        <FormSelect className="mb-24" selectionMode="single" name="language" label={<Trans message="Language" />}>
+        <FormSelect className="mb-4" selectionMode="single" name="language" label={<Trans message="Language" />}>
           {localizations.map(localization => <Item key={localization.language} value={localization.language}>
               {localization.name}
             </Item>)}
         </FormSelect>
-        <FormSelect className="mb-24" selectionMode="single" name="country" label={<Trans message="Country" />} showSearchField searchPlaceholder={trans(message('Search countries'))}>
+        <FormSelect className="mb-4" selectionMode="single" name="country" label={<Trans message="Country" />} showSearchField searchPlaceholder={trans(message('Search countries'))}>
           {countries.map(country => <Item key={country.code} value={country.code}>
               {country.name}
             </Item>)}
         </FormSelect>
         <TimezoneSelect label={<Trans message="Timezone" />} name="timezone" timezones={timezones} />
       </Form>
+  </div>
     </AccountSettingsPanel>;
 }

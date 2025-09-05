@@ -5,12 +5,12 @@ export function AccountSettingsPanel({
   children,
   actions
 }) {
-  return <section id={id} className="mb-24 w-full rounded-panel border bg px-24 py-20">
-      <div className="flex items-center gap-14 border-b pb-10">
-        <div className="text-lg font-light">{title}</div>
-        {titleSuffix && <div className="ml-auto">{titleSuffix}</div>}
-      </div>
-      <div className="pt-24">{children}</div>
-      {actions && <div className="mt-36 flex justify-end border-t pt-10">{actions}</div>}
-    </section>;
+  return <section id={id} className="mb-2 w-full rounded-panel bg px-8 py-8">
+    <div className="flex items-center gap-14 border-b pb-4">
+      <h2 className="text-lg normal-heading">{title}</h2>
+      {titleSuffix && <div className="ml-auto">{titleSuffix}</div>}
+    </div>
+    <div className="pt-4">{children}</div>
+    {actions && <div className="mt-4 flex justify-center items-center">{actions}</div>}
+  </section>;
 }

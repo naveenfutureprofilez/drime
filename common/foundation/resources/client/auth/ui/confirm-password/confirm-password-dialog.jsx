@@ -21,7 +21,7 @@ export function ConfirmPasswordDialog() {
         <Trans message="Confirm password" />
       </DialogHeader>
       <DialogBody>
-        <p className="mb-16 text-sm">
+        <p className="mb-4 text-sm">
           <Trans message="For your security, please confirm your password to continue." />
         </p>
         <Form id={formId} form={form} onSubmit={values => confirmPassword.mutate(values, {

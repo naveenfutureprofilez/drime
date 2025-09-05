@@ -29,18 +29,22 @@ export function AdminLayout() {
           <div className={clsx(variant === 'withoutNavbar' ? 'relative' : 'bg dark:bg-alt')}>
             {!isLoading && data && (
               <>
-                <BasicInfoPanel user={data.user} />
-                <SocialLoginPanel user={data.user} />
+              <BasicInfoPanel user={data.user} />
                 <ChangePasswordPanel />
+
+<LocalizationPanel user={data.user} />
                 <TwoFactorPanel user={data.user} />
+                {/* <SocialLoginPanel user={data.user} /> */}
+                {/* 
                 <SessionsPanel />
                 <LocalizationPanel user={data.user} />
                 <AccessTokenPanel user={data.user} />
-                <DangerZonePanel />
+                 */}
+                {/* <DangerZonePanel /> */}
               </>
             )}
-            <SetupAlertsList />
-            <Outlet />
+            {/* <SetupAlertsList />
+            <Outlet /> */}
           </div>
         </DashboardContent>
   </div>

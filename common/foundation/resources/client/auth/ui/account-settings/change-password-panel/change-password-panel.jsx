@@ -11,19 +11,21 @@ export function ChangePasswordPanel() {
   const form = useForm();
   const formId = useId();
   const updatePassword = useUpdatePassword(form);
-  return <AccountSettingsPanel id={AccountSettingsId.Password} title={<Trans message="Update password" />} actions={<Button type="submit" form={formId} variant="flat" color="primary" disabled={!form.formState.isValid || updatePassword.isPending}>
-          <Trans message="Update password" />
-        </Button>}>
-      <Form form={form} id={formId} onSubmit={newValues => {
-      updatePassword.mutate(newValues, {
-        onSuccess: () => {
-          form.reset();
-        }
-      });
-    }}>
-        <FormTextField className="mb-24" name="current_password" label={<Trans message="Current password" />} type="password" autoComplete="current-password" required />
-        <FormTextField className="mb-24" name="password" label={<Trans message="New password" />} type="password" autoComplete="new-password" required />
+  return <AccountSettingsPanel id={AccountSettingsId.Password} title={<Trans message="Update password" />} actions={<Button className="button" type="submit" form={formId} variant="flat" color="primary" disabled={!form.formState.isValid || updatePassword.isPending}>
+    <h2 className='text-[18px] '>Update password </h2>
+  </Button>}>
+    <div className="flex justify-center items-center ">
+      <Form className="w-full max-w-xl p-4 bg-white " form={form} id={formId} onSubmit={newValues => {
+        updatePassword.mutate(newValues, {
+          onSuccess: () => {
+            form.reset();
+          }
+        });
+      }}>
+        <FormTextField className="mb-4" name="current_password" label={<Trans message="Current password" />} type="password" autoComplete="current-password" required />
+        <FormTextField className="mb-4" name="password" label={<Trans message="New password" />} type="password" autoComplete="new-password" required />
         <FormTextField name="password_confirmation" label={<Trans message="Confirm password" />} type="password" autoComplete="new-password" required />
       </Form>
-    </AccountSettingsPanel>;
+    </div>
+  </AccountSettingsPanel>;
 }
