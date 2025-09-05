@@ -21,6 +21,11 @@ export function GuestRoute({
     pathname
   } = useLocation();
   if (isLoggedIn && !isAppearanceEditorActive) {
+    // Handle admin login route - redirect to /admin
+    if (pathname === '/admin/login') {
+      return <Navigate to="/admin" replace />;
+    }
+    
     // prevent recursive redirects
     if (redirectUri !== pathname) {
       return <Navigate to={redirectUri} replace />;

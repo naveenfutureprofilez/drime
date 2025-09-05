@@ -69,6 +69,7 @@ Route::options('manifest.json', function() {
 Route::get('contact', [HomeController::class, 'render']);
 Route::get('pages/{slugOrId}', [CustomPageController::class, 'show']);
 Route::get('login', [HomeController::class, 'render'])->name('login');
+Route::get('admin/login', [HomeController::class, 'render'])->name('admin.login');
 Route::get('register', [HomeController::class, 'render'])->name('register');
 Route::get('forgot-password', [HomeController::class, 'render']);
 Route::get('pricing', '\Common\Billing\PricingPageController');

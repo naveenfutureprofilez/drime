@@ -17,6 +17,11 @@ export const authRoutes = [{
         <LoginPageWrapper />
       </GuestRoute>
 }, {
+  path: '/admin/login',
+  element: <GuestRoute>
+        <LoginPageWrapper />
+      </GuestRoute>
+}, {
   path: '/workspace/join/register',
   element: <GuestRoute>
         <RegisterPage />

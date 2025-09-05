@@ -18,7 +18,7 @@ export const SiteConfig = {
   },
   auth: {
     redirectUri: '/drive',
-    adminRedirectUri: '/drive'
+    adminRedirectUri: '/admin'
   },
   tags: {
     types: [{
