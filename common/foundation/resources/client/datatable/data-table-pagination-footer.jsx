@@ -36,7 +36,7 @@ export function DataTablePaginationFooter({
           {option.key}
         </Item>)}
     </Select> : null;
-  return <div className={clsx('flex h-54 select-none items-center justify-end gap-20 px-20', className)}>
+  return <div className={clsx('flex h-54 select-none items-center justify-end gap-20 px-2', className)}>
       {!isMobile && perPageSelect}
       {pagination.from && pagination.to && 'total' in pagination ? <div className="text-sm">
           <Trans message=":from - :to of :total" values={{

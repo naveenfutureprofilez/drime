@@ -27,6 +27,6 @@ function getPadding({
     case 'sm':
       return 'p-18';
     default:
-      return 'px-24 py-20';
+      return 'px-4 py-4';
   }
 }

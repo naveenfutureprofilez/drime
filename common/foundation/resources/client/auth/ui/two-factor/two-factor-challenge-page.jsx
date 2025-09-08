@@ -18,13 +18,13 @@ export function TwoFactorChallengePage() {
       <Form form={form} onSubmit={payload => {
       completeChallenge.mutate(payload);
     }}>
-        <div className="mb-32 text-sm">
+        <div className="mb-4 text-sm">
           <Trans message="Confirm access to your account by entering the authentication code provided by your authenticator application." />
         </div>
         <div className="mb-4">
           {usingRecoveryCode ? <FormTextField name="recovery_code" minLength={21} maxLength={21} autoComplete="off" autoCorrect="off" spellCheck="false" label={<Trans message="Recovery code" />} autoFocus required /> : <FormTextField name="code" minLength={6} maxLength={6} autoComplete="off" autoCorrect="off" spellCheck="false" label={<Trans message="Code" />} autoFocus required />}
         </div>
-        <div className="mb-32">
+        <div className="mb-4">
           <Button variant="link" color="primary" size="sm" onClick={() => setUsingRecoveryCode(!usingRecoveryCode)}>
             <Trans message="Use recovery code instead" />
           </Button>

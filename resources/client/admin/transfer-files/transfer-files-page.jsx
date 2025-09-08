@@ -229,7 +229,6 @@ export function TransferFilesPage() {
 
 function PageActions() {
   const cleanupFiles = useCleanupTransferFiles();
-
   return (
     <div className="flex items-center gap-8">
       <Button

@@ -26,7 +26,7 @@ export function DialogHeader(props) {
     isDismissable,
     close
   } = useContext(DialogContext);
-  return <div className={clsx(className, 'flex flex-shrink-0 items-center gap-10', titleFontWeight, showDivider && 'border-b', getPadding(props), color || 'text-main', justify)}>
+  return <div className={clsx(className, 'flex flex-shrink-0 items-center gap-5', titleFontWeight, showDivider && 'border-b', getPadding(props), color || 'text-main', justify)}>
       {leftAdornment}
       <h3 id={labelId} className={clsx(titleTextSize, 'mr-auto leading-5 opacity-90')}>
         {children}
@@ -54,10 +54,10 @@ function getPadding({
   switch (size) {
     case '2xs':
     case 'xs':
-      return 'px-14 py-4';
+      return 'px-2 py-4';
     case 'sm':
-      return 'px-18 py-4';
+      return 'px-2 py-4';
     default:
-      return 'px-24 py-6';
+      return 'px-8 py-6';
   }
 }

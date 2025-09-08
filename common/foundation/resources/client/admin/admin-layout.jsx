@@ -19,35 +19,34 @@ import { DangerZonePanel } from '@common/auth/ui/account-settings/danger-zone-pa
 export function AdminLayout() {
   const isMobile = useIsMobileMediaQuery();
   const variant = isMobile ? 'withNavbar' : 'withoutNavbar';
-  
+
   const { data, isLoading } = useUser('me', { with: ['roles', 'social_profiles', 'tokens'] });
 
   return <>
-  <div className='layout flex'>
-        <AdminSidebars variant={variant}/>
-        <DashboardContent>
-          <div className={clsx(variant === 'withoutNavbar' ? 'relative' : 'bg dark:bg-alt')}>
-            {!isLoading && data && (
-              <>
+    <div className='layout flex'>
+      <AdminSidebars variant={variant} />
+      <DashboardContent>
+        <div className={clsx(variant === 'withoutNavbar' ? 'relative' : 'bg dark:bg-alt')}>
+          {!isLoading && data && (
+            <>
               <BasicInfoPanel user={data.user} />
-                <ChangePasswordPanel />
-
-<LocalizationPanel user={data.user} />
-                <TwoFactorPanel user={data.user} />
-                {/* <SocialLoginPanel user={data.user} /> */}
-                {/* 
+              <ChangePasswordPanel />
+              <LocalizationPanel user={data.user} />
+              <TwoFactorPanel user={data.user} />
+              {/* <SocialLoginPanel user={data.user} /> */}
+              {/* 
                 <SessionsPanel />
                 <LocalizationPanel user={data.user} />
                 <AccessTokenPanel user={data.user} />
                  */}
-                {/* <DangerZonePanel /> */}
-              </>
-            )}
-            {/* <SetupAlertsList />
-            <Outlet /> */}
-          </div>
-        </DashboardContent>
-  </div>
+              {/* <DangerZonePanel /> */}
+            </>
+          )}
+          <SetupAlertsList />
+            <Outlet />
+        </div>
+      </DashboardContent>
+    </div>
     {/* <DashboardLayout name="admin" leftSidenavCanBeCompact className="bg-alt">
       {variant === 'withNavbar' && <DashboardNavbar size="sm" menuPosition="admin-navbar" />}
       <DashboardSidenav position="left" size="sm">
@@ -60,7 +59,7 @@ export function AdminLayout() {
         </div>
       </DashboardContent>
     </DashboardLayout> */}
-  </> 
+  </>
 }
 function SetupAlertsList() {
   const {
@@ -74,8 +73,8 @@ function SetupAlertsList() {
     return null;
   }
   return <div className="fixed left-24 right-24 top-24 z-10 mx-auto w-max max-w-[calc(100%-48px)] overflow-hidden rounded-panel bg shadow-md">
-      <SetupAlert alert={data.alerts[0]} />
-    </div>;
+    <SetupAlert alert={data.alerts[0]} />
+  </div>;
 }
 function SetupAlert({
   alert

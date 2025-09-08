@@ -5,7 +5,7 @@ export function TableHeaderRow() {
   const {
     columns
   } = useContext(TableContext);
-  return <div role="row" aria-rowindex={1} tabIndex={-1} className="flex gap-x-4 px-8">
+  return <div role="row" aria-rowindex={1} tabIndex={-1} className="flex gap-x-4 px-0">
       {columns.map((column, columnIndex) => <HeaderCell index={columnIndex} key={column.key} />)}
     </div>;
 }

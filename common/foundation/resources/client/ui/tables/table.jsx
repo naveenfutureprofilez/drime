@@ -66,7 +66,6 @@ export function Table({
       onSelectionChange(newValues);
     }, [selectedRows, onSelectionChange]);
 
-  // add checkbox columns to config, if selection is enabled
   const columns = useMemo(() => {
     const filteredColumns = (userColumns || []).filter(c => {
       const visibleInMode = c.visibleInMode || 'regular';
@@ -167,7 +166,9 @@ function BasicTableBody({
   const {
     data
   } = useContext(TableContext);
+
+  console.log("data", data)
   return <Fragment>
-    {data.map((item, rowIndex) => <TableRow item={item} index={rowIndex} key={item.id} renderAs={renderRowAs} />)}
+    {data && data?.map((item, rowIndex) => <TableRow item={item} index={rowIndex} key={item.id} renderAs={renderRowAs} />)}
   </Fragment>;
 }
