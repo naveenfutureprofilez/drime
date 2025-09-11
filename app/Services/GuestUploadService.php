@@ -150,9 +150,20 @@ class GuestUploadService
             throw new \Exception('TUS upload data not found');
         }
 
-        $fileName = $tusData['name'] ?? 'unknown';
+        // Extract file information from TUS metadata
+        $metadata = $tusData['metadata'] ?? [];
+        $fileName = $metadata['name'] ?? $metadata['clientName'] ?? 'unknown';
         $fileSize = $tusData['size'] ?? 0;
-        $mimeType = $tusData['mime'] ?? 'application/octet-stream';
+        $mimeType = $metadata['clientMime'] ?? $metadata['mime'] ?? 'application/octet-stream';
+        
+        // Debug the TUS data structure
+        logger('TUS data structure debug', [
+            'tusData_keys' => array_keys($tusData),
+            'metadata' => $metadata,
+            'fileName' => $fileName,
+            'fileSize' => $fileSize,
+            'mimeType' => $mimeType
+        ]);
         
         // Get or create GuestUpload based on upload_group_hash
         $uploadGroupHash = $request->string('upload_group_hash')->toString();
@@ -192,18 +203,20 @@ class GuestUploadService
         }
         
         // Create FileEntry for TUS uploaded file
-        // Safely decode filename with UTF-8 support
+        // TUS server already decoded the metadata, so use filename directly
         $decodedName = $fileName;
-        try {
-            $decodedName = base64_decode($fileName);
-            // Validate UTF-8
-            if (!mb_check_encoding($decodedName, 'UTF-8')) {
-                // If not valid UTF-8, try different approach
-                $decodedName = mb_convert_encoding(base64_decode($fileName), 'UTF-8', 'auto');
+        
+        // Only attempt base64 decode if fileName looks like encoded data
+        if ($fileName !== 'unknown' && base64_encode(base64_decode($fileName, true)) === $fileName) {
+            try {
+                $decoded = base64_decode($fileName);
+                if (mb_check_encoding($decoded, 'UTF-8')) {
+                    $decodedName = $decoded;
+                }
+            } catch (\Exception $e) {
+                // Keep original if decoding fails
+                $decodedName = $fileName;
             }
-        } catch (\Exception $e) {
-            // Fallback to original if decoding fails
-            $decodedName = $fileName;
         }
         
         $fileEntry = FileEntry::create([

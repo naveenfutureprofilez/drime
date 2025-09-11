@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { FileUploadWidget } from './components/FileUploadWidget';
+import { FileUploadWidget } from './components/FileUploadWidget.jsx';
 import { TransferProgress } from './components/TransferProgress';
 import { SettingsPanel } from './components/SettingsPanel';
 import { EmailPanel } from './components/email-panel';

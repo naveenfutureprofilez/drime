@@ -302,7 +302,7 @@ export function FileUploadWidget({
           
           const fileEntry = {
             id: actualFileEntry.id,
-            name: actualFileEntry.name,
+            name: actualFileEntry.name !== 'unknown' ? actualFileEntry.name : file.name, // Use actual filename if available
             file_name: actualFileEntry.file_name,
             mime: actualFileEntry.mime,
             file_size: actualFileEntry.file_size,

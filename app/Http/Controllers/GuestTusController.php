@@ -58,19 +58,25 @@ class GuestTusController extends BaseController
             ], 413);
         }
 
-        // Validate content type - safely decode filename
-        $fileName = '';
-        try {
-            $fileName = base64_decode($tusData['name'] ?? '');
-            // Validate UTF-8
-            if (!mb_check_encoding($fileName, 'UTF-8')) {
-                $fileName = mb_convert_encoding(base64_decode($tusData['name'] ?? ''), 'UTF-8', 'auto');
+        // Extract filename from TUS metadata structure
+        $metadata = $tusData['metadata'] ?? [];
+        $fileName = $metadata['name'] ?? $metadata['clientName'] ?? 'unknown';
+        
+        // Since TUS server already base64_decodes metadata values, we don't need to decode again
+        if ($fileName === 'unknown' && isset($tusData['name'])) {
+            // Fallback to direct access if metadata structure is different
+            try {
+                $fileName = base64_decode($tusData['name']);
+                if (!mb_check_encoding($fileName, 'UTF-8')) {
+                    $fileName = mb_convert_encoding(base64_decode($tusData['name']), 'UTF-8', 'auto');
+                }
+            } catch (\Exception $e) {
+                $fileName = 'unknown';
             }
-        } catch (\Exception $e) {
-            $fileName = $tusData['name'] ?? 'unknown';
         }
+        
         $extension = pathinfo($fileName, PATHINFO_EXTENSION);
-        $mimeType = $tusData['mime'] ?? '';
+        $mimeType = $metadata['clientMime'] ?? $metadata['mime'] ?? $tusData['mime'] ?? '';
 
         if (in_array(strtolower($extension), $blockedExtensions) || in_array($mimeType, $blockedExtensions)) {
             return response()->json([
