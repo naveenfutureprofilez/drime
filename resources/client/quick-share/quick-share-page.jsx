@@ -1,6 +1,6 @@
 import React from 'react';
 import { useDriveUploadQueue } from '@app/drive/uploading/use-drive-upload-queue';
-import { FileUploadWidget } from '@app/transfer/components/FileUploadWidget/FileUploadWidget';
+import { FileUploadWidget } from '@app/transfer/components/FileUploadWidget';
 import { EmailPanel } from '@app/transfer/components/email-panel';
 import { Navbar } from '@common/ui/navigation/navbar/navbar';
 import { Button } from '@ui/buttons/button';

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Development Cache Clear</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            max-width: 600px; 
+            margin: 0 auto; 
+        }
+        .btn { 
+            background: #3490dc; 
+            color: white; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            margin: 5px; 
+            font-size: 14px; 
+        }
+        .btn:hover { background: #2779bd; }
+        .status { 
+            margin: 10px 0; 
+            padding: 10px; 
+            border-radius: 4px; 
+        }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>🧹 Development Cache Clear</h1>
+    <p>Use this page to manually clear browser caches during development.</p>
+    
+    <div>
+        <button class="btn" onclick="clearServiceWorkerCache()">Clear Service Worker Cache</button>
+        <button class="btn" onclick="clearLocalStorage()">Clear Local Storage</button>
+        <button class="btn" onclick="clearSessionStorage()">Clear Session Storage</button>
+        <button class="btn" onclick="clearAllCaches()">Clear All Browser Caches</button>
+        <button class="btn" onclick="hardReload()">Hard Reload Page</button>
+    </div>
+    
+    <div id="status"></div>
+    
+    <h3>Cache Information:</h3>
+    <div id="cache-info"></div>
+    
+    <h3>Instructions:</h3>
+    <ul>
+        <li><strong>Always use Hard Refresh</strong> during development: <kbd>Ctrl+F5</kbd> (Windows) or <kbd>Cmd+Shift+R</kbd> (Mac)</li>
+        <li><strong>Disable cache in DevTools:</strong> Open DevTools → Network tab → Check "Disable cache"</li>
+        <li><strong>For fresh builds:</strong> Run <code>npm run build:fresh</code> or <code>php artisan frontend:clear-cache</code></li>
+        <li><strong>Check browser console</strong> for any cache-related messages</li>
+    </ul>
+
+    <script>
+        function showStatus(message, type = 'success') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="${type}">${message}</div>`;
+            setTimeout(() => statusDiv.innerHTML = '', 3000);
+        }
+
+        async function clearServiceWorkerCache() {
+            if ('caches' in window) {
+                try {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(
+                        cacheNames.map(cacheName => caches.delete(cacheName))
+                    );
+                    showStatus(`✅ Cleared ${cacheNames.length} service worker caches`);
+                } catch (error) {
+                    showStatus(`❌ Error clearing service worker cache: ${error.message}`, 'error');
+                }
+            } else {
+                showStatus('ℹ️ Service Worker caches not supported in this browser');
+            }
+            updateCacheInfo();
+        }
+
+        function clearLocalStorage() {
+            try {
+                const count = localStorage.length;
+                localStorage.clear();
+                showStatus(`✅ Cleared ${count} localStorage items`);
+            } catch (error) {
+                showStatus(`❌ Error clearing localStorage: ${error.message}`, 'error');
+            }
+            updateCacheInfo();
+        }
+
+        function clearSessionStorage() {
+            try {
+                const count = sessionStorage.length;
+                sessionStorage.clear();
+                showStatus(`✅ Cleared ${count} sessionStorage items`);
+            } catch (error) {
+                showStatus(`❌ Error clearing sessionStorage: ${error.message}`, 'error');
+            }
+            updateCacheInfo();
+        }
+
+        async function clearAllCaches() {
+            await clearServiceWorkerCache();
+            clearLocalStorage();
+            clearSessionStorage();
+            showStatus('✅ All browser caches cleared!');
+        }
+
+        function hardReload() {
+            showStatus('🔄 Hard reloading page...');
+            window.location.reload(true);
+        }
+
+        async function updateCacheInfo() {
+            const info = [];
+            
+            // Service Worker caches
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                info.push(`Service Worker Caches: ${cacheNames.length}`);
+                cacheNames.forEach(name => {
+                    info.push(`  - ${name}`);
+                });
+            }
+            
+            // Local storage
+            info.push(`Local Storage Items: ${localStorage.length}`);
+            
+            // Session storage  
+            info.push(`Session Storage Items: ${sessionStorage.length}`);
+            
+            // Browser cache buster
+            const cacheBuster = document.querySelector('meta[name="cache-buster"]')?.content;
+            if (cacheBuster) {
+                info.push(`Cache Buster: ${cacheBuster}`);
+            }
+            
+            document.getElementById('cache-info').innerHTML = 
+                '<pre>' + info.join('\n') + '</pre>';
+        }
+
+        // Update cache info on page load
+        updateCacheInfo();
+    </script>
+</body>
+</html>

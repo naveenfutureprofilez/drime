@@ -21,14 +21,7 @@ export const appRouter = createBrowserRouter([{
   errorElement: <RootErrorElement />,
   children: [{
     path: '/',
-    element: <DynamicHomepage homepageResolver={type => {
-      if (type === 'transfer-homepage') {
-        return <TransferHomepage />;
-      }
-      return <GuestRoute>
-                    <QuickSharePage />
-                  </GuestRoute>;
-    }} />
+    element: <TransferHomepage />
   }, {
     path: '/quick-share',
     element: <QuickSharePage />

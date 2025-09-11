@@ -55,8 +55,30 @@
             @endif
         @endif
 
+        @if(app()->environment('local'))
+        <!-- Development cache busting -->
+        <meta name="cache-buster" content="{{ time() }}">
+        @endif
+        
         <script>
             window.bootstrapData = {!! json_encode($bootstrapData->get()) !!};
+            @if(app()->environment('local'))
+            // Development: Force reload if cache buster changes
+            if (window.localStorage) {
+                const currentBuster = document.querySelector('meta[name="cache-buster"]')?.content;
+                const lastBuster = localStorage.getItem('cache-buster');
+                if (lastBuster && currentBuster !== lastBuster) {
+                    localStorage.setItem('cache-buster', currentBuster);
+                    console.log('🔄 Development: Cache buster changed, clearing caches...');
+                    if ('caches' in window) {
+                        caches.keys().then(names => {
+                            names.forEach(name => caches.delete(name));
+                        });
+                    }
+                }
+                localStorage.setItem('cache-buster', currentBuster || '');
+            }
+            @endif
         </script>
 
         @if (isset($devCssPath))

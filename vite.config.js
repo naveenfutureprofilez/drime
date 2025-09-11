@@ -37,7 +37,15 @@ module.exports = defineConfig({
   },
   build: {
     sourcemap: true,
-    rollupOptions: { external: ['puppeteer', 'ioredis'] },
+    rollupOptions: { 
+      external: ['puppeteer', 'ioredis'],
+      output: {
+        // Enable hash-based filenames for cache busting
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
+      }
+    },
   },
   plugins: [
     react(),

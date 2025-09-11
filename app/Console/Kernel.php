@@ -4,6 +4,7 @@ namespace App\Console;
 
 use App\Console\Commands\CleanDemoSite;
 use App\Console\Commands\CleanupExpiredGuestUploads;
+use App\Console\Commands\ClearFrontendCache;
 use App\Console\Commands\CreateDemoAccounts;
 use App\Console\Commands\DeleteExpiredLinks;
 use App\Console\Commands\MigrateGuestUploadToPivot;
@@ -16,6 +17,7 @@ class Kernel extends ConsoleKernel
         DeleteExpiredLinks::class,
         CleanupExpiredGuestUploads::class,
         MigrateGuestUploadToPivot::class,
+        ClearFrontendCache::class,
     ];
 
     protected function schedule(Schedule $schedule)
