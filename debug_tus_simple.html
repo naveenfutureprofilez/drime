@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple TUS Progress Debug</title>
+    <script src="https://unpkg.com/tus-js-client@3.1.1/dist/tus.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; max-width: 600px; }
+        .progress { width: 100%; height: 20px; background: #f0f0f0; border-radius: 10px; margin: 10px 0; }
+        .progress-bar { height: 100%; background: #4caf50; width: 0%; transition: width 0.1s; }
+        .log { background: #f5f5f5; padding: 10px; height: 200px; overflow-y: scroll; font-family: monospace; font-size: 12px; }
+        button { margin: 5px; padding: 10px 15px; }
+    </style>
+</head>
+<body>
+    <h1>🔬 Simple TUS Progress Test</h1>
+    
+    <input type="file" id="fileInput" />
+    <button id="generateBtn">Generate 2MB Test File</button>
+    <button id="uploadBtn">Upload with Tiny Chunks</button>
+    
+    <div class="progress">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+    
+    <div>Progress: <span id="progressText">0%</span> | Size: <span id="sizeText">0 MB</span></div>
+    
+    <div class="log" id="log"></div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const generateBtn = document.getElementById('generateBtn');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const sizeText = document.getElementById('sizeText');
+        const log = document.getElementById('log');
+
+        function addLog(message) {
+            const time = new Date().toISOString().split('T')[1].split('.')[0];
+            log.innerHTML += `<div>[${time}] ${message}</div>`;
+            log.scrollTop = log.scrollHeight;
+            console.log(`[TUS] ${message}`);
+        }
+
+        function formatBytes(bytes) {
+            return (bytes / (1024 * 1024)).toFixed(2);
+        }
+
+        generateBtn.addEventListener('click', () => {
+            addLog('📝 Generating 2MB test file...');
+            const size = 2 * 1024 * 1024; // 2MB
+            const data = new Array(size).join('x');
+            const blob = new Blob([data], { type: 'text/plain' });
+            const file = new File([blob], 'test-2mb.txt', { type: 'text/plain' });
+            
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            fileInput.files = dt.files;
+            
+            sizeText.textContent = formatBytes(file.size) + ' MB';
+            addLog(`✅ Generated: ${file.name} (${formatBytes(file.size)} MB)`);
+        });
+
+        uploadBtn.addEventListener('click', () => {
+            const file = fileInput.files[0];
+            if (!file) {
+                addLog('❌ No file selected!');
+                return;
+            }
+
+            addLog(`🚀 Starting upload: ${file.name} (${formatBytes(file.size)} MB)`);
+            
+            const upload = new tus.Upload(file, {
+                endpoint: 'http://127.0.0.1:8000/api/v1/tus/upload',
+                chunkSize: 32 * 1024, // 32KB chunks
+                retryDelays: [0, 1000, 3000],
+                removeFingerprintOnSuccess: false,
+                
+                metadata: {
+                    name: btoa(file.name),
+                    clientName: file.name,
+                    clientSize: file.size.toString()
+                },
+                
+                onError: function(error) {
+                    addLog(`❌ Error: ${error.message}`);
+                },
+                
+                onProgress: function(bytesUploaded, bytesTotal) {
+                    const percentage = Math.round((bytesUploaded * 100) / bytesTotal);
+                    progressBar.style.width = percentage + '%';
+                    progressText.textContent = percentage + '%';
+                    addLog(`📊 Progress: ${percentage}% (${formatBytes(bytesUploaded)}/${formatBytes(bytesTotal)} MB)`);
+                },
+                
+                onSuccess: function() {
+                    addLog('✅ Upload completed!');
+                    const uploadKey = upload.url?.split('/').pop();
+                    if (uploadKey) {
+                        addLog(`🔑 Upload key: ${uploadKey}`);
+                        createGuestEntry(uploadKey);
+                    }
+                }
+            });
+
+            addLog('🔍 Looking for previous uploads...');
+            upload.findPreviousUploads().then((previousUploads) => {
+                if (previousUploads.length) {
+                    addLog(`♻️ Resuming from previous upload...`);
+                    upload.resumeFromPreviousUpload(previousUploads[0]);
+                }
+                
+                addLog('⬆️ Starting TUS upload...');
+                upload.start();
+            }).catch((error) => {
+                addLog(`❌ Error finding previous: ${error.message}`);
+            });
+        });
+
+        async function createGuestEntry(uploadKey) {
+            try {
+                addLog(`🏃 Creating guest entry for: ${uploadKey}`);
+                const response = await fetch('http://127.0.0.1:8000/api/v1/guest/tus/entries', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        uploadKey: uploadKey,
+                        expires_in_hours: 72
+                    })
+                });
+                
+                const result = await response.json();
+                if (response.ok) {
+                    addLog('✅ Guest entry created successfully!');
+                } else {
+                    addLog(`❌ Failed to create entry: ${result.message || 'Unknown error'}`);
+                }
+            } catch (error) {
+                addLog(`❌ Error creating entry: ${error.message}`);
+            }
+        }
+
+        addLog('🎯 Simple TUS debug loaded');
+        addLog('1. Generate a 2MB test file');
+        addLog('2. Upload with 32KB chunks for progress visibility');
+    </script>
+</body>
+</html>

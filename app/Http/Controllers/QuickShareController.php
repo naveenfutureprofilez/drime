@@ -19,6 +19,7 @@ use App\Mail\GuestUploadSent;
 use App\Events\GuestUploadDownloaded;
 use Illuminate\Support\Facades\Storage;
 use Common\Core\BaseController;
+use App\Helpers\EmailUrlHelper;
 
 class QuickShareController extends BaseController
 {
@@ -106,7 +107,7 @@ class QuickShareController extends BaseController
             ]);
 
             // Return link URL in JSON
-            $linkUrl = url("/quick-share/link/{$shareableLink->hash}");
+            $linkUrl = EmailUrlHelper::emailUrl("/quick-share/link/{$shareableLink->hash}");
 
             return response()->json([
                 'message' => 'File uploaded successfully',
@@ -188,7 +189,7 @@ class QuickShareController extends BaseController
                 ]);
             }
 
-            $linkUrl = url("/quick-share/link/{$shareableLink->hash}");
+            $linkUrl = EmailUrlHelper::emailUrl("/quick-share/link/{$shareableLink->hash}");
             $fileEntry = $shareableLink->entry;
 
             // Send emails to recipients using proper Mailable

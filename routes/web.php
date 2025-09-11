@@ -1,5 +1,8 @@
 <?php
 
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Route;
+
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\ShareableLinksController;
 use App\Http\Controllers\GuestUploadController;
@@ -7,7 +10,6 @@ use App\Http\Controllers\GuestTusController;
 use App\Http\Controllers\QuickShareController;
 use Common\Core\Controllers\HomeController;
 use Common\Pages\CustomPageController;
-use Illuminate\Support\Facades\Route;
 use App\Helpers\SizeFormatter;
 
 //FRONT-END ROUTES THAT NEED TO BE PRE-RENDERED
@@ -130,6 +132,41 @@ Route::get('debug/api/guest-upload/{hash}', function ($hash) {
     $controller = new \App\Http\Controllers\GuestUploadController(new \App\Services\GuestUploadService());
     $response = $controller->show($hash);
     return $response;
+});
+
+// TEST ROUTE FOR MAIL SENDING
+Route::get('test-mail/{email}', function ($email) {
+    try {
+        Mail::raw('This is a test email from Laravel to verify SMTP connectivity.', function($message) use ($email) {
+            $message->to($email)->subject('Laravel SMTP Test Email');
+        });
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Test email sent successfully to ' . $email,
+            'smtp_config' => [
+                'host' => config('mail.mailers.smtp.host'),
+                'port' => config('mail.mailers.smtp.port'),
+                'encryption' => config('mail.mailers.smtp.encryption'),
+                'username' => config('mail.mailers.smtp.username'),
+                'from_address' => config('mail.from.address'),
+                'from_name' => config('mail.from.name'),
+            ]
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Failed to send test email',
+            'error' => $e->getMessage(),
+            'smtp_config' => [
+                'host' => config('mail.mailers.smtp.host'),
+                'port' => config('mail.mailers.smtp.port'),
+                'encryption' => config('mail.mailers.smtp.encryption'),
+                'username' => config('mail.mailers.smtp.username'),
+                'from_address' => config('mail.from.address'),
+                'from_name' => config('mail.from.name'),
+            ]
+        ], 500);
+    }
 });
 
 // TEST ROUTE FOR UPLOAD LIMITS

@@ -5,6 +5,7 @@ namespace App;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Carbon\Carbon;
+use App\Helpers\EmailUrlHelper;
 
 class FileUpload extends Model
 {
@@ -50,7 +51,7 @@ class FileUpload extends Model
 
     public function getShareUrlAttribute(): string
     {
-        return url("/share/{$this->shareable_link}");
+        return EmailUrlHelper::emailUrl("/share/{$this->shareable_link}");
     }
 
     public function scopeActive($query)

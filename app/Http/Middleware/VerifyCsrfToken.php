@@ -12,6 +12,11 @@ class VerifyCsrfToken extends BaseVerifyCsrfToken
      * @var array
      */
     protected $except = [
-        //
+        'api/v1/guest/upload',
+        'api/v1/guest/tus/entries',
+        'api/v1/guest/upload/*/verify-password',
+        'api/v1/quick-share/uploads',
+        'api/v1/quick-share/email-share',
+        'api/v1/tus/*', // TUS protocol endpoints
     ];
 }

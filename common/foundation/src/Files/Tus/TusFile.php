@@ -63,8 +63,10 @@ class TusFile
      */
     protected function uploadUsingLoop($input, $output): void
     {
-        $chunkSize = 2097152; // 2MB
+        $chunkSize = 262144; // 256KB to match frontend chunk size
         $this->seek($output, $this->offset);
+        $updateInterval = max(2097152, $chunkSize * 8); // Update cache every 2MB or 8 chunks
+        $lastUpdate = $this->offset;
 
         while (!feof($input)) {
             if (CONNECTION_NORMAL !== connection_status()) {
@@ -87,6 +89,19 @@ class TusFile
 
             if ($this->offset > $this->totalBytes) {
                 throw new OutOfRangeException('The uploaded file is corrupt.');
+            }
+
+            // Update cache periodically for progress tracking
+            if ($this->offset - $lastUpdate >= $updateInterval || $this->offset === $this->totalBytes) {
+                $this->cache->merge($this->uploadKey, [
+                    'offset' => $this->offset,
+                ]);
+                $lastUpdate = $this->offset;
+                
+                // Add small delay to prevent rate limiting
+                if ($this->offset < $this->totalBytes) {
+                    usleep(5000); // 5ms delay to prevent overwhelming the client
+                }
             }
 
             if ($this->offset === $this->totalBytes) {

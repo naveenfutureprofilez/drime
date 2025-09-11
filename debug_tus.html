@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TUS Upload Debug</title>
+    <script src="https://unpkg.com/tus-js-client@3.1.1/dist/tus.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; max-width: 800px; }
+        .progress { width: 100%; height: 30px; background: #f0f0f0; border-radius: 15px; overflow: hidden; margin: 10px 0; }
+        .progress-bar { height: 100%; background: #4caf50; width: 0%; transition: width 0.3s; }
+        .log { background: #f5f5f5; padding: 10px; height: 300px; overflow-y: scroll; font-family: monospace; font-size: 12px; margin: 10px 0; }
+        .controls { margin: 20px 0; }
+        .controls button { margin: 0 10px; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        .start { background: #4caf50; color: white; }
+        .pause { background: #ff9800; color: white; }
+        .resume { background: #2196f3; color: white; }
+        .cancel { background: #f44336; color: white; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>🔄 TUS Upload Debug Test</h1>
+    
+    <div>
+        <label>Select a file to upload:</label>
+        <input type="file" id="fileInput" />
+        <br><small>💡 <strong>Tip:</strong> Use a file larger than 1MB to see progress updates. Small files upload too quickly!</small>
+        <br><br>
+        <button id="generateTestFile" type="button" style="padding: 5px 10px; background: #2196f3; color: white; border: none; border-radius: 3px; cursor: pointer;">Generate 5MB Test File</button>
+    </div>
+    
+    <div class="controls">
+        <button id="startBtn" class="start">Start Upload</button>
+        <button id="pauseBtn" class="pause" disabled>Pause</button>
+        <button id="resumeBtn" class="resume" disabled>Resume</button>
+        <button id="cancelBtn" class="cancel" disabled>Cancel</button>
+    </div>
+    
+    <div class="status" id="status">Ready to upload</div>
+    
+    <div class="progress">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+    
+    <div id="details">
+        <div>Progress: <span id="progressText">0%</span></div>
+        <div>Speed: <span id="speedText">--</span></div>
+        <div>Uploaded: <span id="uploadedText">0 bytes</span></div>
+        <div>Total: <span id="totalText">0 bytes</span></div>
+        <div>Time Remaining: <span id="timeText">--</span></div>
+        <div>Chunk Size: <span id="chunkText">64 KB</span></div>
+    </div>
+    
+    <div class="log" id="log"></div>
+
+    <script>
+        let upload = null;
+        let isUploading = false;
+        let isPaused = false;
+        let startTime = null;
+        
+        const fileInput = document.getElementById('fileInput');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resumeBtn = document.getElementById('resumeBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const generateTestBtn = document.getElementById('generateTestFile');
+        const status = document.getElementById('status');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const speedText = document.getElementById('speedText');
+        const uploadedText = document.getElementById('uploadedText');
+        const totalText = document.getElementById('totalText');
+        const timeText = document.getElementById('timeText');
+        const log = document.getElementById('log');
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+            const color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'black';
+            log.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            log.scrollTop = log.scrollHeight;
+            console.log(`[TUS DEBUG] ${message}`);
+        }
+        
+        function updateStatus(msg, type = 'info') {
+            status.className = `status ${type}`;
+            status.textContent = msg;
+            addLog(msg, type);
+        }
+        
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 bytes';
+            const k = 1024;
+            const sizes = ['bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        function formatSpeed(bytesPerSecond) {
+            return formatBytes(bytesPerSecond) + '/s';
+        }
+        
+        function formatTime(seconds) {
+            if (!seconds || seconds === Infinity) return '--';
+            if (seconds < 60) return Math.round(seconds) + 's';
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.round(seconds % 60);
+            return `${minutes}m ${secs}s`;
+        }
+        
+        function updateProgress(bytesUploaded, bytesTotal) {
+            const percentage = Math.round((bytesUploaded * 100) / bytesTotal);
+            progressBar.style.width = percentage + '%';
+            progressText.textContent = percentage + '%';
+            uploadedText.textContent = formatBytes(bytesUploaded);
+            totalText.textContent = formatBytes(bytesTotal);
+            
+            // Calculate speed and time remaining
+            const elapsed = (Date.now() - startTime) / 1000;
+            const speed = bytesUploaded / elapsed;
+            const remaining = (bytesTotal - bytesUploaded) / speed;
+            
+            speedText.textContent = formatSpeed(speed);
+            timeText.textContent = formatTime(remaining);
+        }
+        
+        startBtn.addEventListener('click', () => {
+            const file = fileInput.files[0];
+            if (!file) {
+                updateStatus('Please select a file first', 'error');
+                return;
+            }
+            
+            addLog(`Starting TUS upload for: ${file.name} (${formatBytes(file.size)})`);
+            
+            if (file.size < 500 * 1024) { // Less than 500KB
+                addLog(`⚠️ Warning: File is small (${formatBytes(file.size)}). Progress may not be visible.`, 'info');
+            }
+            
+            startTime = Date.now();
+            
+            // Test different endpoints
+            const endpoints = [
+                'http://127.0.0.1:8000/api/v1/tus/upload',
+                '/api/v1/tus/upload'
+            ];
+            
+            const endpoint = endpoints[0];
+            addLog(`Using endpoint: ${endpoint}`);
+            
+            upload = new tus.Upload(file, {
+                endpoint: endpoint,
+                chunkSize: 64 * 1024, // 64KB for more progress events
+                retryDelays: [0, 1000, 3000, 5000],
+                removeFingerprintOnSuccess: false, // Keep for debugging
+                
+                metadata: {
+                    name: btoa(file.name),
+                    clientName: file.name,
+                    clientExtension: file.name.split('.').pop() || '',
+                    clientMime: file.type || 'application/octet-stream',
+                    clientSize: file.size.toString()
+                },
+                
+                onError: function(error) {
+                    addLog(`❌ Upload Error: ${error.message}`, 'error');
+                    updateStatus('Upload failed: ' + error.message, 'error');
+                    isUploading = false;
+                    isPaused = false;
+                    startBtn.disabled = false;
+                    pauseBtn.disabled = true;
+                    resumeBtn.disabled = true;
+                    cancelBtn.disabled = true;
+                    
+                    // Log detailed error info
+                    if (error.originalResponse) {
+                        addLog(`Response status: ${error.originalResponse.getStatus()}`, 'error');
+                        addLog(`Response body: ${error.originalResponse.getBody()}`, 'error');
+                    }
+                },
+                
+                onProgress: function(bytesUploaded, bytesTotal) {
+                    const percentage = Math.round((bytesUploaded * 100) / bytesTotal);
+                    addLog(`📊 Progress: ${percentage}% (${formatBytes(bytesUploaded)}/${formatBytes(bytesTotal)}) - Chunk: ${formatBytes(upload.chunkSize || 0)}`);
+                    updateProgress(bytesUploaded, bytesTotal);
+                    
+                    // Force a small delay to make progress visible
+                    if (bytesUploaded < bytesTotal) {
+                        console.log(`[TUS PROGRESS] ${percentage}% complete`);
+                    }
+                },
+                
+                onSuccess: function() {
+                    addLog('✅ Upload completed successfully!', 'success');
+                    updateStatus('Upload completed successfully!', 'success');
+                    
+                    const uploadKey = upload.url?.split('/').pop();
+                    addLog(`Upload key: ${uploadKey}`, 'success');
+                    
+                    // Try to create guest upload entry
+                    if (uploadKey) {
+                        createGuestUploadEntry(uploadKey);
+                    }
+                    
+                    isUploading = false;
+                    isPaused = false;
+                    startBtn.disabled = false;
+                    pauseBtn.disabled = true;
+                    resumeBtn.disabled = true;
+                    cancelBtn.disabled = true;
+                }
+            });
+            
+            // Check for previous uploads
+            upload.findPreviousUploads().then((previousUploads) => {
+                if (previousUploads.length) {
+                    addLog(`🔄 Found previous upload, resuming...`);
+                    upload.resumeFromPreviousUpload(previousUploads[0]);
+                }
+                
+                addLog('🚀 Starting upload...');
+                upload.start();
+                
+                isUploading = true;
+                isPaused = false;
+                startBtn.disabled = true;
+                pauseBtn.disabled = false;
+                resumeBtn.disabled = true;
+                cancelBtn.disabled = false;
+                updateStatus('Uploading...', 'info');
+            }).catch((error) => {
+                addLog(`Error finding previous uploads: ${error.message}`, 'error');
+            });
+        });
+        
+        pauseBtn.addEventListener('click', () => {
+            if (upload && isUploading) {
+                addLog('⏸️ Pausing upload...');
+                upload.abort(false); // Don't remove fingerprint
+                isPaused = true;
+                isUploading = false;
+                pauseBtn.disabled = true;
+                resumeBtn.disabled = false;
+                updateStatus('Upload paused', 'info');
+            }
+        });
+        
+        resumeBtn.addEventListener('click', () => {
+            if (upload && isPaused) {
+                addLog('▶️ Resuming upload...');
+                upload.start();
+                isPaused = false;
+                isUploading = true;
+                pauseBtn.disabled = false;
+                resumeBtn.disabled = true;
+                updateStatus('Resuming upload...', 'info');
+            }
+        });
+        
+        cancelBtn.addEventListener('click', () => {
+            if (upload) {
+                addLog('🛑 Cancelling upload...');
+                upload.abort(true); // Remove fingerprint
+                upload = null;
+                isUploading = false;
+                isPaused = false;
+                startBtn.disabled = false;
+                pauseBtn.disabled = true;
+                resumeBtn.disabled = true;
+                cancelBtn.disabled = true;
+                progressBar.style.width = '0%';
+                progressText.textContent = '0%';
+                updateStatus('Upload cancelled', 'info');
+            }
+        });
+        
+        async function createGuestUploadEntry(uploadKey) {
+            try {
+                addLog(`🔑 Creating guest upload entry with key: ${uploadKey}`);
+                
+                const response = await fetch('http://127.0.0.1:8000/api/v1/guest/tus/entries', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        uploadKey: uploadKey,
+                        expires_in_hours: 72
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    addLog('✅ Guest upload entry created successfully!', 'success');
+                    addLog(`Response: ${JSON.stringify(result, null, 2)}`, 'success');
+                } else {
+                    addLog(`❌ Failed to create guest upload entry: ${result.message || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                addLog(`❌ Error creating guest upload entry: ${error.message}`, 'error');
+            }
+        }
+        
+        // Generate test file functionality
+        generateTestBtn.addEventListener('click', () => {
+            addLog('📝 Generating 5MB test file...');
+            const size = 5 * 1024 * 1024; // 5MB
+            const chunk = new Array(1024).join('A'); // 1KB of 'A's
+            const chunks = [];
+            
+            for (let i = 0; i < size / 1024; i++) {
+                chunks.push(chunk);
+            }
+            
+            const content = chunks.join('');
+            const blob = new Blob([content], { type: 'text/plain' });
+            const file = new File([blob], 'test-5mb.txt', { type: 'text/plain' });
+            
+            // Create a fake file input event
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            fileInput.files = dt.files;
+            
+            addLog(`✅ Generated test file: ${file.name} (${formatBytes(file.size)})`, 'success');
+            updateStatus(`Test file ready: ${file.name}`, 'success');
+        });
+        
+        addLog('TUS Debug page loaded. Ready for testing.');
+        addLog('Select a file and click "Start Upload" to begin.');
+        addLog('Or click "Generate 5MB Test File" to create a test file for progress testing.');
+    </script>
+</body>
+</html>

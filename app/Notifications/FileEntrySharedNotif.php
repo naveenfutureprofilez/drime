@@ -13,6 +13,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use NotificationChannels\Fcm\FcmMessage;
 use NotificationChannels\Fcm\Resources\Notification as FcmNotification;
+use App\Helpers\EmailUrlHelper;
 
 class FileEntrySharedNotif extends Notification implements ShouldQueue
 {
@@ -41,7 +42,7 @@ class FileEntrySharedNotif extends Notification implements ShouldQueue
             $message->line('- ' . $line['content']);
         }
 
-        $message->action(__('View now'), url('drive/shares'));
+        $message->action(__('View now'), EmailUrlHelper::emailUrl('drive/shares'));
 
         return $message;
     }

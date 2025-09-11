@@ -8,16 +8,33 @@ export function TransferProgress({
   timeRemaining = 0,
   onCancel,
   onComplete,
-  status = 'uploading' // 'uploading', 'success', 'error'
+  status = 'uploading', // 'uploading', 'success', 'error'
+  uploadedBytes = 0
 }) {
   const [displayProgress, setDisplayProgress] = useState(progress);
-  // Smooth progress animation
+  
+  // Smooth progress animation with detailed logging
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDisplayProgress(progress);
-    }, 100);
+    console.log(`🎨 Progress Animation: ${displayProgress}% → ${progress}%`);
+    
+    // Use requestAnimationFrame for smoother updates
+    const animate = () => {
+      setDisplayProgress(prevDisplay => {
+        const diff = progress - prevDisplay;
+        if (Math.abs(diff) < 0.1) {
+          return progress; // Close enough, snap to target
+        }
+        // Smooth interpolation
+        const step = diff * 0.3;
+        const newProgress = prevDisplay + step;
+        console.log(`🎨 Animating: ${prevDisplay.toFixed(1)}% + ${step.toFixed(1)}% = ${newProgress.toFixed(1)}%`);
+        return newProgress;
+      });
+    };
+    
+    const timer = setTimeout(animate, 16); // ~60fps
     return () => clearTimeout(timer);
-  }, [progress]);
+  }, [progress, displayProgress]);
 
   // Auto complete when progress reaches 100%
   useEffect(() => {
@@ -70,7 +87,25 @@ export function TransferProgress({
 
   // const colors = getStatusColor();
 
-  console.log("files", files)
+  console.log("🔄 TransferProgress Render:", {
+    files: files?.length, 
+    progress: `${progress}%`, 
+    displayProgress: `${displayProgress}%`,
+    progressDiff: Math.abs(progress - displayProgress),
+    status, 
+    totalSize: prettyBytes(totalSize), 
+    uploadedBytes: prettyBytes(uploadedBytes),
+    uploadSpeed: formatSpeed(uploadSpeed),
+    timeRemaining: formatTime(timeRemaining),
+    timestamp: new Date().toISOString().split('T')[1]
+  });
+  
+  // Log when progress changes significantly
+  const prevProgress = React.useRef(0);
+  if (Math.abs(progress - prevProgress.current) >= 5) {
+    console.log(`📊 Progress Jump: ${prevProgress.current}% → ${progress}%`);
+    prevProgress.current = progress;
+  }
   return (
     <div className="column-center !h-[576px]">
       {/* Circle */}
@@ -91,7 +126,7 @@ export function TransferProgress({
             cy="70"
             r="60"
             fill="none"
-            stroke="#08CF65"
+            stroke={status === 'success' ? '#10b981' : status === 'error' ? '#ef4444' : '#08CF65'}
             strokeWidth="8"
             strokeDasharray={2 * Math.PI * 60}
             strokeDashoffset={
@@ -103,42 +138,58 @@ export function TransferProgress({
             transform="rotate(-90 70 70)"
           />
         </svg>
-        <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-4xl font-bold text-gray-800">
-          {Math.round(displayProgress)}%
-        </span>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+          <span className="text-4xl font-bold text-gray-800">
+            {Math.round(displayProgress)}%
+          </span>
+          {/* Debug info - remove in production */}
+          <div className="text-xs text-gray-500 mt-1">
+            Real: {progress}% | Display: {displayProgress.toFixed(1)}%
+          </div>
+        </div>
       </div>
 
       {/* Text and Button */}
       <div className="flex flex-col items-center text-center">
-        <h3 className="normal-heading">Creating your transfer</h3>
-        <p className="normal-para mt-2">{uploadSpeed}</p>
-        <p className="normal-para mt-2">
-          {totalSize} out of {files.length}
-        </p>
-        <p className="normal-para !mb-6">{timeRemaining} remaining</p>
+        <h3 className="normal-heading">
+          {status === 'success' ? 'Transfer Complete!' : 
+           status === 'error' ? 'Upload Failed' : 
+           'Creating your transfer'}
+        </h3>
+        {status === 'uploading' && (
+          <>
+            <p className="normal-para mt-2">{formatSpeed(uploadSpeed)}</p>
+            <p className="normal-para mt-2">
+              {prettyBytes(uploadedBytes)} of {prettyBytes(totalSize)} • {files.length} file{files.length !== 1 ? 's' : ''}
+            </p>
+            <p className="normal-para !mb-6">{formatTime(timeRemaining)} remaining</p>
+          </>
+        )}
+        {status === 'success' && (
+          <p className="normal-para mt-2 text-green-600">
+            {files.length} file{files.length !== 1 ? 's' : ''} uploaded successfully!
+          </p>
+        )}
+        {status === 'error' && (
+          <p className="normal-para mt-2 text-red-600">
+            Please check your connection and try again.
+          </p>
+        )}
       </div>
 
       <button
-        onClick={onComplete}
-        className="px-8 py-3 bg-white text-gray-900 rounded-xl font-medium hover:bg-opacity-90 transition-all duration-200 hover:scale-105"
+        onClick={status === 'uploading' ? undefined : onComplete}
+        className={`px-8 py-3 rounded-xl font-medium transition-all duration-200 ${
+          status === 'uploading' 
+            ? 'bg-gray-300 text-gray-600 cursor-not-allowed' 
+            : status === 'success'
+            ? 'bg-green-500 text-white hover:bg-green-600 hover:scale-105'
+            : 'bg-red-500 text-white hover:bg-red-600 hover:scale-105'
+        }`}
+        disabled={status === 'uploading'}
       >
-        {status === "success" ? "Continue" : "Try again"}
+        {status === "success" ? "Continue" : status === "uploading" ? "Uploading..." : "Try again"}
       </button>
-
-      {(status === "success" || status === "error") && (
-        <div className="text-center space-y-3 mt-6">
-          {status === "success" && (
-            <p className="normal-para !mb-6 text-black opacity-90">
-              Your files have been uploaded successfully!
-            </p>
-          )}
-          {status === "error" && (
-            <p className="normal-para !mb-6 text-black opacity-90">
-              Upload failed. Please try again.
-            </p>
-          )}
-        </div>
-      )}
     </div>
   );
 }

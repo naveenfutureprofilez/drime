@@ -150,32 +150,38 @@ function RowActions({ file }) {
   const deleteFiles = useDeleteTransferFiles();
 
   return (
-    <div className="flex items-center gap-4">
-      <IconButton
-        size="md"
-        elementType={Link}
-        to={file.share_url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-primary hover:bg-primary/10"
-      >
-        <LinkIcon />
-      </IconButton>
-      
-      <IconButton
-        size="md"
-        color="danger"
-        onClick={() => {
-          if (window.confirm(`Delete "${file.original_filename}"?\n\nThis action cannot be undone.`)) {
-            deleteFiles.mutate({ id: file.id });
-          }
-        }}
-        disabled={deleteFiles.isPending}
-        className="text-danger hover:bg-danger/10"
-      >
-        <DeleteIcon />
-      </IconButton>
-    </div>
+    <>
+      <div className="flex items-center gap-4">
+        <Tooltip label={<Trans message="Copy share link" />}>
+          <IconButton
+            size="md"
+            elementType={Link}
+            to={file.share_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:bg-primary/10"
+          >
+            <LinkIcon />
+          </IconButton>
+        </Tooltip>
+        
+        <Tooltip label={<Trans message="Delete" />}>
+          <IconButton
+            size="md"
+            color="danger"
+            onClick={() => {
+              if (window.confirm(`Delete "${file.original_filename}"?\n\nThis action cannot be undone.`)) {
+                deleteFiles.mutate({ id: file.id });
+              }
+            }}
+            disabled={deleteFiles.isPending}
+            className="text-danger hover:bg-danger/10"
+          >
+            <DeleteIcon />
+          </IconButton>
+        </Tooltip>
+      </div>
+    </>
   );
 }
 

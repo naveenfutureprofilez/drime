@@ -9,7 +9,12 @@ use Common\Core\BaseController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
+use App\Mail\GuestUploadSent;
+use App\Models\ShareableLink;
 use Carbon\Carbon;
+use App\Helpers\EmailUrlHelper;
 
 class TransferFilesController extends BaseController
 {
@@ -274,6 +279,83 @@ class TransferFilesController extends BaseController
     }
 
     /**
+     * Send email notification for a transfer file
+     */
+    public function sendEmail(Request $request, int $id): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'sender_email' => 'required|email',
+            'recipient_emails' => 'required|array|min:1|max:10',
+            'recipient_emails.*' => 'required|email',
+            'message' => 'nullable|string|max:500',
+            'sender_name' => 'nullable|string|max:100',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $guestUpload = GuestUpload::with(['files', 'shareableLink'])->findOrFail($id);
+
+            $senderEmail = $request->input('sender_email');
+            $recipientEmails = $request->input('recipient_emails');
+            $message = $request->input('message');
+            $senderName = $request->input('sender_name', $senderEmail);
+
+            // Update guest upload record with email information
+            $guestUpload->update([
+                'sender_email' => $senderEmail,
+                'recipient_emails' => $recipientEmails,
+            ]);
+
+            // Create or get shareable link for the transfer
+            $shareableLink = $guestUpload->shareableLink;
+            if (!$shareableLink) {
+                // If no shareable link exists, create one
+                $shareableLink = ShareableLink::create([
+                    'entry_id' => $guestUpload->files->first()->id ?? null,
+                    'hash' => \Illuminate\Support\Str::random(30),
+                    'is_guest' => true,
+                    'expires_at' => $guestUpload->expires_at,
+                    'allow_download' => true,
+                    'allow_edit' => false,
+                ]);
+                
+                // Update guest upload with the new link
+                $guestUpload->update(['link_id' => $shareableLink->hash]);
+            }
+
+            $linkUrl = $this->generateShareUrl($guestUpload);
+
+            // Send emails to recipients immediately using the existing Mailable
+            foreach ($recipientEmails as $recipientEmail) {
+                Mail::to($recipientEmail)->send(
+                    new GuestUploadSent($shareableLink, $guestUpload, $senderName, $linkUrl, $message)
+                );
+            }
+
+            return response()->json([
+                'message' => 'Email(s) sent successfully',
+                'data' => [
+                    'sender_email' => $senderEmail,
+                    'recipient_count' => count($recipientEmails),
+                    'link_url' => $linkUrl,
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to send emails',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Generate the correct share URL based on upload type
      */
     private function generateShareUrl($item): string
@@ -282,13 +364,13 @@ class TransferFilesController extends BaseController
         if ($item->shareableLink) {
             // Check if it's a quick-share link (has is_guest = true)
             if ($item->shareableLink->is_guest) {
-                return url("/quick-share/link/{$item->shareableLink->hash}");
+                return EmailUrlHelper::emailUrl("/quick-share/link/{$item->shareableLink->hash}");
             } else {
-                return url("/share/{$item->shareableLink->hash}");
+                return EmailUrlHelper::emailUrl("/share/{$item->shareableLink->hash}");
             }
         }
         
         // Fallback to guest upload format
-        return url("/share/{$item->hash}");
+        return EmailUrlHelper::emailUrl("/share/{$item->hash}");
     }
 }

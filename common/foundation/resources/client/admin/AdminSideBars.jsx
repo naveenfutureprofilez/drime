@@ -59,13 +59,13 @@ function AdminSidebars() {
                             <span>Transfer Files</span>
                         </a>
                         <a
-                            href="/account-settings"
+                            href="/setting/general"
                             onClick={handleLinkClick}
                             className="flex items-center gap-3 p-3 rounded-lg 
                          text-black hover:bg-[#e5e7eb] transition"
                         >
                             <MdSettings className="text-pink-500 text-xl" />
-                            <span>Account Settings</span>
+                            <span>Account Settings sdad</span>
                         </a>
                     </nav>
                 </div>

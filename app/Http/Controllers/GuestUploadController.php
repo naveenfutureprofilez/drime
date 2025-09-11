@@ -26,6 +26,10 @@ class GuestUploadController extends BaseController
      */
     public function store(Request $request): JsonResponse
     {
+        // Set unlimited execution time for large file uploads
+        ini_set('max_execution_time', '0');
+        ini_set('max_input_time', '0');
+        
         logger('GuestUploadController::store called', [
             'request_all' => $request->all(),
             'sender_email' => $request->get('sender_email'),
@@ -71,7 +75,10 @@ class GuestUploadController extends BaseController
             return response()->json([
                 'message' => 'Files uploaded successfully',
                 'data' => $result
-            ], 201);
+            ], 201)
+            ->header('Access-Control-Allow-Origin', '*')
+            ->header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+            ->header('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With');
             
         } catch (\Exception $e) {
             logger('Exception in upload', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);

@@ -42,6 +42,9 @@ class AppServiceProvider extends ServiceProvider
         // Set Laravel's max_file_size config based on the environment variable
         $guestUploadMaxSize = (int) env('GUEST_UPLOAD_MAX_FILE_SIZE', 3145728000); // bytes
         config(['app.max_file_size' => intval($guestUploadMaxSize / 1024)]); // Convert to KB for Laravel
+        
+        // Set dynamic PHP ini limits for file uploads
+        $this->configureDynamicUploadLimits($guestUploadMaxSize);
 
         Model::preventLazyLoading(!app()->isProduction());
 
@@ -49,6 +52,37 @@ class AppServiceProvider extends ServiceProvider
             FileEntry::MODEL_TYPE => FileEntry::class,
             User::MODEL_TYPE => User::class,
         ]);
+    }
+    
+    /**
+     * Configure dynamic upload limits based on environment variables
+     */
+    private function configureDynamicUploadLimits(int $maxSizeBytes): void
+    {
+        // Calculate recommended values
+        $uploadMaxFilesize = SizeFormatter::bytesToIni($maxSizeBytes);
+        $postMaxSize = SizeFormatter::bytesToIni(SizeFormatter::getRecommendedPostMaxSize($maxSizeBytes));
+        $memoryLimit = SizeFormatter::bytesToIni(SizeFormatter::getRecommendedMemoryLimit($maxSizeBytes));
+        
+        // Set PHP ini settings
+        ini_set('upload_max_filesize', $uploadMaxFilesize);
+        ini_set('post_max_size', $postMaxSize);
+        ini_set('memory_limit', $memoryLimit);
+        ini_set('max_execution_time', '0'); // No time limit for uploads
+        ini_set('max_input_time', '0'); // No time limit for input processing
+        ini_set('max_file_uploads', '20');
+        
+        // Log settings when debug is enabled
+        if (config('app.debug')) {
+            logger()->info('[DynamicUploadLimits] Applied settings', [
+                'upload_max_filesize' => $uploadMaxFilesize,
+                'post_max_size' => $postMaxSize,
+                'memory_limit' => $memoryLimit,
+                'max_execution_time' => '0 (unlimited)',
+                'max_input_time' => '0 (unlimited)',
+                'based_on_bytes' => number_format($maxSizeBytes)
+            ]);
+        }
     }
 
 }

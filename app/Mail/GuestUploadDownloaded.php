@@ -10,6 +10,7 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use App\Helpers\EmailUrlHelper;
 
 class GuestUploadDownloaded extends Mailable implements ShouldQueue
 {
@@ -42,7 +43,7 @@ class GuestUploadDownloaded extends Mailable implements ShouldQueue
                 'maxDownloads' => $this->guestUpload->max_downloads,
                 'downloadedAt' => $this->guestUpload->last_downloaded_at,
                 'expiresAt' => $this->shareableLink->expires_at,
-                'linkUrl' => url("/quick-share/link/{$this->shareableLink->hash}"),
+                'linkUrl' => EmailUrlHelper::emailUrl("/quick-share/link/{$this->shareableLink->hash}"),
                 'appName' => config('app.name', 'File Sharing Service'),
             ]
         );

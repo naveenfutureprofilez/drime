@@ -6,6 +6,7 @@ import { EmailPanel } from './components/email-panel';
 import { Trans } from '@ui/i18n/trans';
 import Layout from '@app/components/Layout';
 import TransferSuccessPage from './components/TransferSuccessPage';
+import { prettyBytes } from '@ui/utils/files/pretty-bytes';
 
 
 export function TransferHomepage() {
@@ -22,98 +23,26 @@ export function TransferHomepage() {
   const [uploadData, setUploadData] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadSpeed, setUploadSpeed] = useState(0);
-  const [uploadStatus, setUploadStatus] = useState('uploading');
+  const [uploadStatus, setUploadStatus] = useState('idle');
   const [uploadStartTime, setUploadStartTime] = useState(null);
   const [abortController, setAbortController] = useState(null);
+  const [uploadResponse, setUploadResponse] = useState(null);
+  const [uploadedBytes, setUploadedBytes] = useState(0);
+  const [timeRemaining, setTimeRemaining] = useState(0);
 
   const handleSettingsChange = useCallback((newSettings) => {
     setTransferSettings(newSettings);
   }, []);
 
   const handleUploadStart = useCallback(async ({ files, totalSize, settings, formData: uploadFormData }) => {
-    setUploadData({ files, totalSize, settings });
+    console.log('🚀 Homepage received upload start - switching to progress view');
+    
+    // Set upload data and switch to progress view
+    setUploadData({ files, totalSize, settings, formData: uploadFormData });
     setCurrentStep('progress');
-    setUploadProgress(0);
-    setUploadSpeed(0);
     setUploadStatus('uploading');
-    setUploadStartTime(Date.now());
-
-    try {
-      // Create abort controller for cancellation
-      const controller = new AbortController();
-      setAbortController(controller);
-
-      const formData = new FormData();
-      files.forEach(file => {
-        const actualFile = file.native || file;
-        formData.append('files[]', actualFile);
-      });
-
-      if (settings.password) {
-        formData.append('password', settings.password);
-      }
-      formData.append('expires_in_hours', settings.expiresInHours.toString());
-      if (settings.maxDownloads) {
-        formData.append('max_downloads', settings.maxDownloads.toString());
-      }
-      
-      // Add form data (email, name/title, message)
-      if (uploadFormData) {
-        if (uploadFormData.email) {
-          formData.append('sender_email', uploadFormData.email);
-        }
-        if (uploadFormData.name) {
-          formData.append('sender_name', uploadFormData.name);
-        }
-        if (uploadFormData.message) {
-          formData.append('message', uploadFormData.message);
-        }
-      }
-
-      let lastLoaded = 0;
-      let lastTimestamp = Date.now();
-
-      const { apiClient } = await import('@common/http/query-client');
-      const response = await apiClient.post('guest/upload', formData, {
-        signal: controller.signal,
-        onUploadProgress: (progressEvent) => {
-          if (progressEvent.total) {
-            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            setUploadProgress(progress);
-
-            // Calculate upload speed
-            const now = Date.now();
-            const timeDiff = (now - lastTimestamp) / 1000; // seconds
-            const bytesDiff = progressEvent.loaded - lastLoaded;
-            if (timeDiff > 0.5) { // Update speed every 500ms
-              const speed = bytesDiff / timeDiff;
-              setUploadSpeed(speed);
-              lastLoaded = progressEvent.loaded;
-              lastTimestamp = now;
-            }
-          }
-        }
-      });
-
-      setUploadStatus('success');
-      setUploadedFiles(response.data.data.files);
-
-      // Auto-continue to share step after success animation
-      setTimeout(() => {
-        setCurrentStep('share');
-      }, 2000);
-
-    } catch (error) {
-      if (error.name === 'CanceledError') {
-        // Upload was cancelled
-        setCurrentStep('upload');
-      } else {
-        console.error('Upload failed:', error);
-        setUploadStatus('error');
-      }
-    } finally {
-      setAbortController(null);
-    }
+    setUploadProgress(0);
+    setUploadedBytes(0);
   }, []);
 
   const handleUploadCancel = useCallback(() => {
@@ -129,9 +58,27 @@ export function TransferHomepage() {
       setCurrentStep('upload');
       setUploadData(null);
       setUploadProgress(0);
-      setUploadStatus('uploading');
+      setUploadStatus('idle');
+      setUploadedBytes(0);
     }
   }, [uploadStatus]);
+
+  const handleProgressUpdate = useCallback(({ progress, uploadedBytes, totalBytes, uploadSpeed, timeRemaining, status }) => {
+    console.log('🏠 Homepage received progress update:', {
+      progress,
+      uploadedBytes,
+      totalBytes,
+      uploadSpeed,
+      timeRemaining,
+      status
+    });
+    
+    setUploadProgress(progress);
+    setUploadedBytes(uploadedBytes);
+    setUploadSpeed(uploadSpeed);
+    setTimeRemaining(timeRemaining);
+    setUploadStatus(status);
+  }, []);
 
   const handleUploadComplete = useCallback(files => {
     setUploadedFiles(files);
@@ -144,8 +91,12 @@ export function TransferHomepage() {
     setShowEmailPanel(false);
     setUploadData(null);
     setUploadProgress(0);
-    setUploadStatus('uploading');
+    setUploadStatus('idle');
+    setUploadedBytes(0);
   }, []);
+  // Debug logging
+  console.log('🏠 Homepage render - currentStep:', currentStep, 'uploadData:', !!uploadData);
+  
   return <>
     {/* <DefaultMetaTags /> */}
     <Layout>
@@ -158,9 +109,16 @@ export function TransferHomepage() {
                 onSettingsChange={handleSettingsChange}
                 onUploadComplete={handleUploadComplete}
                 onUploadStart={handleUploadStart}
+                onProgressUpdate={handleProgressUpdate}
+                uploadProgress={uploadProgress}
+                uploadState={uploadStatus === 'success' ? 'completed' : uploadStatus}
+                uploadSpeed={uploadSpeed}
+                timeRemaining={uploadSpeed > 0 ? ((uploadData?.totalSize * (100 - uploadProgress)) / 100) / uploadSpeed : 0}
+                uploadedBytes={uploadedBytes}
+                totalBytes={uploadData?.totalSize || 0}
               />)}
 
-            {currentStep === 'share' && <SHARE_SECTION files={uploadedFiles} transferSettings={transferSettings} onNewTransfer={handleNewTransfer} onShowEmailPanel={() => setShowEmailPanel(true)} />}
+            {currentStep === 'share' && <SHARE_SECTION files={uploadedFiles} transferSettings={transferSettings} onNewTransfer={handleNewTransfer} onShowEmailPanel={() => setShowEmailPanel(true)} uploadResponse={uploadResponse} />}
           </div>
         )}
 
@@ -171,10 +129,11 @@ export function TransferHomepage() {
             progress={uploadProgress}
             totalSize={uploadData.totalSize}
             uploadSpeed={uploadSpeed}
-            timeRemaining={uploadSpeed > 0 ? ((uploadData.totalSize * (100 - uploadProgress)) / 100) / uploadSpeed : 0}
+            timeRemaining={timeRemaining}
             onCancel={handleUploadCancel}
             onComplete={handleProgressComplete}
             status={uploadStatus}
+            uploadedBytes={uploadedBytes}
           />
         )}
         {showEmailPanel && <EmailPanel files={uploadedFiles} onClose={() => setShowEmailPanel(false)} />}
@@ -187,9 +146,34 @@ function UPLOAD_SECTION({
   settings,
   onSettingsChange,
   onUploadComplete,
-  onUploadStart
+  onUploadStart,
+  onProgressUpdate,
+  uploadProgress = 0,
+  uploadState = 'idle',
+  uploadSpeed = 0,
+  timeRemaining = 0,
+  uploadedBytes = 0,
+  totalBytes = 0
 }) {
   const [showSettings, setShowSettings] = useState(false);
+  const [testMode, setTestMode] = useState(false);
+  
+  // Debug logging for UPLOAD_SECTION
+  console.log('📍 UPLOAD_SECTION props:', {
+    uploadProgress,
+    uploadState,
+    uploadSpeed,
+    timeRemaining,
+    uploadedBytes,
+    totalBytes,
+    hasProgressUpdate: !!onProgressUpdate
+  });
+  
+  // Test function to force upload state
+  const handleTestProgress = () => {
+    console.log('🧪 Activating test mode...');
+    setTestMode(true);
+  };
 
   return <div className="shadow-md p-1 rounded-xl overflow-hidden relative" onClick={() => {
     if (showSettings) {
@@ -197,12 +181,13 @@ function UPLOAD_SECTION({
     }
   }}
   >
-    {/* Upload Widget */}
+    {/* File Upload Widget with regular upload functionality */}
     <FileUploadWidget
       settings={settings}
-      onUploadComplete={onUploadComplete}
       onUploadStart={onUploadStart}
+      onUploadComplete={onUploadComplete}
       onSettingsChange={onSettingsChange}
+      onProgressUpdate={onProgressUpdate}
     />
 
  
@@ -221,7 +206,8 @@ function SHARE_SECTION({
   files,
   transferSettings,
   onNewTransfer,
-  onShowEmailPanel
+  onShowEmailPanel,
+  uploadResponse
 }) {
   // All files should share the same upload/share URL
   const shareUrl = files && files.length > 0 ? files[0]?.share_url || '' : '';
@@ -246,7 +232,8 @@ function SHARE_SECTION({
       onEmailTransfer={onShowEmailPanel} 
       files={files} 
       expiresInHours={transferSettings?.expiresInHours}
-      onNewTransfer={onNewTransfer} 
+      onNewTransfer={onNewTransfer}
+      uploadResponse={uploadResponse}
     />
     {/* <ShareLinkPanel shareUrl={shareUrl} files={files}  onEmailTransfer={onShowEmailPanel}  /> */}
   </div>;

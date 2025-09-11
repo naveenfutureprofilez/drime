@@ -45,10 +45,15 @@ const getExpiryMessage = (files, expiresInHours) => {
     return `The download link for your transfer is available for a limited time.`;
 };
 
-const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onNewTransfer, files, expiresInHours }) => {
-    const headingText = type === 'Link'
+const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onNewTransfer, files, expiresInHours, uploadResponse }) => {
+    // Determine the display type based on whether email was sent
+    const emailWasSent = uploadResponse?.email_sent || false;
+    const recipientEmail = uploadResponse?.recipient_email;
+    const displayType = emailWasSent ? 'Email' : 'Link';
+    
+    const headingText = displayType === 'Link'
         ? 'Your link is ready'
-        : 'Your transfer has been sent to your recipient(s)';
+        : `Files sent successfully to ${recipientEmail}`;
 
     const [copied, setCopied] = useState(false);
     const copyToClipboard = async () => {
@@ -68,7 +73,7 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
         <div className="center-align">
             <div className="manage-col p-4 md:p-[40px]">
                 <div className="center-align mb-6">
-                    {type === "Link" ? (
+                    {displayType === "Link" ? (
                         <img src={Shared} alt='' className='h-32 w-32' />
                     ) : (
                         <img src={Mail} alt='' className='h-32 w-32' />
@@ -79,7 +84,7 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
                     <h2 className="normal-heading">{headingText}</h2>
                 </div>
 
-                {type === 'Link' && (
+                {displayType === 'Link' && (
                     <>
                         <p className="normal-para mb-4 md:p-3">
                             {getExpiryMessage(files, expiresInHours)}
@@ -110,10 +115,13 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
                         )}
                     </>
                 )}
-                {type === 'Email' && (
+                {displayType === 'Email' && (
                     <div className="manage-col mt-3 mb-4 md:mb-8 p-1 md:p-3">
-                        <button className="button-sm sm:button-md md:button-lg ">
-                            View transfer
+                        <p className="normal-para text-center mb-3">
+                            Files have been uploaded successfully and the shareable link has been shared on your mail ID.
+                        </p>
+                        <button className="button-sm sm:button-md md:button-lg " onClick={onNewTransfer}>
+                            Start new transfer
                         </button>
                     </div>
                 )}

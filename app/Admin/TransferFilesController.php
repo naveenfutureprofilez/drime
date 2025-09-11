@@ -8,6 +8,7 @@ use Common\Core\BaseController;
 use Common\Database\Datasource\Datasource;
 use App\Models\GuestUpload;
 use Illuminate\Support\Facades\DB;
+use App\Helpers\EmailUrlHelper;
 
 class TransferFilesController extends BaseController
 {
@@ -50,7 +51,7 @@ class TransferFilesController extends BaseController
                 'expires_at' => $upload->expires_at,
                 'created_at' => $upload->created_at,
                 'updated_at' => $upload->updated_at,
-                'share_url' => $upload->link_id ? url("/quick-share/link/{$upload->link_id}") : url("/share/{$upload->hash}"),
+                'share_url' => $upload->link_id ? EmailUrlHelper::emailUrl("/quick-share/link/{$upload->link_id}") : EmailUrlHelper::emailUrl("/share/{$upload->hash}"),
                 'file_count' => $files->count(),
                 'files' => $files->map(function ($file) {
                     return [

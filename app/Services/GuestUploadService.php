@@ -5,10 +5,14 @@ namespace App\Services;
 use App\Models\GuestUpload;
 use App\Models\FileEntry;
 use App\Models\ShareableLink;
+use App\Services\GuestUploadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 use Illuminate\Validation\ValidationException;
+use App\Mail\UploadConfirmation;
+use App\Helpers\EmailUrlHelper;
 
 class GuestUploadService
 {
@@ -97,8 +101,8 @@ class GuestUploadService
                 'filename' => $file->getClientOriginalName(),
                 'size' => $file->getSize(),
                 'mime_type' => $file->getMimeType(),
-                'download_url' => url("/download/{$guestUpload->hash}/{$fileEntry->id}"),
-                'share_url' => url("/share/{$guestUpload->hash}"),
+                'download_url' => EmailUrlHelper::emailUrl("/download/{$guestUpload->hash}/{$fileEntry->id}"),
+                'share_url' => EmailUrlHelper::emailUrl("/share/{$guestUpload->hash}"),
             ];
         }
 
@@ -106,12 +110,21 @@ class GuestUploadService
         $guestUpload->total_size = $totalSize;
         $guestUpload->save();
 
-        // e. Build response payload
+        // e. Send confirmation email if recipient email is provided
+        $emailSent = false;
+        if ($recipientEmail) {
+            $this->sendUploadConfirmation($guestUpload, $recipientEmail);
+            $emailSent = true;
+        }
+
+        // f. Build response payload
         return [
             'hash' => $guestUpload->hash,
             'expires_at' => $guestUpload->expires_at->toISOString(),
             'files' => $uploadedFiles,
-            'download_all_url' => url("/download/{$guestUpload->hash}"),
+            'download_all_url' => EmailUrlHelper::emailUrl("/download/{$guestUpload->hash}"),
+            'email_sent' => $emailSent,
+            'recipient_email' => $recipientEmail,
         ];
     }
 
@@ -199,6 +212,11 @@ class GuestUploadService
         $totalSize = $guestUpload->files()->sum('file_entries.file_size');
         $guestUpload->update(['total_size' => $totalSize]);
 
+        // Send confirmation email if recipient email is provided (for new uploads only)
+        if (!$uploadGroupHash && $recipientEmail) {
+            $this->sendUploadConfirmation($guestUpload, $recipientEmail);
+        }
+
         return [
             'hash' => $guestUpload->hash, // Return shared hash for group
             'fileEntry' => [ // Maintain compatibility with existing TUS frontend
@@ -213,8 +231,8 @@ class GuestUploadService
             'total_files' => $guestUpload->files()->count(),
             'total_size' => $totalSize,
             'expires_at' => $guestUpload->expires_at->toISOString(),
-            'download_url' => url("/download/{$guestUpload->hash}"),
-            'share_url' => url("/share/{$guestUpload->hash}"),
+            'download_url' => EmailUrlHelper::emailUrl("/download/{$guestUpload->hash}"),
+            'share_url' => EmailUrlHelper::emailUrl("/share/{$guestUpload->hash}"),
         ];
     }
 
@@ -414,5 +432,94 @@ class GuestUploadService
             'billing_enabled' => env('BILLING_ENABLED', false),
             'max_size_mb' => settings('guest_uploads.max_size_mb', 100)
         ]);
+    }
+
+    /**
+     * Send upload confirmation email to the uploader
+     */
+    private function sendUploadConfirmation(GuestUpload $guestUpload, string $email): void
+    {
+        try {
+            logger('Starting email sending process', [
+                'email' => $email,
+                'upload_hash' => $guestUpload->hash
+            ]);
+            
+            // Create or get shareable link for the upload
+            $shareableLink = $guestUpload->shareableLink;
+            if (!$shareableLink) {
+                logger('Creating new shareable link');
+                // Create a shareable link if it doesn't exist
+                $shareableLink = ShareableLink::create([
+                    'entry_id' => $guestUpload->files->first()->id ?? null,
+                    'hash' => \Illuminate\Support\Str::random(30),
+                    'is_guest' => true,
+                    'expires_at' => $guestUpload->expires_at,
+                    'allow_download' => true,
+                    'allow_edit' => false,
+                ]);
+                
+                // Update guest upload with the new link
+                $guestUpload->update(['link_id' => $shareableLink->hash]);
+                logger('Shareable link created', ['link_hash' => $shareableLink->hash]);
+            } else {
+                logger('Using existing shareable link', ['link_hash' => $shareableLink->hash]);
+            }
+
+            $linkUrl = EmailUrlHelper::emailUrl("/share/{$guestUpload->hash}");
+            
+            logger('About to create UploadConfirmation mailable', [
+                'linkUrl' => $linkUrl,
+                'files_count' => $guestUpload->files()->count(),
+                'total_size' => $guestUpload->total_size
+            ]);
+
+            // Send confirmation email immediately (synchronous)
+            try {
+                $mailable = new UploadConfirmation($guestUpload, $shareableLink, $linkUrl);
+                logger('Mailable created successfully, sending email');
+                
+                // Test mailable content generation
+                $envelope = $mailable->envelope();
+                logger('Envelope created successfully', [
+                    'subject' => $envelope->subject,
+                    'from' => $envelope->from ? (is_array($envelope->from) ? $envelope->from[0]->address : $envelope->from->address) : 'none'
+                ]);
+                
+                $content = $mailable->content();
+                logger('Content created successfully', [
+                    'view' => $content->view,
+                    'data_keys' => array_keys($content->with ?? [])
+                ]);
+                
+                Mail::to($email)->send($mailable);
+                
+                logger('Mail::send completed successfully');
+            } catch (\Exception $mailableException) {
+                logger('Exception during mailable creation or sending', [
+                    'error' => $mailableException->getMessage(),
+                    'trace' => $mailableException->getTraceAsString(),
+                    'file' => $mailableException->getFile(),
+                    'line' => $mailableException->getLine()
+                ]);
+                throw $mailableException;
+            }
+
+            logger('Upload confirmation email sent', [
+                'email' => $email,
+                'upload_hash' => $guestUpload->hash,
+                'link_url' => $linkUrl
+            ]);
+
+        } catch (\Exception $e) {
+            logger('Failed to send upload confirmation email', [
+                'email' => $email,
+                'upload_hash' => $guestUpload->hash ?? 'unknown',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            // Re-throw the exception so it's visible in the response
+            throw $e;
+        }
     }
 }
