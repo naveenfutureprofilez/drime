@@ -19,7 +19,7 @@ return new class extends Migration
             ],
             [
                 'name' => 'guest_uploads.max_size_mb',
-                'value' => json_encode(100),
+                'value' => json_encode(3072), // 3GB = 3072 MB
                 'created_at' => now(),
                 'updated_at' => now(),
             ],

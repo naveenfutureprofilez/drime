@@ -11,6 +11,8 @@ export function TransferProgress({
   status = 'uploading', // 'uploading', 'success', 'error'
   uploadedBytes = 0
 }) {
+  console.log('🚨 🚨 🚨 TRANSFER PROGRESS COMPONENT RENDERING 🚨 🚨 🚨');
+  console.log('TransferProgress props:', { files: files?.length, progress, status, uploadedBytes, totalSize });
   const [displayProgress, setDisplayProgress] = useState(progress);
   
   // Smooth progress animation - simplified
@@ -116,7 +118,7 @@ export function TransferProgress({
             cy="70"
             r="60"
             fill="none"
-            stroke={status === 'success' ? '#10b981' : status === 'error' ? '#ef4444' : '#08CF65'}
+            stroke={status === 'success' ? '#10b981' : status === 'error' ? '#ef4444' : status === 'retrying' ? '#f59e0b' : '#08CF65'}
             strokeWidth="8"
             strokeDasharray={2 * Math.PI * 60}
             strokeDashoffset={
@@ -144,15 +146,20 @@ export function TransferProgress({
         <h3 className="normal-heading">
           {status === 'success' ? 'Transfer Complete!' : 
            status === 'error' ? 'Upload Failed' : 
+           status === 'retrying' ? 'Retrying Upload...' :
            'Creating your transfer'}
         </h3>
-        {status === 'uploading' && (
+        {(status === 'uploading' || status === 'retrying') && (
           <>
-            <p className="normal-para mt-2">{formatSpeed(uploadSpeed)}</p>
+            <p className="normal-para mt-2">
+              {status === 'retrying' ? 'Reconnecting...' : formatSpeed(uploadSpeed)}
+            </p>
             <p className="normal-para mt-2">
               {prettyBytes(uploadedBytes)} of {prettyBytes(totalSize)} • {files.length} file{files.length !== 1 ? 's' : ''}
             </p>
-            <p className="normal-para !mb-6">{formatTime(timeRemaining)} remaining</p>
+            <p className="normal-para !mb-6">
+              {status === 'retrying' ? 'Retrying upload...' : `${formatTime(timeRemaining)} remaining`}
+            </p>
           </>
         )}
         {status === 'success' && (
@@ -168,17 +175,28 @@ export function TransferProgress({
       </div>
 
       <button
-        onClick={status === 'uploading' ? undefined : onComplete}
+        onClick={() => {
+          console.log('🔘 Continue/Try Again button clicked with status:', status);
+          console.log('💾 Files in storage before onComplete:', !!window.completedUploadFiles, window.completedUploadFiles?.length);
+          if (status !== 'uploading' && status !== 'retrying' && onComplete) {
+            onComplete();
+          } else {
+            console.log('⚠️ Button click ignored - status:', status, 'onComplete:', !!onComplete);
+          }
+        }}
         className={`px-8 py-3 rounded-xl font-medium transition-all duration-200 ${
-          status === 'uploading' 
+          status === 'uploading' || status === 'retrying'
             ? 'bg-gray-300 text-gray-600 cursor-not-allowed' 
             : status === 'success'
             ? 'bg-green-500 text-white hover:bg-green-600 hover:scale-105'
             : 'bg-red-500 text-white hover:bg-red-600 hover:scale-105'
         }`}
-        disabled={status === 'uploading'}
+        disabled={status === 'uploading' || status === 'retrying'}
       >
-        {status === "success" ? "Continue" : status === "uploading" ? "Uploading..." : "Try again"}
+        {status === "success" ? "Continue" : 
+         status === "uploading" ? "Uploading..." : 
+         status === "retrying" ? "Retrying..." : 
+         "Try again"}
       </button>
     </div>
   );

@@ -52,9 +52,29 @@ export function TransferHomepage() {
   }, [abortController]);
 
   const handleProgressComplete = useCallback(() => {
+    console.log('🎯 handleProgressComplete called with status:', uploadStatus, 'completedFiles in storage:', !!window.completedUploadFiles);
+    
     if (uploadStatus === 'success') {
-      setCurrentStep('share');
-    } else if (uploadStatus === 'error') {
+      // Get the completed files from the window storage
+      const completedFiles = window.completedUploadFiles;
+      
+      if (completedFiles && completedFiles.length > 0) {
+        console.log('🎉 Found completed files - transitioning to share page:', completedFiles);
+        setUploadedFiles(completedFiles);
+        setCurrentStep('share');
+        // Clean up the temporary storage
+        delete window.completedUploadFiles;
+      } else {
+        console.error('❌ No completed files found in storage - staying on progress screen');
+        // Don't go back to upload, let user try again or handle error
+        console.log('⚠️ Staying on progress screen for manual retry');
+      }
+    } else if (uploadStatus === 'error' || uploadStatus === 'retrying') {
+      console.log('🔄 Staying on progress screen for error/retry status:', uploadStatus);
+      // Don't switch away from progress screen during errors or retries
+    } else {
+      // Handle other cases (like cancelled uploads or user clicking continue with idle status)
+      console.log('⚠️ Unexpected status for progress complete:', uploadStatus, '- going back to upload');
       setCurrentStep('upload');
       setUploadData(null);
       setUploadProgress(0);
@@ -88,8 +108,11 @@ export function TransferHomepage() {
   }, []);
 
   const handleUploadComplete = useCallback(files => {
+    console.log('🎉 Homepage handleUploadComplete called with:', files?.length, 'files:', files);
+    console.log('⚠️ Note: This direct callback bypasses the progress screen');
     setUploadedFiles(files);
     setCurrentStep('share');
+    console.log('🔄 Homepage switched to share step with', files?.length, 'files');
   }, []);
 
   const handleNewTransfer = useCallback(() => {
@@ -218,7 +241,13 @@ function SHARE_SECTION({
 }) {
   // All files should share the same upload/share URL
   const shareUrl = files && files.length > 0 ? files[0]?.share_url || '' : '';
-  console.log('SHARE_SECTION received files:', files); // Debug log to see all files
+  console.log('🎁 SHARE_SECTION received:', {
+    filesCount: files?.length,
+    files: files,
+    shareUrl: shareUrl,
+    firstFile: files?.[0],
+    transferSettings: transferSettings
+  });
 
   // Early return if no files are provided
   if (!files || files.length === 0) {

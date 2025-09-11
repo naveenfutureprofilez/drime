@@ -86,35 +86,73 @@ export function FileUploadWidget({
       onError: (error) => {
         console.error(`❌ TUS Upload Error for ${file.name}:`, error);
         
-        // Handle 429 rate limiting and other retry-able errors
+        // Handle different types of errors
         const statusCode = error.originalResponse?.getStatus();
-        const isRetryableError = statusCode === 429 || statusCode >= 500;
+        const isRateLimited = statusCode === 429;
+        const isServerError = statusCode >= 500;
+        const isNetworkError = !statusCode || statusCode === 0;
+        const isRetryableError = isRateLimited || isServerError || isNetworkError;
+        
+        let errorMessage = 'Upload failed';
+        if (isRateLimited) {
+          errorMessage = 'Too many requests, retrying...';
+        } else if (isServerError) {
+          errorMessage = 'Server error, retrying...';
+        } else if (isNetworkError) {
+          errorMessage = 'Network error, retrying...';
+        } else {
+          errorMessage = error.message || 'Upload failed';
+        }
         
         if (isRetryableError) {
-          console.log(`⏱️ ${statusCode === 429 ? 'Rate limit (429)' : `Server error (${statusCode})`} for ${file.name}, TUS will retry automatically`);
+          console.log(`⏱️ ${errorMessage} for ${file.name}, TUS will retry automatically`);
+          
+          const retryCount = (uploadProgress[file.name]?.retryCount || 0) + 1;
           
           setUploadProgress(prev => ({
             ...prev,
             [file.name]: { 
               ...prev[file.name], 
               status: 'retrying', 
-              error: statusCode === 429 ? 'Rate limited, retrying...' : 'Connection error, retrying...',
-              retryCount: (prev[file.name]?.retryCount || 0) + 1
+              error: errorMessage,
+              retryCount: retryCount
             }
           }));
           
+          // Send retry status to parent
+          onProgressUpdate?.({
+            progress: totalProgress,
+            uploadedBytes: uploadedBytes,
+            totalBytes: totalBytes,
+            uploadSpeed: 0,
+            timeRemaining: 0,
+            status: 'retrying',
+            error: `${errorMessage} (Attempt ${retryCount})`
+          });
+          
           // Keep upload state as uploading during retries
           setUploadState('uploading');
-          console.log(`🔄 Retry attempt ${(uploadProgress[file.name]?.retryCount || 0) + 1} for ${file.name}`);
+          console.log(`🔄 Retry attempt ${retryCount} for ${file.name}`);
           return; // Let TUS handle the retry
         }
         
         // Only set error state for non-retryable errors
-        console.log(`💥 Non-retryable error for ${file.name}: ${error.message}`);
+        console.log(`💥 Non-retryable error for ${file.name}: ${errorMessage}`);
         setUploadProgress(prev => ({
           ...prev,
-          [file.name]: { ...prev[file.name], status: 'error', error: error.message }
+          [file.name]: { ...prev[file.name], status: 'error', error: errorMessage }
         }));
+        
+        // Send error status to parent
+        onProgressUpdate?.({
+          progress: totalProgress,
+          uploadedBytes: uploadedBytes,
+          totalBytes: totalBytes,
+          uploadSpeed: 0,
+          timeRemaining: 0,
+          status: 'error',
+          error: errorMessage
+        });
         
         // Check if all uploads failed before setting global error state
         const currentUploads = Array.from(uploadsRef.current.values());
@@ -234,50 +272,69 @@ export function FileUploadWidget({
             setGuestUploadGroupHash(response.data.upload_group_hash);
           }
 
+          // Simple approach: For single file uploads, assume completion immediately
+          const allUploads = Array.from(uploadsRef.current.values());
+          console.log(`🚀 TUS upload completed for ${file.name}. Total uploads: ${allUploads.length}`);
+          
+          // Update progress state
+          const actualFileEntry = response.data.fileEntry.fileEntry || response.data.fileEntry;
           setUploadProgress(prev => ({
             ...prev,
             [file.name]: {
               ...prev[file.name],
               status: 'completed',
-              fileEntry: response.data.fileEntry
+              fileEntry: actualFileEntry
             }
           }));
-
-          // Check if all files are completed
-          const allUploads = Array.from(uploadsRef.current.values());
-          const completedUploads = allUploads.filter(u => 
-            uploadProgress[u.file.name]?.status === 'completed'
-          );
-
-          if (completedUploads.length === allUploads.length) {
-            setUploadState('completed');
-            console.log(`🎉 All TUS uploads completed!`);
-            
-            // Send final progress update
-            onProgressUpdate?.({
-              progress: 100,
-              uploadedBytes: totalSize,
-              totalBytes: totalSize,
-              uploadSpeed: 0,
-              timeRemaining: 0,
-              status: 'success'
-            });
-            
-            // Get all file entries from completed uploads
-            const allFileEntries = [];
-            completedUploads.forEach(({ file }) => {
-              const fileProgress = uploadProgress[file.name];
-              if (fileProgress?.fileEntry) {
-                allFileEntries.push(fileProgress.fileEntry);
-              }
-            });
-            
-            setTimeout(() => {
-              if (allFileEntries.length > 0) {
-                onUploadComplete?.(allFileEntries);
-              }
-            }, 1000);
-          }
+          
+          // Mark upload as completed and send success immediately
+          setUploadState('completed');
+          console.log(`🎉 All TUS uploads completed!`);
+          
+          console.log('🔍 DEBUG: About to create fileEntry');
+          console.log('🔍 DEBUG: guestUploadGroupHash:', guestUploadGroupHash);
+          console.log('🔍 DEBUG: response.data.upload_group_hash:', response.data.upload_group_hash);
+          console.log('🔍 DEBUG: response.data.fileEntry:', response.data.fileEntry);
+          
+          // Create file entry with share URL
+          const shareHash = guestUploadGroupHash || response.data.upload_group_hash;
+          // actualFileEntry already declared above on line 280
+          
+          const fileEntry = {
+            id: actualFileEntry.id,
+            name: actualFileEntry.name,
+            file_name: actualFileEntry.file_name,
+            mime: actualFileEntry.mime,
+            file_size: actualFileEntry.file_size,
+            extension: actualFileEntry.extension,
+            share_url: `${window.location.origin}/share/${shareHash}`,
+            download_url: `${window.location.origin}/download/${shareHash}/${actualFileEntry.id}`
+          };
+          
+          console.log('🔍 DEBUG: fileEntry created successfully:', fileEntry);
+          
+          // Send final progress update with success status
+          console.log('🔍 DEBUG: About to call onProgressUpdate with success status');
+          onProgressUpdate?.({
+            progress: 100,
+            uploadedBytes: file.size,
+            totalBytes: file.size,
+            uploadSpeed: 0,
+            timeRemaining: 0,
+            status: 'success'
+          });
+          console.log('🔍 DEBUG: onProgressUpdate called successfully');
+          
+          // Store the completed file for the progress screen
+          window.completedUploadFiles = [fileEntry];
+          console.log('💾 window.completedUploadFiles stored:', window.completedUploadFiles);
+          
+          // Call onUploadComplete to trigger the success flow
+          setTimeout(() => {
+            console.log('🎯 Calling onUploadComplete to trigger success transition');
+            onUploadComplete?.([fileEntry]);
+            console.log('🔍 DEBUG: onUploadComplete called successfully');
+          }, 100);
 
         } catch (error) {
           console.error(`❌ Failed to create file entry for ${file.name}:`, error);
@@ -300,9 +357,9 @@ export function FileUploadWidget({
           
           // Send error status to parent
           onProgressUpdate?.({
-            progress: totalProgress,
-            uploadedBytes: totalUploaded,
-            totalBytes: totalSize,
+            progress: 0,
+            uploadedBytes: 0,
+            totalBytes: file.size,
             uploadSpeed: 0,
             timeRemaining: 0,
             status: 'error',
@@ -339,13 +396,51 @@ export function FileUploadWidget({
     
     console.log(`🚀 Starting TUS upload for ${selectedFiles.length} files`);
     
+    const allFiles = selectedFiles.flatMap(item => item.files ? item.files : item);
+    const totalSize = allFiles.reduce((total, file) => total + file.size, 0);
+    const maxFileSize = 3 * 1024 * 1024 * 1024; // 3GB in bytes
+    const maxTotalSize = 5 * 1024 * 1024 * 1024; // 5GB total limit
+    
+    // Validate individual file sizes
+    const oversizedFiles = allFiles.filter(file => file.size > maxFileSize);
+    if (oversizedFiles.length > 0) {
+      const fileNames = oversizedFiles.map(f => f.name).join(', ');
+      const errorMessage = `File(s) too large: ${fileNames}. Maximum file size is 3GB.`;
+      console.error(`❌ ${errorMessage}`);
+      
+      onProgressUpdate?.({
+        progress: 0,
+        uploadedBytes: 0,
+        totalBytes: totalSize,
+        uploadSpeed: 0,
+        timeRemaining: 0,
+        status: 'error',
+        error: errorMessage
+      });
+      return;
+    }
+    
+    // Validate total size
+    if (totalSize > maxTotalSize) {
+      const errorMessage = `Total upload size too large: ${prettyBytes(totalSize)}. Maximum total size is 5GB.`;
+      console.error(`❌ ${errorMessage}`);
+      
+      onProgressUpdate?.({
+        progress: 0,
+        uploadedBytes: 0,
+        totalBytes: totalSize,
+        uploadSpeed: 0,
+        timeRemaining: 0,
+        status: 'error',
+        error: errorMessage
+      });
+      return;
+    }
+    
     setUploadState('uploading');
     setUploadProgress({});
     setTotalProgress(0);
     speedCalculatorRef.current = { lastBytes: 0, lastTime: Date.now() };
-
-    const allFiles = selectedFiles.flatMap(item => item.files ? item.files : item);
-    const totalSize = allFiles.reduce((total, file) => total + file.size, 0);
     setTotalBytes(totalSize);
 
     // Create and start TUS uploads for all files with delay
