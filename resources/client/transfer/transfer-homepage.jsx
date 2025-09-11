@@ -65,12 +65,13 @@ export function TransferHomepage() {
 
   const handleProgressUpdate = useCallback(({ progress, uploadedBytes, totalBytes, uploadSpeed, timeRemaining, status }) => {
     console.log('🏠 Homepage received progress update:', {
-      progress,
-      uploadedBytes,
-      totalBytes,
-      uploadSpeed,
+      progress: `${progress}% (type: ${typeof progress})`,
+      uploadedBytes: `${uploadedBytes} (${prettyBytes(uploadedBytes)})`,
+      totalBytes: `${totalBytes} (${prettyBytes(totalBytes)})`,
+      uploadSpeed: `${uploadSpeed} (${prettyBytes(uploadSpeed)}/s)`,
       timeRemaining,
-      status
+      status,
+      timestamp: new Date().toISOString().split('T')[1]
     });
     
     setUploadProgress(progress);
@@ -78,6 +79,12 @@ export function TransferHomepage() {
     setUploadSpeed(uploadSpeed);
     setTimeRemaining(timeRemaining);
     setUploadStatus(status);
+    
+    console.log('📎 Homepage state after update:', {
+      uploadProgress: progress,
+      uploadedBytes,
+      uploadStatus: status
+    });
   }, []);
 
   const handleUploadComplete = useCallback(files => {

@@ -58,12 +58,25 @@ export function FileUploadWidget({
       overridePatchMethod: true,
       
       metadata: {
-        name: btoa(file.name),
+        name: (() => {
+          try {
+            // Proper UTF-8 encoding for filenames with special characters
+            const encoded = btoa(unescape(encodeURIComponent(file.name)));
+            console.log(`📄 Encoded filename: ${file.name} → ${encoded}`);
+            return encoded;
+          } catch (e) {
+            // Fallback for problematic characters
+            const sanitized = file.name.replace(/[^\w\s.-]/g, '_');
+            const fallback = btoa(sanitized);
+            console.warn(`⚠️ Filename encoding failed, using fallback: ${file.name} → ${sanitized} → ${fallback}`);
+            return fallback;
+          }
+        })(),
         clientName: file.name,
         clientExtension: file.name.split('.').pop() || '',
         clientMime: file.type || 'application/octet-stream',
         clientSize: file.size.toString(),
-        // Guest upload settings
+        // Guest upload settings  
         password: settings?.password || '',
         expires_in_hours: settings?.expiresInHours?.toString() || '72',
         max_downloads: settings?.maxDownloads?.toString() || '',
@@ -180,15 +193,19 @@ export function FileUploadWidget({
         }
         
         // Always notify homepage of progress updates (not just during speed calculations)
-        console.log(`📤 Sending progress to homepage: ${totalProgressValue}%`);
-        onProgressUpdate?.({
-          progress: totalProgressValue,
-          uploadedBytes: totalUploaded,
-          totalBytes: totalSize,
-          uploadSpeed: currentSpeed,
-          timeRemaining: currentTimeRemaining,
-          status: 'uploading'
-        });
+        console.log(`📤 Sending progress to homepage: ${totalProgressValue}% (${prettyBytes(totalUploaded)}/${prettyBytes(totalSize)})`);
+        if (onProgressUpdate) {
+          onProgressUpdate({
+            progress: totalProgressValue,
+            uploadedBytes: totalUploaded,
+            totalBytes: totalSize,
+            uploadSpeed: currentSpeed,
+            timeRemaining: currentTimeRemaining,
+            status: 'uploading'
+          });
+        } else {
+          console.warn('⚠️ onProgressUpdate callback is not defined');
+        }
       },
 
       onSuccess: async () => {
@@ -264,20 +281,39 @@ export function FileUploadWidget({
 
         } catch (error) {
           console.error(`❌ Failed to create file entry for ${file.name}:`, error);
+          
+          let errorMessage = 'Failed to create file entry';
+          if (error.response?.data?.error) {
+            errorMessage = error.response.data.error;
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+          
           setUploadProgress(prev => ({
             ...prev,
             [file.name]: { 
               ...prev[file.name], 
               status: 'error', 
-              error: 'Failed to create file entry' 
+              error: errorMessage
             }
           }));
+          
+          // Send error status to parent
+          onProgressUpdate?.({
+            progress: totalProgress,
+            uploadedBytes: totalUploaded,
+            totalBytes: totalSize,
+            uploadSpeed: 0,
+            timeRemaining: 0,
+            status: 'error',
+            error: errorMessage
+          });
         }
       }
     });
 
     return upload;
-  }, [settings, guestUploadGroupHash, uploadProgress]);
+  }, [settings, guestUploadGroupHash, uploadProgress, onProgressUpdate, onUploadComplete, uploadSpeed, timeRemaining]);
 
   // Form data state - moved up to avoid temporal dead zone
   const [data, setData] = useState({
@@ -616,48 +652,7 @@ export function FileUploadWidget({
               value={data?.message}
               onChange={handleChange}
             />
-            {/* TUS UPLOAD PROGRESS DISPLAY */}
-            {(uploadState === 'uploading' || uploadState === 'paused' || uploadState === 'completed') && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium">
-                    {uploadState === 'completed' ? 'Upload Complete!' : 
-                     uploadState === 'paused' ? 'Upload Paused' : 
-                     Object.values(uploadProgress).some(p => p.status === 'retrying') ? 
-                       `Uploading (retrying - attempt ${Math.max(...Object.values(uploadProgress).map(p => p.retryCount || 0))})...` : 
-                       'Uploading...'} 
-                    ({totalProgress}%)
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    {prettyBytes(uploadedBytes)} / {prettyBytes(totalBytes)}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                  <div 
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      uploadState === 'completed' ? 'bg-green-600' : 
-                      Object.values(uploadProgress).some(p => p.status === 'retrying') ? 'bg-yellow-500' : 'bg-green-500'
-                    }`}
-                    style={{ width: `${totalProgress}%` }}
-                  />
-                </div>
-                {uploadState === 'uploading' && (
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>
-                      {Object.values(uploadProgress).some(p => p.status === 'retrying') ? 'Retrying...' : formatSpeed(uploadSpeed)}
-                    </span>
-                    <span>
-                      {Object.values(uploadProgress).some(p => p.status === 'retrying') ? 'Reconnecting...' : `${formatTime(timeRemaining)} remaining`}
-                    </span>
-                  </div>
-                )}
-                {uploadState === 'completed' && (
-                  <div className="text-center text-sm text-green-600 font-medium">
-                    ✅ Upload successful! Redirecting to share page...
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Progress display removed - now handled by TransferProgress component */}
             
             <div className='between-align pt-[20px] gap-5 md:gap-0'>
               <div className='flex items-center space-x-1 cursor-pointer hover:opacity-75 transition-opacity' onClick={handleSettingsClick}>

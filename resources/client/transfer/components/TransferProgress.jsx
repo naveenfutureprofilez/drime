@@ -13,28 +13,11 @@ export function TransferProgress({
 }) {
   const [displayProgress, setDisplayProgress] = useState(progress);
   
-  // Smooth progress animation with detailed logging
+  // Smooth progress animation - simplified
   useEffect(() => {
-    console.log(`🎨 Progress Animation: ${displayProgress}% → ${progress}%`);
-    
-    // Use requestAnimationFrame for smoother updates
-    const animate = () => {
-      setDisplayProgress(prevDisplay => {
-        const diff = progress - prevDisplay;
-        if (Math.abs(diff) < 0.1) {
-          return progress; // Close enough, snap to target
-        }
-        // Smooth interpolation
-        const step = diff * 0.3;
-        const newProgress = prevDisplay + step;
-        console.log(`🎨 Animating: ${prevDisplay.toFixed(1)}% + ${step.toFixed(1)}% = ${newProgress.toFixed(1)}%`);
-        return newProgress;
-      });
-    };
-    
-    const timer = setTimeout(animate, 16); // ~60fps
-    return () => clearTimeout(timer);
-  }, [progress, displayProgress]);
+    console.log(`🎨 TransferProgress: updating displayProgress from ${displayProgress}% to ${progress}%`);
+    setDisplayProgress(progress); // Direct update for now to debug
+  }, [progress]);
 
   // Auto complete when progress reaches 100%
   useEffect(() => {
@@ -89,8 +72,8 @@ export function TransferProgress({
 
   console.log("🔄 TransferProgress Render:", {
     files: files?.length, 
-    progress: `${progress}%`, 
-    displayProgress: `${displayProgress}%`,
+    progress: `${progress}% (type: ${typeof progress})`,
+    displayProgress: `${displayProgress}% (type: ${typeof displayProgress})`,
     progressDiff: Math.abs(progress - displayProgress),
     status, 
     totalSize: prettyBytes(totalSize), 
@@ -99,6 +82,13 @@ export function TransferProgress({
     timeRemaining: formatTime(timeRemaining),
     timestamp: new Date().toISOString().split('T')[1]
   });
+  
+  // Log when we receive a new progress value
+  const prevProgressRef = React.useRef(progress);
+  if (prevProgressRef.current !== progress) {
+    console.log(`📈 Progress changed: ${prevProgressRef.current}% -> ${progress}%`);
+    prevProgressRef.current = progress;
+  }
   
   // Log when progress changes significantly
   const prevProgress = React.useRef(0);

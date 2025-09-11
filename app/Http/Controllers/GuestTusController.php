@@ -58,8 +58,17 @@ class GuestTusController extends BaseController
             ], 413);
         }
 
-        // Validate content type
-        $fileName = base64_decode($tusData['name'] ?? '');
+        // Validate content type - safely decode filename
+        $fileName = '';
+        try {
+            $fileName = base64_decode($tusData['name'] ?? '');
+            // Validate UTF-8
+            if (!mb_check_encoding($fileName, 'UTF-8')) {
+                $fileName = mb_convert_encoding(base64_decode($tusData['name'] ?? ''), 'UTF-8', 'auto');
+            }
+        } catch (\Exception $e) {
+            $fileName = $tusData['name'] ?? 'unknown';
+        }
         $extension = pathinfo($fileName, PATHINFO_EXTENSION);
         $mimeType = $tusData['mime'] ?? '';
 

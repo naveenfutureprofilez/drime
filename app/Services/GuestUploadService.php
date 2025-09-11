@@ -192,12 +192,26 @@ class GuestUploadService
         }
         
         // Create FileEntry for TUS uploaded file
+        // Safely decode filename with UTF-8 support
+        $decodedName = $fileName;
+        try {
+            $decodedName = base64_decode($fileName);
+            // Validate UTF-8
+            if (!mb_check_encoding($decodedName, 'UTF-8')) {
+                // If not valid UTF-8, try different approach
+                $decodedName = mb_convert_encoding(base64_decode($fileName), 'UTF-8', 'auto');
+            }
+        } catch (\Exception $e) {
+            // Fallback to original if decoding fails
+            $decodedName = $fileName;
+        }
+        
         $fileEntry = FileEntry::create([
-            'name' => base64_decode($fileName),
+            'name' => $decodedName,
             'file_name' => $uploadKey,
             'mime' => $mimeType,
             'file_size' => $fileSize,
-            'extension' => pathinfo(base64_decode($fileName), PATHINFO_EXTENSION),
+            'extension' => pathinfo($decodedName, PATHINFO_EXTENSION),
             'user_id' => null,
             'parent_id' => null,
             'path' => 'tus',
