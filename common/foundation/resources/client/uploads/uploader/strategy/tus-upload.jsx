@@ -3,8 +3,9 @@ import { getAxiosErrorMessage } from '@common/http/get-axios-error-message';
 import { apiClient } from '@common/http/query-client';
 import { getCookie } from 'react-use-cookie';
 export class TusUpload {
-  constructor(upload) {
+  constructor(upload, uploadGroupHash) {
     this.upload = upload;
+    this.uploadGroupHash = uploadGroupHash;
   }
   start() {
     this.upload.start();
@@ -75,7 +76,22 @@ export class TusUpload {
         const uploadKey = upload.url?.split('/').pop();
         try {
           if (uploadKey) {
-            const response = await createFileEntry(uploadKey);
+            const response = await createFileEntry(uploadKey, {
+              upload_group_hash: metadata.upload_group_hash,
+              password: metadata.password,
+              expires_in_hours: metadata.expires_in_hours,
+              max_downloads: metadata.max_downloads,
+              sender_email: metadata.sender_email,
+              sender_name: metadata.sender_name,
+              message: metadata.message
+            });
+            
+            // Store the upload_group_hash for subsequent files to use
+            if (response.upload_group_hash && !metadata.upload_group_hash) {
+              // This was the first file, store the hash for subsequent files
+              window.currentUploadGroupHash = response.upload_group_hash;
+            }
+            
             onSuccess?.(response.fileEntry, file);
           }
         } catch (err) {
@@ -88,11 +104,18 @@ export class TusUpload {
     if (previousUploads.length) {
       upload.resumeFromPreviousUpload(previousUploads[0]);
     }
-    return new TusUpload(upload);
+    return new TusUpload(upload, metadata.upload_group_hash);
   }
 }
-function createFileEntry(uploadKey) {
+function createFileEntry(uploadKey, options = {}) {
   return apiClient.post('tus/entries', {
-    uploadKey
+    uploadKey,
+    upload_group_hash: options.upload_group_hash || null,
+    password: options.password || null,
+    expires_in_hours: options.expires_in_hours || null,
+    max_downloads: options.max_downloads || null,
+    sender_email: options.sender_email || null,
+    sender_name: options.sender_name || null,
+    message: options.message || null
   }).then(r => r.data);
 }

@@ -29,6 +29,7 @@ export function TransferHomepage() {
   const [uploadResponse, setUploadResponse] = useState(null);
   const [uploadedBytes, setUploadedBytes] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(0);
+  const [uploadControlsRef, setUploadControlsRef] = useState(null);
 
   const handleSettingsChange = useCallback((newSettings) => {
     setTransferSettings(newSettings);
@@ -49,37 +50,69 @@ export function TransferHomepage() {
     if (abortController) {
       abortController.abort();
     }
-  }, [abortController]);
+    // Also cancel via upload controls if available
+    if (uploadControlsRef?.handleCancelUpload) {
+      uploadControlsRef.handleCancelUpload();
+    }
+  }, [abortController, uploadControlsRef]);
+
+  const handleUploadPause = useCallback(() => {
+    console.log('🏠 Homepage: Pausing upload');
+    if (uploadControlsRef?.handlePauseUpload) {
+      uploadControlsRef.handlePauseUpload();
+      setUploadStatus('paused');
+    }
+  }, [uploadControlsRef]);
+
+  const handleUploadResume = useCallback(() => {
+    console.log('🏠 Homepage: Resuming upload');
+    if (uploadControlsRef?.handleResumeUpload) {
+      uploadControlsRef.handleResumeUpload();
+      setUploadStatus('uploading');
+    }
+  }, [uploadControlsRef]);
 
   const handleProgressComplete = useCallback(() => {
     console.log('🎯 handleProgressComplete called with status:', uploadStatus, 'completedFiles in storage:', !!window.completedUploadFiles);
     
+    // Check for completed files first - this is the most reliable indicator
+    const completedFiles = window.completedUploadFiles;
+    
+    if (completedFiles && completedFiles.length > 0) {
+      console.log('🎉 Found completed files - transitioning directly to share page:', completedFiles);
+      setUploadedFiles(completedFiles);
+      setCurrentStep('share');
+      setUploadStatus('success'); // Ensure status is set to success
+      // Clean up the temporary storage
+      delete window.completedUploadFiles;
+      return; // Early return to prevent any other logic
+    }
+    
+    // If no completed files but status is success, something went wrong
     if (uploadStatus === 'success') {
-      // Get the completed files from the window storage
-      const completedFiles = window.completedUploadFiles;
-      
-      if (completedFiles && completedFiles.length > 0) {
-        console.log('🎉 Found completed files - transitioning to share page:', completedFiles);
-        setUploadedFiles(completedFiles);
-        setCurrentStep('share');
-        // Clean up the temporary storage
-        delete window.completedUploadFiles;
-      } else {
-        console.error('❌ No completed files found in storage - staying on progress screen');
-        // Don't go back to upload, let user try again or handle error
-        console.log('⚠️ Staying on progress screen for manual retry');
-      }
-    } else if (uploadStatus === 'error' || uploadStatus === 'retrying') {
+      console.error('❌ Status is success but no completed files found - staying on progress screen');
+      console.log('⚠️ Staying on progress screen for manual retry');
+      return; // Stay on progress screen
+    }
+    
+    // Handle error and retry states
+    if (uploadStatus === 'error' || uploadStatus === 'retrying') {
       console.log('🔄 Staying on progress screen for error/retry status:', uploadStatus);
-      // Don't switch away from progress screen during errors or retries
-    } else {
-      // Handle other cases (like cancelled uploads or user clicking continue with idle status)
-      console.log('⚠️ Unexpected status for progress complete:', uploadStatus, '- going back to upload');
+      return; // Stay on progress screen
+    }
+    
+    // Only go back to upload if explicitly cancelled or in an unexpected state
+    // AND there are no completed files
+    if (uploadStatus === 'cancelled' || uploadStatus === 'idle') {
+      console.log('⚠️ Upload was cancelled or idle - going back to upload');
       setCurrentStep('upload');
       setUploadData(null);
       setUploadProgress(0);
       setUploadStatus('idle');
       setUploadedBytes(0);
+    } else {
+      // For any other unexpected status, stay on progress screen
+      console.log('⚠️ Unexpected status for progress complete:', uploadStatus, '- staying on progress screen');
     }
   }, [uploadStatus]);
 
@@ -131,24 +164,34 @@ export function TransferHomepage() {
     {/* <DefaultMetaTags /> */}
     <Layout>
       <div className=" bg-white text-black">
-        {currentStep !== 'progress' && (
+        {currentStep === 'upload' && (
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-            {currentStep === 'upload' && (
-              <UPLOAD_SECTION
-                settings={transferSettings}
-                onSettingsChange={handleSettingsChange}
-                onUploadComplete={handleUploadComplete}
-                onUploadStart={handleUploadStart}
-                onProgressUpdate={handleProgressUpdate}
-                uploadProgress={uploadProgress}
-                uploadState={uploadStatus === 'success' ? 'completed' : uploadStatus}
-                uploadSpeed={uploadSpeed}
-                timeRemaining={uploadSpeed > 0 ? ((uploadData?.totalSize * (100 - uploadProgress)) / 100) / uploadSpeed : 0}
-                uploadedBytes={uploadedBytes}
-                totalBytes={uploadData?.totalSize || 0}
-              />)}
+            <UPLOAD_SECTION
+              settings={transferSettings}
+              onSettingsChange={handleSettingsChange}
+              onUploadComplete={handleUploadComplete}
+              onUploadStart={handleUploadStart}
+              onProgressUpdate={handleProgressUpdate}
+              uploadProgress={uploadProgress}
+              uploadState={uploadStatus === 'success' ? 'completed' : uploadStatus}
+              uploadSpeed={uploadSpeed}
+              timeRemaining={uploadSpeed > 0 ? ((uploadData?.totalSize * (100 - uploadProgress)) / 100) / uploadSpeed : 0}
+              uploadedBytes={uploadedBytes}
+              totalBytes={uploadData?.totalSize || 0}
+              setUploadControlsRef={setUploadControlsRef}
+            />
+          </div>
+        )}
 
-            {currentStep === 'share' && <SHARE_SECTION files={uploadedFiles} transferSettings={transferSettings} onNewTransfer={handleNewTransfer} onShowEmailPanel={() => setShowEmailPanel(true)} uploadResponse={uploadResponse} />}
+        {currentStep === 'share' && (
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <SHARE_SECTION 
+              files={uploadedFiles} 
+              transferSettings={transferSettings} 
+              onNewTransfer={handleNewTransfer} 
+              onShowEmailPanel={() => setShowEmailPanel(true)} 
+              uploadResponse={uploadResponse} 
+            />
           </div>
         )}
 
@@ -161,6 +204,8 @@ export function TransferHomepage() {
             uploadSpeed={uploadSpeed}
             timeRemaining={timeRemaining}
             onCancel={handleUploadCancel}
+            onPause={handleUploadPause}
+            onResume={handleUploadResume}
             onComplete={handleProgressComplete}
             status={uploadStatus}
             uploadedBytes={uploadedBytes}
@@ -183,7 +228,8 @@ function UPLOAD_SECTION({
   uploadSpeed = 0,
   timeRemaining = 0,
   uploadedBytes = 0,
-  totalBytes = 0
+  totalBytes = 0,
+  setUploadControlsRef
 }) {
   const [showSettings, setShowSettings] = useState(false);
   const [testMode, setTestMode] = useState(false);
@@ -218,6 +264,7 @@ function UPLOAD_SECTION({
       onUploadComplete={onUploadComplete}
       onSettingsChange={onSettingsChange}
       onProgressUpdate={onProgressUpdate}
+      onSetUploadControls={setUploadControlsRef}
     />
 
  

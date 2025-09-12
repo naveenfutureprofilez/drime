@@ -68,8 +68,8 @@ class GuestUploadService
 
         // c. Inside the loop keep previous logic for FileEntry creation but do not create GuestUpload rows
         foreach ($files as $file) {
-            // Store file using configured disk (Cloudflare R2)
-            $disk = Storage::disk(config('common.site.uploads_disk', 'uploads'));
+            // Store file using configured uploads disk (can be Cloudflare R2)
+            $disk = Storage::disk('uploads'); // This uses the dynamic-uploads driver
             $fileName = $this->generateUniqueFileName($file);
             $path = $disk->putFileAs('guest-uploads', $file, $fileName);
             
@@ -87,7 +87,7 @@ class GuestUploadService
                 'user_id' => null, // Guest upload
                 'parent_id' => null,
                 'path' => 'guest-uploads',
-                'disk_prefix' => config('common.site.uploads_disk', 'uploads'),
+                'disk_prefix' => 'uploads', // Uses dynamic-uploads driver
                 'type' => 'file',
             ]);
 
@@ -219,25 +219,94 @@ class GuestUploadService
             }
         }
         
+        // Move TUS file from local storage to cloud storage (if configured)
+        $finalDisk = Storage::disk('uploads'); // Dynamic uploads disk
+        $localTusPath = storage_path("tus/{$uploadKey}");
+        
+        $finalFileName = $this->generateUniqueFileName($decodedName);
+        $cloudPath = "guest-uploads/{$finalFileName}";
+        
+        // Check if we should move to cloud storage
+        $shouldMoveToCloud = config('common.site.uploads_disk_driver') !== 'local';
+        
+        if ($shouldMoveToCloud && file_exists($localTusPath)) {
+            // Move file from local TUS storage to cloud storage using streaming for large files
+            $fileSize = filesize($localTusPath);
+            
+            logger()->info('Moving TUS file to cloud storage', [
+                'upload_key' => $uploadKey,
+                'file_size' => $fileSize,
+                'source' => $localTusPath,
+                'destination' => $cloudPath
+            ]);
+            
+            if ($fileSize > 50 * 1024 * 1024) { // Files larger than 50MB
+                // Use streaming for large files to avoid memory issues
+                $stream = fopen($localTusPath, 'r');
+                if ($stream === false) {
+                    throw new \Exception('Unable to open TUS file for streaming: ' . $localTusPath);
+                }
+                
+                try {
+                    $finalDisk->writeStream($cloudPath, $stream);
+                    logger()->info('Large file streamed successfully to cloud storage', [
+                        'upload_key' => $uploadKey,
+                        'file_size' => $fileSize
+                    ]);
+                } finally {
+                    fclose($stream);
+                }
+            } else {
+                // Use regular method for smaller files
+                $fileContent = file_get_contents($localTusPath);
+                $finalDisk->put($cloudPath, $fileContent);
+                logger()->info('Small file transferred to cloud storage', [
+                    'upload_key' => $uploadKey,
+                    'file_size' => $fileSize
+                ]);
+            }
+            
+            // Clean up local TUS file
+            unlink($localTusPath);
+            
+            $diskPrefix = 'uploads';
+            $finalPath = 'guest-uploads';
+        } else {
+            // Keep file in local TUS storage
+            $finalFileName = $uploadKey;
+            $diskPrefix = 'local';
+            $finalPath = 'tus';
+        }
+        
         $fileEntry = FileEntry::create([
             'name' => $decodedName,
-            'file_name' => $uploadKey,
+            'file_name' => $finalFileName,
             'mime' => $mimeType,
             'file_size' => $fileSize,
             'extension' => pathinfo($decodedName, PATHINFO_EXTENSION),
             'user_id' => null,
             'parent_id' => null,
-            'path' => 'tus',
-            'disk_prefix' => 'local', // TUS files are stored locally first
+            'path' => $finalPath,
+            'disk_prefix' => $diskPrefix,
             'type' => 'file',
         ]);
 
         // Attach the file to the GuestUpload
         $guestUpload->files()->attach($fileEntry->id);
         
-        // Update total size by summing all attached files
-        $totalSize = $guestUpload->files()->sum('file_entries.file_size');
-        $guestUpload->update(['total_size' => $totalSize]);
+        // Update total size efficiently - just add the current file size instead of recalculating
+        $currentTotalSize = $guestUpload->total_size + $fileSize;
+        $guestUpload->update(['total_size' => $currentTotalSize]);
+        
+        logger()->info('File entry created successfully', [
+            'upload_key' => $uploadKey,
+            'file_entry_id' => $fileEntry->id,
+            'file_name' => $decodedName,
+            'file_size' => $fileSize,
+            'guest_upload_hash' => $guestUpload->hash,
+            'total_files' => $guestUpload->files()->count(),
+            'total_size' => $currentTotalSize
+        ]);
 
         // Send confirmation email if recipient email is provided (for new uploads only)
         if (!$uploadGroupHash && $recipientEmail) {
@@ -256,7 +325,7 @@ class GuestUploadService
             ],
             'upload_group_hash' => $guestUpload->hash,
             'total_files' => $guestUpload->files()->count(),
-            'total_size' => $totalSize,
+            'total_size' => $currentTotalSize,
             'expires_at' => $guestUpload->expires_at->toISOString(),
             'download_url' => EmailUrlHelper::emailUrl("/download/{$guestUpload->hash}"),
             'share_url' => EmailUrlHelper::emailUrl("/share/{$guestUpload->hash}"),
@@ -371,9 +440,17 @@ class GuestUploadService
      */
     private function generateUniqueFileName($file): string
     {
-        $extension = $file->getClientOriginalExtension();
-        $hash = hash('sha256', $file->getClientOriginalName() . time() . rand());
-        return $hash . ($extension ? '.' . $extension : '');
+        if (is_string($file)) {
+            // For TUS uploads, $file is the filename string
+            $extension = pathinfo($file, PATHINFO_EXTENSION);
+            $hash = hash('sha256', $file . time() . rand());
+            return $hash . ($extension ? '.' . $extension : '');
+        } else {
+            // For regular uploads, $file is UploadedFile object
+            $extension = $file->getClientOriginalExtension();
+            $hash = hash('sha256', $file->getClientOriginalName() . time() . rand());
+            return $hash . ($extension ? '.' . $extension : '');
+        }
     }
 
     /**

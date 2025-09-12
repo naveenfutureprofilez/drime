@@ -14,6 +14,8 @@ use App\Events\GuestUploadDownloaded;
 use Common\Core\BaseController;
 use ZipStream\ZipStream;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use App\Helpers\FilePathResolver;
+use App\Services\FileDownloadErrorHandler;
 
 class GuestUploadController extends BaseController
 {
@@ -240,9 +242,7 @@ class GuestUploadController extends BaseController
         
         if (!$canDownload) {
             logger('Cannot download - expired or limit reached');
-            return response()->json([
-                'message' => 'This upload has expired or reached download limit'
-            ], 410);
+            return FileDownloadErrorHandler::handleExpiredUpload($guestUpload);
         }
 
         // Check password using consistent method
@@ -265,84 +265,26 @@ class GuestUploadController extends BaseController
         }
 
         try {
-            logger('Starting download process');
+            logger('Starting download process for file: ' . $fileEntry->name);
             
-            // Re-use existing disk logic but lookup FileEntry by id
-            $disk = Storage::disk(config('common.site.uploads_disk', 'uploads'));
-            logger('Disk loaded', ['disk' => config('common.site.uploads_disk')]);
+            // Use the FilePathResolver to find the actual file
+            $fileResult = FilePathResolver::resolve($fileEntry->file_name);
             
-            // Build the file path - try multiple possible paths
-            $rawPath = $fileEntry->getRawOriginal('path');
-            $fileName = $fileEntry->file_name;
-            
-            $possiblePaths = [
-                // Try with raw path if it exists
-                $rawPath ? $rawPath . '/' . $fileName : null,
-                // Try direct file name
-                $fileName,
-                // Try in guest-uploads directory (common location)
-                'guest-uploads/' . $fileName,
-                // Try to find files that start with this name (for cases where extension was added)
-                null // We'll handle this separately
-            ];
-            
-            $filePath = null;
-            $fileExists = false;
-            
-            // Check each possible path
-            foreach (array_filter($possiblePaths) as $path) {
-                if ($disk->exists($path)) {
-                    $filePath = $path;
-                    $fileExists = true;
-                    break;
-                }
+            if (!$fileResult) {
+                return FileDownloadErrorHandler::handleFileNotFound(
+                    $fileEntry->file_name,
+                    $fileEntry->name,
+                    ['upload_hash' => $hash, 'file_id' => $fileId]
+                );
             }
             
-            // If still not found, try to find files that start with the stored filename
-            // For S3 compatibility, we'll use a more efficient approach
-            if (!$fileExists) {
-                // Try with common extensions for the partial filename
-                $commonExtensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'txt', 'doc', 'docx', 'zip', 'mp4', 'mp3'];
-                foreach ($commonExtensions as $ext) {
-                    $testPath = 'guest-uploads/' . $fileName . '.' . $ext;
-                    if ($disk->exists($testPath)) {
-                        $filePath = $testPath;
-                        $fileExists = true;
-                        break;
-                    }
-                }
-                
-                // If still not found, try a prefix-based search (works for both S3 and local)
-                if (!$fileExists) {
-                    try {
-                        $files = $disk->files('guest-uploads');
-                        foreach ($files as $file) {
-                            if (strpos(basename($file), $fileName) === 0) {
-                                $filePath = $file;
-                                $fileExists = true;
-                                break;
-                            }
-                        }
-                    } catch (\Exception $e) {
-                        logger('Error searching files: ' . $e->getMessage());
-                    }
-                }
-            }
+            $filePath = $fileResult['path'];
+            $useDisk = $fileResult['disk'];
             
-            logger('File path search result', [
-                'filePath' => $filePath, 
-                'rawPath' => $rawPath, 
-                'file_name' => $fileName,
-                'exists' => $fileExists
+            logger('File found successfully', [
+                'path' => $filePath,
+                'disk' => is_string($useDisk) ? $useDisk : get_class($useDisk)
             ]);
-            
-            if (!$fileExists) {
-                logger('File not found in storage after all attempts', [
-                    'fileName' => $fileName,
-                    'checkedPaths' => array_filter($possiblePaths)
-                ]);
-                return response()->json(['message' => 'File not found in storage'], 404);
-            }
 
             logger('About to increment download count');
             // Increment download count for successful download
@@ -355,16 +297,29 @@ class GuestUploadController extends BaseController
             }
 
             logger('About to start download', ['fileName' => $fileEntry->getNameWithExtension()]);
-            return $disk->download(
+            
+            // Handle direct file access for TUS files
+            if ($useDisk === 'direct') {
+                return response()->download(
+                    $filePath,
+                    $fileEntry->getNameWithExtension(),
+                    [
+                        'Content-Type' => $fileEntry->mime ?? 'application/octet-stream',
+                    ]
+                );
+            }
+            
+            return $useDisk->download(
                 $filePath,
                 $fileEntry->getNameWithExtension()
             );
             
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Download failed',
-                'error' => $e->getMessage()
-            ], 500);
+            return FileDownloadErrorHandler::handleStorageError($e, [
+                'upload_hash' => $hash,
+                'file_id' => $fileId,
+                'file_name' => $fileEntry->name ?? 'unknown'
+            ]);
         }
     }
 
@@ -384,9 +339,7 @@ class GuestUploadController extends BaseController
 
         // Verify password/limits once (not per file)
         if (!$guestUpload->canDownload()) {
-            return response()->json([
-                'message' => 'This upload has expired or reached download limit'
-            ], 410);
+            return FileDownloadErrorHandler::handleExpiredUpload($guestUpload);
         }
 
         // Check password using consistent method
@@ -411,64 +364,19 @@ class GuestUploadController extends BaseController
             $fileEntry = $files->first();
             
             try {
-                $disk = Storage::disk(config('common.site.uploads_disk', 'uploads'));
+                // Use the FilePathResolver to find the actual file
+                $fileResult = FilePathResolver::resolve($fileEntry->file_name);
                 
-                // Build the file path - try multiple possible paths (same as downloadFile)
-                $rawPath = $fileEntry->getRawOriginal('path');
-                $fileName = $fileEntry->file_name;
-                
-                $possiblePaths = [
-                    $rawPath ? $rawPath . '/' . $fileName : null,
-                    $fileName,
-                    'guest-uploads/' . $fileName,
-                ];
-                
-                $filePath = null;
-                $fileExists = false;
-                
-                // Check each possible path
-                foreach (array_filter($possiblePaths) as $path) {
-                    if ($disk->exists($path)) {
-                        $filePath = $path;
-                        $fileExists = true;
-                        break;
-                    }
+                if (!$fileResult) {
+                    return FileDownloadErrorHandler::handleFileNotFound(
+                        $fileEntry->file_name,
+                        $fileEntry->name,
+                        ['upload_hash' => $hash, 'download_type' => 'single_file_from_multi']
+                    );
                 }
                 
-                // If still not found, try to find files that start with the stored filename
-                // For S3 compatibility, we'll use a more efficient approach
-                if (!$fileExists) {
-                    // Try with common extensions for the partial filename
-                    $commonExtensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'txt', 'doc', 'docx', 'zip', 'mp4', 'mp3'];
-                    foreach ($commonExtensions as $ext) {
-                        $testPath = 'guest-uploads/' . $fileName . '.' . $ext;
-                        if ($disk->exists($testPath)) {
-                            $filePath = $testPath;
-                            $fileExists = true;
-                            break;
-                        }
-                    }
-                    
-                    // If still not found, try a prefix-based search (works for both S3 and local)
-                    if (!$fileExists) {
-                        try {
-                            $files = $disk->files('guest-uploads');
-                            foreach ($files as $file) {
-                                if (strpos(basename($file), $fileName) === 0) {
-                                    $filePath = $file;
-                                    $fileExists = true;
-                                    break;
-                                }
-                            }
-                        } catch (\Exception $e) {
-                            logger('Error searching files: ' . $e->getMessage());
-                        }
-                    }
-                }
-                
-                if (!$fileExists) {
-                    return response()->json(['message' => 'File not found in storage'], 404);
-                }
+                $filePath = $fileResult['path'];
+                $useDisk = $fileResult['disk'];
 
                 // Increment download count for successful download
                 $guestUpload->incrementDownloadCount();
@@ -479,21 +387,44 @@ class GuestUploadController extends BaseController
                     GuestUploadDownloaded::dispatch($guestUpload, $shareableLink);
                 }
 
-                return $disk->download(
+                // Handle direct file access for TUS files
+                if ($useDisk === 'direct') {
+                    return response()->download(
+                        $filePath,
+                        $fileEntry->getNameWithExtension(),
+                        [
+                            'Content-Type' => $fileEntry->mime ?? 'application/octet-stream',
+                        ]
+                    );
+                }
+                
+                return $useDisk->download(
                     $filePath,
                     $fileEntry->getNameWithExtension()
                 );
                 
             } catch (\Exception $e) {
-                return response()->json([
-                    'message' => 'Download failed',
-                    'error' => $e->getMessage()
-                ], 500);
+                return FileDownloadErrorHandler::handleStorageError($e, [
+                    'upload_hash' => $hash,
+                    'download_type' => 'single_file_from_multi',
+                    'file_name' => $fileEntry->name ?? 'unknown'
+                ]);
             }
         }
 
-        // Multiple files - stream as ZIP
-        return $this->streamFilesAsZip($guestUpload, $files);
+        // Multiple files - stream as ZIP with retry logic
+        try {
+            return FileDownloadErrorHandler::retryOperation(
+                fn() => $this->streamFilesAsZip($guestUpload, $files),
+                maxRetries: 2,
+                baseDelay: 1
+            );
+        } catch (\Exception $e) {
+            return FileDownloadErrorHandler::handleZipError($e, $files->count(), [
+                'upload_hash' => $hash,
+                'file_count' => $files->count()
+            ]);
+        }
     }
 
     /**
@@ -511,20 +442,25 @@ class GuestUploadController extends BaseController
                     outputName: "guest-upload-{$guestUpload->hash}-$timestamp.zip",
                 );
 
-                $disk = Storage::disk(config('common.site.uploads_disk', 'uploads'));
+                $disk = Storage::disk('uploads'); // Dynamic uploads disk (can be Cloudflare R2)
+                $localDisk = Storage::disk('local'); // For TUS files
                 $filesInZip = []; // Track duplicate file names
                 
                 foreach ($files as $fileEntry) {
                     try {
-                        // Use raw path to avoid base36 decoding
-                        $rawPath = $fileEntry->getRawOriginal('path');
-                        $filePath = $rawPath ? 
-                            $rawPath . '/' . $fileEntry->file_name : 
-                            $fileEntry->file_name;
+                        // Use FilePathResolver to find the actual file location
+                        $fileResult = FilePathResolver::resolve($fileEntry->file_name);
                         
-                        if (!$disk->exists($filePath)) {
+                        if (!$fileResult) {
+                            logger('File not found in ZIP generation', [
+                                'fileName' => $fileEntry->file_name,
+                                'originalName' => $fileEntry->name
+                            ]);
                             continue; // Skip missing files
                         }
+                        
+                        $filePath = $fileResult['path'];
+                        $useDisk = $fileResult['disk'];
 
                         // Handle duplicate file names by adding numbers
                         $fileName = $fileEntry->getNameWithExtension();
@@ -536,7 +472,13 @@ class GuestUploadController extends BaseController
                             $filesInZip[$fileName] = 0;
                         }
 
-                        $stream = $disk->readStream($filePath);
+                        // Handle direct file access for TUS files
+                        if ($useDisk === 'direct') {
+                            $stream = fopen($filePath, 'r');
+                        } else {
+                            $stream = $useDisk->readStream($filePath);
+                        }
+                        
                         if ($stream) {
                             $zip->addFileFromStream($fileName, $stream);
                             fclose($stream);

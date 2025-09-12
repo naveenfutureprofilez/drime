@@ -20,6 +20,7 @@ use App\Events\GuestUploadDownloaded;
 use Illuminate\Support\Facades\Storage;
 use Common\Core\BaseController;
 use App\Helpers\EmailUrlHelper;
+use App\Helpers\FilePathResolver;
 
 class QuickShareController extends BaseController
 {
@@ -371,16 +372,21 @@ class QuickShareController extends BaseController
         $fileEntry = $files->first();
         
         try {
-            // Get file from storage
-            $disk = Storage::disk(config('common.site.uploads_disk'));
+            // Use FilePathResolver to find the actual file location
+            $fileResult = FilePathResolver::resolve($fileEntry->file_name);
             
-            $filePath = $fileEntry->path ? 
-                $fileEntry->path . '/' . $fileEntry->file_name : 
-                $fileEntry->file_name;
-            
-            if (!$disk->exists($filePath)) {
-                return response()->json(['message' => 'File not found in storage'], 404);
+            if (!$fileResult) {
+                return response()->json([
+                    'message' => 'File not found in storage',
+                    'debug' => [
+                        'stored_name' => $fileEntry->file_name,
+                        'original_name' => $fileEntry->name
+                    ]
+                ], 404);
             }
+            
+            $filePath = $fileResult['path'];
+            $useDisk = $fileResult['disk'];
 
             // Increment download count ONCE before initiating download
             $guestUpload->incrementDownloadCount();
@@ -388,7 +394,18 @@ class QuickShareController extends BaseController
             // Fire event for download tracking and notifications (does not increment count)
             GuestUploadDownloaded::dispatch($guestUpload, $shareableLink);
 
-            return $disk->download(
+            // Handle direct file access for TUS files
+            if ($useDisk === 'direct') {
+                return response()->download(
+                    $filePath,
+                    $fileEntry->getNameWithExtension(),
+                    [
+                        'Content-Type' => $fileEntry->mime ?? 'application/octet-stream',
+                    ]
+                );
+            }
+            
+            return $useDisk->download(
                 $filePath,
                 $fileEntry->getNameWithExtension()
             );
@@ -450,15 +467,21 @@ class QuickShareController extends BaseController
         }
 
         try {
-            $disk = Storage::disk(config('common.site.uploads_disk'));
+            // Use FilePathResolver to find the actual file location
+            $fileResult = FilePathResolver::resolve($fileEntry->file_name);
             
-            $filePath = $fileEntry->path ? 
-                $fileEntry->path . '/' . $fileEntry->file_name : 
-                $fileEntry->file_name;
-            
-            if (!$disk->exists($filePath)) {
-                return response()->json(['message' => 'File not found in storage'], 404);
+            if (!$fileResult) {
+                return response()->json([
+                    'message' => 'File not found in storage',
+                    'debug' => [
+                        'stored_name' => $fileEntry->file_name,
+                        'original_name' => $fileEntry->name
+                    ]
+                ], 404);
             }
+            
+            $filePath = $fileResult['path'];
+            $useDisk = $fileResult['disk'];
 
             // Increment download count for successful download
             $guestUpload->incrementDownloadCount();
@@ -466,7 +489,18 @@ class QuickShareController extends BaseController
             // Fire event for download tracking and notifications
             GuestUploadDownloaded::dispatch($guestUpload, $shareableLink);
 
-            return $disk->download(
+            // Handle direct file access for TUS files
+            if ($useDisk === 'direct') {
+                return response()->download(
+                    $filePath,
+                    $fileEntry->getNameWithExtension(),
+                    [
+                        'Content-Type' => $fileEntry->mime ?? 'application/octet-stream',
+                    ]
+                );
+            }
+            
+            return $useDisk->download(
                 $filePath,
                 $fileEntry->getNameWithExtension()
             );
@@ -539,78 +573,86 @@ class QuickShareController extends BaseController
     private function downloadAllFilesAsZip($guestUpload, $files, $shareableLink = null)
     {
         return response()->stream(
-            function () use ($guestUpload, $files) {
+            function () use ($guestUpload, $files, $shareableLink) {
                 $timestamp = Carbon::now()->getTimestamp();
-                $zip = new \ZipArchive();
-                $zipPath = storage_path("app/temp/quickshare-{$guestUpload->hash}-{$timestamp}.zip");
                 
-                // Ensure temp directory exists
-                if (!file_exists(dirname($zipPath))) {
-                    mkdir(dirname($zipPath), 0755, true);
+                // Use proper streaming ZIP library instead of creating temp files
+                $zip = new ZipStream\ZipStream(
+                    defaultEnableZeroHeader: true,
+                    contentType: 'application/zip',
+                    sendHttpHeaders: true,
+                    outputName: "quickshare-{$guestUpload->hash}-$timestamp.zip",
+                );
+                
+                $filesInZip = []; // Track duplicate file names
+                $addedFiles = 0;
+                
+                foreach ($files as $fileEntry) {
+                    try {
+                        // Use FilePathResolver to find the actual file location
+                        $fileResult = FilePathResolver::resolve($fileEntry->file_name);
+                        
+                        if (!$fileResult) {
+                            logger('File not found in QuickShare ZIP generation', [
+                                'fileName' => $fileEntry->file_name,
+                                'originalName' => $fileEntry->name
+                            ]);
+                            continue; // Skip missing files
+                        }
+                        
+                        $filePath = $fileResult['path'];
+                        $useDisk = $fileResult['disk'];
+
+                        // Handle duplicate file names by adding numbers
+                        $fileName = $fileEntry->getNameWithExtension();
+                        if (isset($filesInZip[$fileName])) {
+                            $filesInZip[$fileName]++;
+                            $pathInfo = pathinfo($fileName);
+                            $fileName = $pathInfo['filename'] . '(' . $filesInZip[$fileName] . ').' . ($pathInfo['extension'] ?? '');
+                        } else {
+                            $filesInZip[$fileName] = 0;
+                        }
+
+                        // Handle direct file access for TUS files
+                        if ($useDisk === 'direct') {
+                            $stream = fopen($filePath, 'r');
+                        } else {
+                            $stream = $useDisk->readStream($filePath);
+                        }
+                        
+                        if ($stream) {
+                            $zip->addFileFromStream($fileName, $stream);
+                            fclose($stream);
+                            $addedFiles++;
+                        }
+                    } catch (\Exception $e) {
+                        // Log error but continue with other files
+                        logger('Error adding file to QuickShare ZIP', [
+                            'file_id' => $fileEntry->id,
+                            'error' => $e->getMessage()
+                        ]);
+                        continue;
+                    }
                 }
 
-                if ($zip->open($zipPath, \ZipArchive::CREATE) === TRUE) {
-                    $disk = Storage::disk(config('common.site.uploads_disk'));
-                    $filesInZip = []; // Track duplicate file names
-                    
-                    foreach ($files as $fileEntry) {
-                        try {
-                            $filePath = $fileEntry->path ? 
-                                $fileEntry->path . '/' . $fileEntry->file_name : 
-                                $fileEntry->file_name;
-                            
-                            if (!$disk->exists($filePath)) {
-                                continue; // Skip missing files
-                            }
+                $zip->finish();
 
-                            // Handle duplicate file names by adding numbers
-                            $fileName = $fileEntry->getNameWithExtension();
-                            if (isset($filesInZip[$fileName])) {
-                                $filesInZip[$fileName]++;
-                                $pathInfo = pathinfo($fileName);
-                                $fileName = $pathInfo['filename'] . '(' . $filesInZip[$fileName] . ').' . $pathInfo['extension'];
-                            } else {
-                                $filesInZip[$fileName] = 0;
-                            }
-
-                            $fileContent = $disk->get($filePath);
-                            $zip->addFromString($fileName, $fileContent);
-                        } catch (\Exception $e) {
-                            // Log error but continue with other files
-                            logger('Error adding file to ZIP', [
-                                'file_id' => $fileEntry->id,
-                                'error' => $e->getMessage()
-                            ]);
-                            continue;
-                        }
-                    }
-
-                    $zip->close();
-
-                    // Increment download count after successful ZIP creation
+                // Increment download count after successful ZIP creation
+                if ($addedFiles > 0) {
                     $guestUpload->incrementDownloadCount();
 
                     // Fire event for download tracking and notifications
                     if ($shareableLink) {
                         GuestUploadDownloaded::dispatch($guestUpload, $shareableLink);
                     }
-
-                    // Stream the file and delete it after
-                    $zipContent = file_get_contents($zipPath);
-                    unlink($zipPath);
-                    
-                    echo $zipContent;
-                } else {
-                    http_response_code(500);
-                    echo json_encode(['message' => 'Failed to create ZIP file']);
                 }
             },
             200,
             [
-                'Content-Type' => 'application/zip',
-                'Content-Disposition' => "attachment; filename=\"quickshare-{$guestUpload->hash}.zip\"",
+                'X-Accel-Buffering' => 'no',
                 'Pragma' => 'public',
                 'Cache-Control' => 'no-cache',
+                'Content-Transfer-Encoding' => 'binary',
             ]
         );
     }

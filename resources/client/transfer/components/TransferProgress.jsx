@@ -7,8 +7,10 @@ export function TransferProgress({
   uploadSpeed = 0,
   timeRemaining = 0,
   onCancel,
+  onPause,
+  onResume,
   onComplete,
-  status = 'uploading', // 'uploading', 'success', 'error'
+  status = 'uploading', // 'uploading', 'processing', 'paused', 'success', 'error', 'retrying'
   uploadedBytes = 0
 }) {
   console.log('🚨 🚨 🚨 TRANSFER PROGRESS COMPONENT RENDERING 🚨 🚨 🚨');
@@ -21,9 +23,10 @@ export function TransferProgress({
     setDisplayProgress(progress); // Direct update for now to debug
   }, [progress]);
 
-  // Auto complete when progress reaches 100%
+  // Auto complete when progress reaches 100% and status is success
   useEffect(() => {
-    if (progress >= 100 && status === 'uploading') {
+    if (progress >= 100 && status === 'success') {
+      console.log('🚀 TransferProgress: Auto-completing on 100% + success status');
       const timer = setTimeout(() => {
         onComplete?.();
       }, 500);
@@ -118,7 +121,7 @@ export function TransferProgress({
             cy="70"
             r="60"
             fill="none"
-            stroke={status === 'success' ? '#10b981' : status === 'error' ? '#ef4444' : status === 'retrying' ? '#f59e0b' : '#08CF65'}
+            stroke={status === 'success' ? '#10b981' : status === 'error' ? '#ef4444' : status === 'retrying' ? '#f59e0b' : status === 'paused' ? '#6b7280' : status === 'processing' ? '#3b82f6' : '#08CF65'}
             strokeWidth="8"
             strokeDasharray={2 * Math.PI * 60}
             strokeDashoffset={
@@ -147,18 +150,26 @@ export function TransferProgress({
           {status === 'success' ? 'Transfer Complete!' : 
            status === 'error' ? 'Upload Failed' : 
            status === 'retrying' ? 'Retrying Upload...' :
+           status === 'paused' ? 'Transfer Paused' :
+           status === 'processing' ? 'Finalizing transfer...' :
            'Creating your transfer'}
         </h3>
-        {(status === 'uploading' || status === 'retrying') && (
+        {(status === 'uploading' || status === 'processing' || status === 'retrying' || status === 'paused') && (
           <>
             <p className="normal-para mt-2">
-              {status === 'retrying' ? 'Reconnecting...' : formatSpeed(uploadSpeed)}
+              {status === 'retrying' ? 'Reconnecting...' : 
+               status === 'paused' ? 'Upload paused' :
+               status === 'processing' ? 'Processing files...' :
+               formatSpeed(uploadSpeed)}
             </p>
             <p className="normal-para mt-2">
               {prettyBytes(uploadedBytes)} of {prettyBytes(totalSize)} • {files.length} file{files.length !== 1 ? 's' : ''}
             </p>
             <p className="normal-para !mb-6">
-              {status === 'retrying' ? 'Retrying upload...' : `${formatTime(timeRemaining)} remaining`}
+              {status === 'retrying' ? 'Retrying upload...' : 
+               status === 'paused' ? 'Click resume to continue' :
+               status === 'processing' ? 'Creating file entries and share links...' :
+               `${formatTime(timeRemaining)} remaining`}
             </p>
           </>
         )}
@@ -174,30 +185,93 @@ export function TransferProgress({
         )}
       </div>
 
-      <button
-        onClick={() => {
-          console.log('🔘 Continue/Try Again button clicked with status:', status);
-          console.log('💾 Files in storage before onComplete:', !!window.completedUploadFiles, window.completedUploadFiles?.length);
-          if (status !== 'uploading' && status !== 'retrying' && onComplete) {
-            onComplete();
-          } else {
-            console.log('⚠️ Button click ignored - status:', status, 'onComplete:', !!onComplete);
-          }
-        }}
-        className={`px-8 py-3 rounded-xl font-medium transition-all duration-200 ${
-          status === 'uploading' || status === 'retrying'
-            ? 'bg-gray-300 text-gray-600 cursor-not-allowed' 
-            : status === 'success'
-            ? 'bg-green-500 text-white hover:bg-green-600 hover:scale-105'
-            : 'bg-red-500 text-white hover:bg-red-600 hover:scale-105'
-        }`}
-        disabled={status === 'uploading' || status === 'retrying'}
-      >
-        {status === "success" ? "Continue" : 
-         status === "uploading" ? "Uploading..." : 
-         status === "retrying" ? "Retrying..." : 
-         "Try again"}
-      </button>
+      {/* Action buttons based on status */}
+      <div className="flex gap-3">
+        {status === 'uploading' && (
+          <>
+            <button
+              onClick={() => {
+                console.log('⏸️ Pause button clicked');
+                onPause?.();
+              }}
+              className="px-6 py-3 rounded-xl font-medium transition-all duration-200 bg-yellow-500 text-white hover:bg-yellow-600 hover:scale-105"
+            >
+              Pause
+            </button>
+            <button
+              onClick={() => {
+                console.log('🛑 Cancel button clicked');
+                onCancel?.();
+              }}
+              className="px-6 py-3 rounded-xl font-medium transition-all duration-200 bg-red-500 text-white hover:bg-red-600 hover:scale-105"
+            >
+              Cancel
+            </button>
+          </>
+        )}
+        
+        {status === 'paused' && (
+          <>
+            <button
+              onClick={() => {
+                console.log('▶️ Resume button clicked');
+                onResume?.();
+              }}
+              className="px-6 py-3 rounded-xl font-medium transition-all duration-200 bg-green-500 text-white hover:bg-green-600 hover:scale-105"
+            >
+              Resume
+            </button>
+            <button
+              onClick={() => {
+                console.log('🛑 Cancel button clicked');
+                onCancel?.();
+              }}
+              className="px-6 py-3 rounded-xl font-medium transition-all duration-200 bg-red-500 text-white hover:bg-red-600 hover:scale-105"
+            >
+              Cancel
+            </button>
+          </>
+        )}
+        
+        {status === 'processing' && (
+          <div className="text-center">
+            <p className="text-sm text-gray-500">Please wait while we finalize your transfer...</p>
+          </div>
+        )}
+        
+        {status === 'retrying' && (
+          <button
+            onClick={() => {
+              console.log('🛑 Cancel button clicked during retry');
+              onCancel?.();
+            }}
+            className="px-6 py-3 rounded-xl font-medium transition-all duration-200 bg-red-500 text-white hover:bg-red-600 hover:scale-105"
+          >
+            Cancel
+          </button>
+        )}
+        
+        {(status === 'success' || status === 'error') && (
+          <button
+            onClick={() => {
+              console.log('🔘 Continue/Try Again button clicked with status:', status);
+              console.log('💾 Files in storage before onComplete:', !!window.completedUploadFiles, window.completedUploadFiles?.length);
+              if (onComplete) {
+                onComplete();
+              } else {
+                console.log('⚠️ Button click ignored - onComplete:', !!onComplete);
+              }
+            }}
+            className={`px-8 py-3 rounded-xl font-medium transition-all duration-200 ${
+              status === 'success'
+                ? 'bg-green-500 text-white hover:bg-green-600 hover:scale-105'
+                : 'bg-red-500 text-white hover:bg-red-600 hover:scale-105'
+            }`}
+          >
+            {status === "success" ? "Continue" : "Try again"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
