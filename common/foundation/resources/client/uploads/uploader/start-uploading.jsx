@@ -114,6 +114,7 @@ export async function startUploading(upload, state) {
           eta = remainingBytes / speed;
         }
       }
+      
       state.updateFileUpload(file.id, {
         percentage,
         bytesUploaded,

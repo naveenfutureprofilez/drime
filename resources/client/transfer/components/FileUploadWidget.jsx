@@ -250,33 +250,15 @@ export function FileUploadWidget({
       onSuccess: async () => {
         console.log(`✅ TUS Upload Complete for: ${file.name}`);
         
-        // First, update the UI to show this file as "processing" (not stuck at uploading)
+        // Mark this file as completed immediately - no processing delay
         setUploadProgress(prev => ({
           ...prev,
           [file.name]: {
             ...prev[file.name],
-            status: 'processing',
+            status: 'completed',
             progress: 100
           }
         }));
-        
-        // Send processing status to parent
-        const currentUploads = Array.from(uploadsRef.current.values());
-        const completedTusUploads = currentUploads.filter((_, index) => {
-          const fileName = currentUploads[index].file.name;
-          return uploadProgress[fileName]?.status === 'completed' || fileName === file.name;
-        });
-        
-        const processingProgress = Math.round((completedTusUploads.length / currentUploads.length) * 95); // Cap at 95% until file entries are created
-        
-        onProgressUpdate?.({
-          progress: processingProgress,
-          uploadedBytes: uploadedBytes,
-          totalBytes: totalBytes,
-          uploadSpeed: 0,
-          timeRemaining: 0,
-          status: 'processing'
-        });
         
         try {
           const uploadKey = upload.url?.split('/').pop();
@@ -296,16 +278,18 @@ export function FileUploadWidget({
             upload_group_hash: useGroupHash,
             password: settings?.password,
             expires_in_hours: settings?.expiresInHours || 72,
-            max_downloads: settings?.maxDownloads
+            max_downloads: settings?.maxDownloads,
+            sender_email: data?.email, // Use form data, not settings
+            sender_name: data?.name, // Use form data, not settings
+            message: data?.message // Use form data, not settings
           };
           
           console.log(`📤 Sending file entry request:`, requestPayload);
           
-          // Add timeout to the API call - longer for large files
+          // Reasonable timeout for file entry creation
           const controller = new AbortController();
-          const fileSize = file.size || 0;
-          const timeoutDuration = Math.max(120000, fileSize / (1024 * 1024) * 5000); // At least 2 minutes, or 5 seconds per MB
-          console.log(`⏱️ Setting timeout to ${timeoutDuration/1000}s for ${file.name} (${prettyBytes(fileSize)})`);
+          const timeoutDuration = 120000; // 2 minutes - give enough time for large files
+          console.log(`⏱️ Setting timeout to ${timeoutDuration/1000}s for ${file.name}`);
           
           const timeoutId = setTimeout(() => {
             console.warn(`⏰ File entry creation timeout after ${timeoutDuration/1000}s for ${file.name}`);
@@ -447,10 +431,8 @@ export function FileUploadWidget({
           let shouldRetry = false;
           
           if (error.name === 'AbortError' || error.code === 'ERR_CANCELED') {
-            const fileSize = file.size || 0;
-            const timeoutDuration = Math.max(120000, fileSize / (1024 * 1024) * 5000);
-            errorMessage = `File processing timed out after ${Math.round(timeoutDuration/1000)}s. This can happen with large files or slow servers.`;
-            shouldRetry = true;
+            errorMessage = `File processing is taking longer than expected. The file may still be processing in the background.`;
+            shouldRetry = false; // Don't retry timeouts to avoid infinite loops
           } else if (error.response?.data?.error) {
             errorMessage = error.response.data.error;
           } else if (error.message) {

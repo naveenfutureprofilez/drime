@@ -106,15 +106,22 @@ class GuestUploadService
             ];
         }
 
-        // d. After loop finishes, update total_size and save
-        $guestUpload->total_size = $totalSize;
-        $guestUpload->save();
+        // d. After loop finishes, update total_size and mark as completed immediately
+        $guestUpload->update([
+            'total_size' => $totalSize,
+            'status' => 'completed' // Mark as completed immediately
+        ]);
 
-        // e. Send confirmation email if recipient email is provided
+        // e. OPTIMIZED: Send confirmation email asynchronously (completely optional)
         $emailSent = false;
         if ($recipientEmail) {
-            $this->sendUploadConfirmation($guestUpload, $recipientEmail);
-            $emailSent = true;
+            // Dispatch background job for email sending with delay
+            \App\Jobs\ProcessGuestUploadJob::dispatch(
+                $guestUpload->hash,
+                $guestUpload->files->first()?->id ?? 0,
+                $recipientEmail
+            )->delay(now()->addSeconds(10)); // Longer delay since it's not critical
+            $emailSent = true; // Set to true since job is dispatched
         }
 
         // f. Build response payload
@@ -129,12 +136,13 @@ class GuestUploadService
     }
 
     /**
-     * Handle TUS upload completion with multi-file support
+     * Handle TUS upload completion with multi-file support (Optimized)
      * 
      * This method supports grouping multiple TUS uploads into a single GuestUpload:
      * 1. If upload_group_hash is provided, attach the file to existing GuestUpload
      * 2. If upload_group_hash is not provided, create a new GuestUpload
      * 3. The response always echoes the shared hash for the client to use in subsequent uploads
+     * 4. Heavy processing (cloud transfer, email) is moved to background job
      * 
      * @param string $uploadKey The TUS upload key for this specific file
      * @param Request $request Request containing upload_group_hash and other parameters
@@ -142,6 +150,12 @@ class GuestUploadService
      */
     public function handleTusUpload(string $uploadKey, Request $request): array
     {
+        $startTime = microtime(true);
+        logger('GuestUploadService::handleTusUpload - Started', [
+            'upload_key' => $uploadKey,
+            'start_time' => $startTime
+        ]);
+        
         // This will be called when TUS upload is completed
         // The file is already stored by TUS protocol
         
@@ -149,6 +163,11 @@ class GuestUploadService
         if (!$tusData) {
             throw new \Exception('TUS upload data not found');
         }
+        
+        logger('GuestUploadService::handleTusUpload - TUS data retrieved', [
+            'upload_key' => $uploadKey,
+            'elapsed_ms' => (microtime(true) - $startTime) * 1000
+        ]);
 
         // Extract file information from TUS metadata
         $metadata = $tusData['metadata'] ?? [];
@@ -167,6 +186,8 @@ class GuestUploadService
         
         // Get or create GuestUpload based on upload_group_hash
         $uploadGroupHash = $request->string('upload_group_hash')->toString();
+        $recipientEmail = $request->string('sender_email')->toString();
+        $isNewUploadGroup = !$uploadGroupHash;
         
         if ($uploadGroupHash) {
             // Find existing GuestUpload by upload_group_hash
@@ -182,7 +203,6 @@ class GuestUploadService
             );
             
             // Process form data for TUS uploads too
-            $recipientEmail = $request->string('sender_email')->toString();
             $title = $request->string('sender_name')->toString(); // Frontend sends as 'sender_name' but it's actually title
             
             $guestUpload = GuestUpload::create([
@@ -219,7 +239,7 @@ class GuestUploadService
             }
         }
         
-        // Move TUS file from local storage to cloud storage (if configured)
+        // Prepare for cloud storage transfer (will be done asynchronously)
         $finalDisk = Storage::disk('uploads'); // Dynamic uploads disk
         $localTusPath = storage_path("tus/{$uploadKey}");
         
@@ -230,47 +250,34 @@ class GuestUploadService
         $shouldMoveToCloud = config('common.site.uploads_disk_driver') !== 'local';
         
         if ($shouldMoveToCloud && file_exists($localTusPath)) {
-            // Move file from local TUS storage to cloud storage using streaming for large files
-            $fileSize = filesize($localTusPath);
+            // OPTIMIZED: Don't move to cloud storage synchronously - do it in background job
+            // For now, create FileEntry pointing to local TUS storage
+            // The background job will handle the cloud transfer and update the FileEntry
             
-            logger()->info('Moving TUS file to cloud storage', [
+            logger()->info('Scheduling TUS file for cloud storage transfer', [
                 'upload_key' => $uploadKey,
                 'file_size' => $fileSize,
                 'source' => $localTusPath,
-                'destination' => $cloudPath
+                'destination' => $cloudPath,
+                'will_transfer_async' => true
             ]);
             
-            if ($fileSize > 50 * 1024 * 1024) { // Files larger than 50MB
-                // Use streaming for large files to avoid memory issues
-                $stream = fopen($localTusPath, 'r');
-                if ($stream === false) {
-                    throw new \Exception('Unable to open TUS file for streaming: ' . $localTusPath);
-                }
-                
-                try {
-                    $finalDisk->writeStream($cloudPath, $stream);
-                    logger()->info('Large file streamed successfully to cloud storage', [
+            // Temporarily keep file in local storage, will be moved by background job
+            $diskPrefix = 'local';
+            $finalPath = 'tus';
+            $finalFileName = $uploadKey;
+            
+            // Store metadata for background job to process later
+            $guestUpload->update([
+                'metadata' => array_merge($guestUpload->metadata ?? [], [
+                    'pending_cloud_transfer' => [
                         'upload_key' => $uploadKey,
-                        'file_size' => $fileSize
-                    ]);
-                } finally {
-                    fclose($stream);
-                }
-            } else {
-                // Use regular method for smaller files
-                $fileContent = file_get_contents($localTusPath);
-                $finalDisk->put($cloudPath, $fileContent);
-                logger()->info('Small file transferred to cloud storage', [
-                    'upload_key' => $uploadKey,
-                    'file_size' => $fileSize
-                ]);
-            }
-            
-            // Clean up local TUS file
-            unlink($localTusPath);
-            
-            $diskPrefix = 'uploads';
-            $finalPath = 'guest-uploads';
+                        'local_path' => $localTusPath,
+                        'cloud_path' => $cloudPath,
+                        'final_filename' => $this->generateUniqueFileName($decodedName)
+                    ]
+                ])
+            ]);
         } else {
             // Keep file in local TUS storage
             $finalFileName = $uploadKey;
@@ -291,12 +298,18 @@ class GuestUploadService
             'type' => 'file',
         ]);
 
-        // Attach the file to the GuestUpload
-        $guestUpload->files()->attach($fileEntry->id);
-        
-        // Update total size efficiently - just add the current file size instead of recalculating
-        $currentTotalSize = $guestUpload->total_size + $fileSize;
-        $guestUpload->update(['total_size' => $currentTotalSize]);
+        // OPTIMIZED: Use a single database transaction for better performance
+        \DB::transaction(function () use ($guestUpload, $fileEntry, $fileSize) {
+            // Attach the file to the GuestUpload
+            $guestUpload->files()->attach($fileEntry->id);
+            
+            // Update total size efficiently - just add the current file size instead of recalculating
+            $currentTotalSize = $guestUpload->total_size + $fileSize;
+            $guestUpload->update([
+                'total_size' => $currentTotalSize,
+                'status' => 'completed' // Mark as completed immediately - background jobs handle the rest
+            ]);
+        });
         
         logger()->info('File entry created successfully', [
             'upload_key' => $uploadKey,
@@ -305,14 +318,35 @@ class GuestUploadService
             'file_size' => $fileSize,
             'guest_upload_hash' => $guestUpload->hash,
             'total_files' => $guestUpload->files()->count(),
-            'total_size' => $currentTotalSize
+            'total_size' => $guestUpload->fresh()->total_size
         ]);
 
-        // Send confirmation email if recipient email is provided (for new uploads only)
-        if (!$uploadGroupHash && $recipientEmail) {
-            $this->sendUploadConfirmation($guestUpload, $recipientEmail);
+        // OPTIMIZED: Dispatch background jobs for heavy operations (non-blocking)
+        
+        // Only dispatch jobs for heavy operations that don't affect upload completion
+        if ($shouldMoveToCloud && isset($guestUpload->metadata['pending_cloud_transfer'])) {
+            \App\Jobs\TransferFileToCloudJob::dispatch(
+                $fileEntry->id,
+                $guestUpload->metadata['pending_cloud_transfer']
+            )->delay(now()->addSeconds(5)); // Longer delay since it's not user-facing
+        }
+        
+        // Email sending is completely optional - dispatch with delay
+        if ($isNewUploadGroup && $recipientEmail) {
+            \App\Jobs\ProcessGuestUploadJob::dispatch(
+                $guestUpload->hash,
+                $fileEntry->id,
+                $recipientEmail
+            )->delay(now()->addSeconds(10)); // Much longer delay since it's not critical
         }
 
+        logger('GuestUploadService::handleTusUpload - Completed', [
+            'upload_key' => $uploadKey,
+            'total_elapsed_ms' => (microtime(true) - $startTime) * 1000,
+            'file_entry_id' => $fileEntry->id,
+            'guest_upload_hash' => $guestUpload->hash
+        ]);
+        
         return [
             'hash' => $guestUpload->hash, // Return shared hash for group
             'fileEntry' => [ // Maintain compatibility with existing TUS frontend
@@ -325,7 +359,7 @@ class GuestUploadService
             ],
             'upload_group_hash' => $guestUpload->hash,
             'total_files' => $guestUpload->files()->count(),
-            'total_size' => $currentTotalSize,
+            'total_size' => $guestUpload->fresh()->total_size,
             'expires_at' => $guestUpload->expires_at->toISOString(),
             'download_url' => EmailUrlHelper::emailUrl("/download/{$guestUpload->hash}"),
             'share_url' => EmailUrlHelper::emailUrl("/share/{$guestUpload->hash}"),
@@ -624,6 +658,23 @@ class GuestUploadService
             ]);
             // Re-throw the exception so it's visible in the response
             throw $e;
+        }
+    }
+
+    /**
+     * Send upload confirmation email asynchronously (for background jobs)
+     */
+    public function sendConfirmationEmailAsync(GuestUpload $guestUpload, string $email): void
+    {
+        try {
+            $this->sendUploadConfirmation($guestUpload, $email);
+        } catch (\Exception $e) {
+            // Log error but don't throw - email failure shouldn't break the upload
+            logger()->error('Async email sending failed', [
+                'guest_upload_hash' => $guestUpload->hash,
+                'email' => $email,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 }

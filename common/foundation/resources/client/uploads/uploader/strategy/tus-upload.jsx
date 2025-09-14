@@ -92,6 +92,8 @@ export class TusUpload {
               window.currentUploadGroupHash = response.upload_group_hash;
             }
             
+            // Upload is complete - no processing feedback needed
+            // Background jobs will handle heavy operations silently
             onSuccess?.(response.fileEntry, file);
           }
         } catch (err) {
@@ -119,3 +121,4 @@ function createFileEntry(uploadKey, options = {}) {
     message: options.message || null
   }).then(r => r.data);
 }
+

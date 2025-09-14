@@ -121,7 +121,7 @@ export function TransferProgress({
             cy="70"
             r="60"
             fill="none"
-            stroke={status === 'success' ? '#10b981' : status === 'error' ? '#ef4444' : status === 'retrying' ? '#f59e0b' : status === 'paused' ? '#6b7280' : status === 'processing' ? '#3b82f6' : '#08CF65'}
+            stroke={status === 'success' ? '#10b981' : status === 'error' ? '#ef4444' : status === 'retrying' ? '#f59e0b' : status === 'paused' ? '#6b7280' : '#08CF65'}
             strokeWidth="8"
             strokeDasharray={2 * Math.PI * 60}
             strokeDashoffset={
@@ -151,15 +151,13 @@ export function TransferProgress({
            status === 'error' ? 'Upload Failed' : 
            status === 'retrying' ? 'Retrying Upload...' :
            status === 'paused' ? 'Transfer Paused' :
-           status === 'processing' ? 'Finalizing transfer...' :
            'Creating your transfer'}
         </h3>
-        {(status === 'uploading' || status === 'processing' || status === 'retrying' || status === 'paused') && (
+        {(status === 'uploading' || status === 'retrying' || status === 'paused') && (
           <>
             <p className="normal-para mt-2">
               {status === 'retrying' ? 'Reconnecting...' : 
                status === 'paused' ? 'Upload paused' :
-               status === 'processing' ? 'Processing files...' :
                formatSpeed(uploadSpeed)}
             </p>
             <p className="normal-para mt-2">
@@ -168,7 +166,6 @@ export function TransferProgress({
             <p className="normal-para !mb-6">
               {status === 'retrying' ? 'Retrying upload...' : 
                status === 'paused' ? 'Click resume to continue' :
-               status === 'processing' ? 'Creating file entries and share links...' :
                `${formatTime(timeRemaining)} remaining`}
             </p>
           </>
@@ -233,11 +230,6 @@ export function TransferProgress({
           </>
         )}
         
-        {status === 'processing' && (
-          <div className="text-center">
-            <p className="text-sm text-gray-500">Please wait while we finalize your transfer...</p>
-          </div>
-        )}
         
         {status === 'retrying' && (
           <button
