@@ -49,6 +49,14 @@ export const adminRoutes = [{
       lazy: () => lazyAdminRoute('UpdateUserApiTab')
     }]
   },
+  // PROFILE
+  {
+    path: 'profile',
+    loader: () => authGuard({
+      permission: 'admin.access'
+    }),
+    lazy: () => import('@common/admin/profile/admin-profile-page')
+  },
   // ROLES
   {
     path: 'roles',

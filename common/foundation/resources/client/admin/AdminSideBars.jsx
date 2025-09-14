@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { MdClose, MdDashboard, MdFileOpen, MdLogout, MdSettings } from "react-icons/md";
+import { MdClose, MdDashboard, MdLogout, MdSettings, MdPerson, MdTransferWithinAStation } from "react-icons/md";
 import { IoReorderThreeOutline } from "react-icons/io5";
 import { AdminSidebarAuthUserItem } from "./AdminSidebarAuthUserItem";
 import { useLogout } from "@common/auth/requests/logout";
-import { FaFile } from "react-icons/fa";
 
 function AdminSidebars() {
     const [isOpen, setIsOpen] = useState(false);
@@ -50,22 +49,31 @@ function AdminSidebars() {
                             <span>Dashboard </span>
                         </a>
                         <a
+                            href="/admin/profile"
+                            onClick={handleLinkClick}
+                            className="flex items-center gap-3 p-3 rounded-lg 
+                         text-black hover:bg-[#e5e7eb] transition"
+                        >
+                            <MdPerson className="text-pink-500 text-xl" />
+                            <span>Profile</span>
+                        </a>
+                        <a
                             href="/admin/transfer-files"
                             onClick={handleLinkClick}
                             className="flex items-center gap-3 p-3 rounded-lg 
                          text-black hover:bg-[#e5e7eb] transition"
                         >
-                            <FaFile className="text-pink-500 text-xl" />
+                            <MdTransferWithinAStation className="text-pink-500 text-xl" />
                             <span>Transfer Files</span>
                         </a>
                         <a
-                            href="/setting/general"
+                            href="/admin/settings"
                             onClick={handleLinkClick}
                             className="flex items-center gap-3 p-3 rounded-lg 
                          text-black hover:bg-[#e5e7eb] transition"
                         >
                             <MdSettings className="text-pink-500 text-xl" />
-                            <span>Account Settings sdad</span>
+                            <span>Settings</span>
                         </a>
                     </nav>
                 </div>

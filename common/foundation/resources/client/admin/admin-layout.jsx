@@ -7,43 +7,17 @@ import { setInLocalStorage, useLocalStorage } from '@ui/utils/hooks/local-storag
 import clsx from 'clsx';
 import { useIsMobileMediaQuery } from '@ui/utils/hooks/is-mobile-media-query';
 import AdminSidebars from './AdminSideBars';
-import { BasicInfoPanel } from '@common/auth/ui/account-settings/basic-info-panel/basic-info-panel';
-import { useUser } from '@common/auth/ui/use-user';
-import { SocialLoginPanel } from '@common/auth/ui/account-settings/social-login-panel';
-import { ChangePasswordPanel } from '@common/auth/ui/account-settings/change-password-panel/change-password-panel';
-import { TwoFactorPanel } from '@common/auth/ui/account-settings/two-factor-panel';
-import { SessionsPanel } from '@common/auth/ui/account-settings/sessions-panel/sessions-panel';
-import { LocalizationPanel } from '@common/auth/ui/account-settings/localization-panel';
-import { AccessTokenPanel } from '@common/auth/ui/account-settings/access-token-panel/access-token-panel';
-import { DangerZonePanel } from '@common/auth/ui/account-settings/danger-zone-panel/danger-zone-panel';
 export function AdminLayout() {
   const isMobile = useIsMobileMediaQuery();
   const variant = isMobile ? 'withNavbar' : 'withoutNavbar';
-
-  const { data, isLoading } = useUser('me', { with: ['roles', 'social_profiles', 'tokens'] });
 
   return <>
     <div className='layout flex'>
       <AdminSidebars variant={variant} />
       <DashboardContent>
         <div className={clsx(variant === 'withoutNavbar' ? 'relative' : 'bg dark:bg-alt')}>
-          {!isLoading && data && (
-            <>
-              <BasicInfoPanel user={data.user} />
-              <ChangePasswordPanel />
-              <LocalizationPanel user={data.user} />
-              <TwoFactorPanel user={data.user} />
-              {/* <SocialLoginPanel user={data.user} /> */}
-              {/* 
-                <SessionsPanel />
-                <LocalizationPanel user={data.user} />
-                <AccessTokenPanel user={data.user} />
-                 */}
-              {/* <DangerZonePanel /> */}
-            </>
-          )}
           <SetupAlertsList />
-            <Outlet />
+          <Outlet />
         </div>
       </DashboardContent>
     </div>
