@@ -63,7 +63,7 @@ export function useHandleLoginSuccess() {
     localStorage.removeItem('loginPath'); // Clean up
     
     // Determine redirect URI based on login route used or current context
-    let redirectUri = '/drive'; // default redirect for /login
+    let redirectUri = '/'; // default redirect for /login (home page)
     
     // Debug: log the stored login path
     console.log('Login redirect - Stored login path:', loginPath);
@@ -79,7 +79,7 @@ export function useHandleLoginSuccess() {
       console.log('Admin login detected, redirecting to /admin');
       redirectUri = '/admin';
     } else {
-      console.log('Regular login, redirecting to /drive');
+      console.log('Regular login, redirecting to home page');
     }
     
     navigate(redirectUri, {

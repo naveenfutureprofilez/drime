@@ -6,3 +6,4 @@ export { LandingPageSectionActionButtons } from '@app/admin/appearance/sections/
 export { LandingPageSectionPrimaryFeatures } from '@app/admin/appearance/sections/landing-page-section/landing-page-section-primary-features';
 export { LandingPageSecondaryFeatures } from '@app/admin/appearance/sections/landing-page-section/landing-page-section-secondary-features';
 export { TransferFilesPage } from '@app/admin/transfer-files/transfer-files-page';
+export { AdminTwoFactorAuthPage } from '@app/admin/2fa/admin-2fa-page';

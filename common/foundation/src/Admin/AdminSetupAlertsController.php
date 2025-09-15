@@ -9,11 +9,16 @@ class AdminSetupAlertsController extends BaseController
 {
     public function __construct()
     {
-        $this->middleware('isAdmin');
+        // Removed isAdmin middleware to support API authentication
     }
 
     public function index()
     {
+        $user = auth()->user();
+        if (!$user || !$user->hasPermission('admin.access')) {
+            abort(403);
+        }
+
         $alerts = [];
 
         if (!config('common.site.demo')) {

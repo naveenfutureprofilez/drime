@@ -55,7 +55,15 @@ export const adminRoutes = [{
     loader: () => authGuard({
       permission: 'admin.access'
     }),
-    lazy: () => import('@common/admin/profile/admin-profile-page')
+    lazy: () => import('@app/admin/profile/admin-profile-page')
+  },
+  // TWO-FACTOR AUTHENTICATION
+  {
+    path: '2fa',
+    loader: () => authGuard({
+      permission: 'admin.access'
+    }),
+    lazy: () => import('@app/admin/2fa/admin-2fa-page')
   },
   // ROLES
   {

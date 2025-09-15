@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MdClose, MdDashboard, MdLogout, MdSettings, MdPerson, MdTransferWithinAStation } from "react-icons/md";
+import { MdClose, MdDashboard, MdLogout, MdSettings, MdPerson, MdTransferWithinAStation, MdSecurity } from "react-icons/md";
 import { IoReorderThreeOutline } from "react-icons/io5";
 import { AdminSidebarAuthUserItem } from "./AdminSidebarAuthUserItem";
 import { useLogout } from "@common/auth/requests/logout";
@@ -74,6 +74,15 @@ function AdminSidebars() {
                         >
                             <MdSettings className="text-pink-500 text-xl" />
                             <span>Settings</span>
+                        </a>
+                        <a
+                            href="/admin/2fa"
+                            onClick={handleLinkClick}
+                            className="flex items-center gap-3 p-3 rounded-lg 
+                         text-black hover:bg-[#e5e7eb] transition"
+                        >
+                            <MdSecurity className="text-pink-500 text-xl" />
+                            <span>Two-Factor Authentication</span>
                         </a>
                     </nav>
                 </div>

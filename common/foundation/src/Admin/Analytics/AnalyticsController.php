@@ -21,13 +21,10 @@ class AnalyticsController extends BaseController
 
     public function report()
     {
+        $user = auth()->user();
         if (
-            !auth('web')
-                ->user()
-                ->hasPermission('admin.access') &&
-            !auth('web')
-                ->user()
-                ->hasPermission('reports.view')
+            !$user ||
+            (!$user->hasPermission('admin.access') && !$user->hasPermission('reports.view'))
         ) {
             abort(403);
         }

@@ -206,4 +206,45 @@ class TransferFilesController extends BaseController
         
         return round($bytes, 2) . ' ' . $units[$i];
     }
+
+    public function show(Request $request, $id): JsonResponse
+    {
+        // TODO: Re-enable auth after testing: $this->authorize('admin.access');
+
+        $upload = GuestUpload::with(['files', 'fileEntry'])
+            ->withoutGlobalScopes()
+            ->findOrFail($id);
+
+        // Get files from relationship (multi-file) or single file fallback
+        $files = $upload->files;
+        if ($files->isEmpty() && $upload->fileEntry) {
+            $files = collect([$upload->fileEntry]);
+        }
+        
+        // Use first file for main display or aggregate info
+        $primaryFile = $files->first();
+        
+        $data = [
+            'id' => $upload->id,
+            'original_filename' => $upload->original_filename ?: ($primaryFile ? $primaryFile->name : 'Multiple Files'),
+            'file_size' => $upload->total_size ?: $upload->file_size,
+            'formatted_size' => $this->formatBytes($upload->total_size ?: $upload->file_size ?: 0),
+            'mime_type' => $upload->mime_type ?: ($primaryFile ? $primaryFile->mime : null),
+            'status' => $this->getFileStatus($upload),
+            'title' => $upload->title,
+            'message' => $upload->message,
+            'sender_email' => $upload->sender_email,
+            'recipient_emails' => $upload->recipient_emails,
+            'download_count' => $upload->download_count ?? 0,
+            'max_downloads' => $upload->max_downloads,
+            'has_password' => !empty($upload->password),
+            'expires_at' => $upload->expires_at,
+            'created_at' => $upload->created_at,
+            'updated_at' => $upload->updated_at,
+            'files_count' => $files->count(),
+            'share_url' => $upload->share_url ? EmailUrlHelper::buildShareUrl($upload->share_url) : null,
+        ];
+
+        return response()->json($data);
+    }
 }

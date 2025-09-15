@@ -16,6 +16,7 @@ import { Link } from 'react-router';
 import { LinkIcon } from '@ui/icons/material/Link';
 import { FileUploadIcon } from '@ui/icons/material/FileUpload';
 import { Tooltip } from '@ui/tooltip/tooltip';
+import { VisibilityIcon } from '@ui/icons/material/Visibility';
 
 const columnConfig = [
   {
@@ -152,6 +153,17 @@ function RowActions({ file }) {
   return (
     <>
       <div className="flex items-center gap-4">
+        <Tooltip label={<Trans message="View details" />}>
+          <IconButton
+            size="md"
+            elementType={Link}
+            to={`/admin/transfer-files/${file.id}`}
+            className="text-muted"
+          >
+            <VisibilityIcon />
+          </IconButton>
+        </Tooltip>
+        
         <Tooltip label={<Trans message="Copy share link" />}>
           <IconButton
             size="md"

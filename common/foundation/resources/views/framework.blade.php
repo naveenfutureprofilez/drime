@@ -61,7 +61,9 @@
         @endif
         
         <script>
+            console.log('Bootstrap data script executing...');
             window.bootstrapData = {!! json_encode($bootstrapData->get()) !!};
+            console.log('Bootstrap data assigned:', window.bootstrapData);
             @if(app()->environment('local'))
             // Development: Force reload if cache buster changes
             if (window.localStorage) {

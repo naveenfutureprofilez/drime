@@ -114,6 +114,7 @@ Route::group(['prefix' => 'v1'], function() {
     
     // ADMIN TRANSFER FILES MANAGEMENT
     Route::get('admin/transfer-files', [TransferFilesController::class, 'index']);
+    Route::get('admin/transfer-files/{id}', [TransferFilesController::class, 'show']);
     Route::delete('admin/transfer-files/{id}', [TransferFilesController::class, 'destroy']);
     Route::post('admin/transfer-files/bulk-delete', [TransferFilesController::class, 'bulkDestroy']);
     Route::post('admin/transfer-files/{id}/send-email', [TransferFilesController::class, 'sendEmail']);
