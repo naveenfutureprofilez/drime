@@ -1475,13 +1475,13 @@ export function FileUploadWidget({
   return <div className="text-center">
     {selectedFiles.length === 0 ?
       <div
-        className={` center-align flex-col h-[60vh] max-h-[500px] rounded-[15px] transition
+        className={`p-[20px] md:p-[30px] center-align flex-col h-[60vh] max-h-[500px] rounded-[15px] transition
                 ${isDragging ? "border-green-500 bg-green-50" : "border-gray-300"}`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <div className="column-center text-center p-12">
+        <div className="column-center text-center">
           <input
             type="file"
             multiple
@@ -1504,7 +1504,6 @@ export function FileUploadWidget({
             <VscAdd size={56} />
           </label>
 
-
           <p className="para mt-[10px]">Let us begin by adding some files</p>
           <p
             onClick={() => folderInputRef.current.click()}
@@ -1516,7 +1515,7 @@ export function FileUploadWidget({
       </div>
       :
       <div>
-        <div className=" overflow-hidden relative ">
+        <div className=" relative ">
           <div className='p-[20px] md:p-[30px]'>
             <div className="between-align">
               <div>
@@ -1616,7 +1615,7 @@ export function FileUploadWidget({
             />
             {/* Progress display removed - now handled by TransferProgress component */}
             
-            <div className='between-align pt-[20px] gap-5 md:gap-0'>
+            <div className='md:between-align pt-[7px] md:pt-[20px] gap-5 md:gap-0'>
               <div className='flex items-center space-x-1 cursor-pointer hover:opacity-75 transition-opacity' onClick={handleSettingsClick}>
                 <CiSettings size={28} className="text-black" />
                 <div>
@@ -1630,9 +1629,9 @@ export function FileUploadWidget({
               </div>
               
               {/* Upload Control - Only show Create Transfer button */}
-              <div className="flex gap-2">
+              <div className="mt-3 md:mt-0 md:flex gap-2">
                 <button 
-                  className="button-sm !text-[15px] md:button-md" 
+                  className="button-sm !text-[15px] w-full md:w-auto md:button-md" 
                   onClick={handleUpload}
                   disabled={selectedFiles.length === 0}
                 >

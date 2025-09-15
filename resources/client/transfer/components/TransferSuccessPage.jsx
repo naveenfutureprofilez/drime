@@ -69,9 +69,9 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
     };
 
     return (
-    <>
+    <div className='bg-white p-[20px] md:p-[30px]'>
         <div className="center-align">
-            <div className="manage-col p-4 md:p-[40px]">
+            <div className="manage-col px-3 min-h-[370px]">
                 <div className="center-align mb-6">
                     {displayType === "Link" ? (
                         <img src={Shared} alt='' className='h-32 w-32' />
@@ -138,7 +138,7 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
                     Start new transfer
                 </button> </p>
             </div>
-    </>
+    </div>
     );
 };
 

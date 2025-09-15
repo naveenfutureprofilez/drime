@@ -14,8 +14,26 @@ export function SettingsPanel({
     maxDownloads: settings.maxDownloads || null
   });
 
+  const [passwordError, setPasswordError] = useState('');
+
+  const validatePassword = (password) => {
+    if (password && password.length < 4) {
+      return 'The password must be at least 4 characters.';
+    }
+    return '';
+  };
+
   const handleSave = () => {
     console.log('handleSave called with:', localSettings);
+    
+    // Validate password before saving
+    const passwordValidationError = validatePassword(localSettings.password);
+    if (passwordValidationError) {
+      setPasswordError(passwordValidationError);
+      return; // Don't save if validation fails
+    }
+    
+    setPasswordError(''); // Clear any existing error
     onSettingsChange(localSettings);
     onClose();
   };
@@ -36,10 +54,10 @@ export function SettingsPanel({
             </div>
           </div>
 
-<div className="mb-2 flex items-center gap-5 justify-between">
-            <label className="font-bold">
+<div className="mb-2 md:flex items-center gap-5 justify-between">
+            <p className="font-bold !text-start">
               Expiration
-            </label>
+            </p>
             <select
               value={localSettings.expiresInHours}
               onChange={(e) => {
@@ -49,7 +67,7 @@ export function SettingsPanel({
               }}
               onClick={(e) => e.stopPropagation()}
               onFocus={(e) => e.stopPropagation()}
-              className="w-full max-w-[130px] input-sm sm:input px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
+              className="input-sm sm:input !w-full md:!max-w-[200px]  px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
             >
               <option value={1}>1 hour</option>
               <option value={6}>6 hours</option>
@@ -64,21 +82,36 @@ export function SettingsPanel({
             </select>
           </div>
 
-          <div className="mb-2 flex items-center gap-5 justify-between">
-            <p className='font-bold'>Password</p>
-            <input
-              type="password"
-              value={localSettings.password}
-              onChange={(e) => {
-                console.log('Password changed to:', e.target.value);
-                setLocalSettings({ ...localSettings, password: e.target.value });
-              }}
-              onClick={(e) => e.stopPropagation()}
-              onFocus={(e) => e.stopPropagation()}
-              placeholder="Enter password"
-              className="w-full max-w-[130px] input-sm sm:input px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
-            />
+          <div className="mb-2 md:flex items-center gap-5 justify-between">
+            <p className='font-bold !text-start'>Password</p>
+            <div className=" !w-full  md:!max-w-[200px]">
+              <input
+                type="password"
+                value={localSettings.password}
+                onChange={(e) => {
+                  const newPassword = e.target.value;
+                  console.log('Password changed to:', newPassword);
+                  setLocalSettings({ ...localSettings, password: newPassword });
+                  
+                  // Clear error when user starts typing
+                  if (passwordError) {
+                    setPasswordError('');
+                  }
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.stopPropagation()}
+                placeholder="Enter password"
+                className={` input-sm sm:input !w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
+                  passwordError 
+                    ? 'border-red-500 focus:ring-red-500' 
+                    : 'border-gray-300 focus:ring-green-500'
+                }`}
+              />
+            </div>
           </div>
+          {passwordError && (
+            <p className="!text-yellow-600 text-sm mt-1 text-xs mt-1">{passwordError}</p>
+          )}
 
           {/* Download Limit
           <div className="mb-2 ">
@@ -121,7 +154,7 @@ export function SettingsPanel({
                 console.log('Save clicked with settings:', localSettings);
                 handleSave();
               }}
-              className=" button-sm md:button-md lg:button-lg"
+              className="button-lg"
             >
               <Trans message="Done" />
             </button>

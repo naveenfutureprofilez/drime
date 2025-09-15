@@ -123,9 +123,9 @@ export function TransferHomepage() {
   return <>
     {/* <DefaultMetaTags /> */}
     <Layout>
-      <div className=" bg-white text-black">
+      <div className="bg-white text-black">
         {currentStep === 'upload' && (
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="bg-white ">
             <UPLOAD_SECTION
               settings={transferSettings}
               onSettingsChange={handleSettingsChange}
@@ -144,7 +144,7 @@ export function TransferHomepage() {
         )}
 
         {currentStep === 'share' && (
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="bg-white rounded-2xl  overflow-hidden">
             <SHARE_SECTION 
               files={uploadedFiles} 
               transferSettings={transferSettings} 
@@ -196,7 +196,7 @@ function UPLOAD_SECTION({
   
   
 
-  return <div className="shadow-md rounded-xl overflow-hidden relative" onClick={() => {
+  return <div className="relative" onClick={() => {
     if (showSettings) {
       setShowSettings(false);
     }
@@ -228,7 +228,7 @@ function SHARE_SECTION({
   // Early return if no files are provided
   if (!files || files.length === 0) {
     return (
-      <div className="p-8 text-center">
+      <div className="text-center">
         <div className="text-red-600">
           <Trans message="No files to share. Please upload files first." />
         </div>
@@ -238,7 +238,7 @@ function SHARE_SECTION({
       </div>
     );
   }
-  return <div className="p-8">
+  return <div className="">
     <TransferSuccessPage 
       downloadLink={shareUrl} 
       onEmailTransfer={onShowEmailPanel} 
