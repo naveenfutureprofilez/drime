@@ -267,6 +267,31 @@ class GuestUploadController extends BaseController
         try {
             logger('Starting download process for file: ' . $fileEntry->name);
             
+            // Check if the upload has a failed transfer before attempting file resolution
+            $metadata = $guestUpload->metadata ?? [];
+            if (isset($metadata['transfer_failed']) && $metadata['transfer_failed'] === true) {
+                $errorId = uniqid('transfer_err_');
+                $transferError = $metadata['transfer_error'] ?? 'File transfer to storage failed';
+                
+                logger('Download failed - transfer failed', [
+                    'error_id' => $errorId,
+                    'upload_hash' => $hash,
+                    'file_id' => $fileId,
+                    'transfer_error' => $transferError
+                ]);
+                
+                return response()->json([
+                    'message' => 'This file is no longer available',
+                    'error_code' => 'TRANSFER_FAILED',
+                    'error_id' => $errorId,
+                    'details' => [
+                        'suggestion' => 'The file upload completed but the transfer to storage failed. Please re-upload the file.',
+                        'technical_reason' => $transferError,
+                        'support_info' => 'Reference ID: ' . $errorId
+                    ]
+                ], 410); // Gone - indicates the resource is no longer available
+            }
+            
             // Use the FilePathResolver to find the actual file
             $fileResult = FilePathResolver::resolve($fileEntry->file_name);
             
@@ -364,6 +389,24 @@ class GuestUploadController extends BaseController
             $fileEntry = $files->first();
             
             try {
+                // Check if the upload has a failed transfer before attempting file resolution
+                $metadata = $guestUpload->metadata ?? [];
+                if (isset($metadata['transfer_failed']) && $metadata['transfer_failed'] === true) {
+                    $errorId = uniqid('transfer_err_');
+                    $transferError = $metadata['transfer_error'] ?? 'File transfer to storage failed';
+                    
+                    return response()->json([
+                        'message' => 'This file is no longer available',
+                        'error_code' => 'TRANSFER_FAILED',
+                        'error_id' => $errorId,
+                        'details' => [
+                            'suggestion' => 'The file upload completed but the transfer to storage failed. Please re-upload the file.',
+                            'technical_reason' => $transferError,
+                            'support_info' => 'Reference ID: ' . $errorId
+                        ]
+                    ], 410);
+                }
+                
                 // Use the FilePathResolver to find the actual file
                 $fileResult = FilePathResolver::resolve($fileEntry->file_name);
                 
@@ -412,7 +455,31 @@ class GuestUploadController extends BaseController
             }
         }
 
-        // Multiple files - stream as ZIP with retry logic
+        // Multiple files - check for transfer failure before creating ZIP
+        $uploadMetadata = $guestUpload->metadata ?? [];
+        if (isset($uploadMetadata['transfer_failed']) && $uploadMetadata['transfer_failed']) {
+            $errorId = uniqid('transfer_err_');
+            $transferError = $uploadMetadata['transfer_error'] ?? 'File transfer to storage failed';
+            
+            logger('ZIP download failed - transfer failed', [
+                'error_id' => $errorId,
+                'upload_hash' => $guestUpload->hash,
+                'transfer_error' => $transferError
+            ]);
+            
+            return response()->json([
+                'message' => 'These files are no longer available',
+                'error_code' => 'TRANSFER_FAILED',
+                'error_id' => $errorId,
+                'details' => [
+                    'suggestion' => 'The file upload completed but the transfer to storage failed. Please re-upload the files.',
+                    'technical_reason' => $transferError,
+                    'support_info' => 'Reference ID: ' . $errorId
+                ]
+            ], 410);
+        }
+        
+        // Stream as ZIP with retry logic
         try {
             return FileDownloadErrorHandler::retryOperation(
                 fn() => $this->streamFilesAsZip($guestUpload, $files),
@@ -445,7 +512,7 @@ class GuestUploadController extends BaseController
                 $disk = Storage::disk('uploads'); // Dynamic uploads disk (can be Cloudflare R2)
                 $localDisk = Storage::disk('local'); // For TUS files
                 $filesInZip = []; // Track duplicate file names
-                
+
                 foreach ($files as $fileEntry) {
                     try {
                         // Use FilePathResolver to find the actual file location

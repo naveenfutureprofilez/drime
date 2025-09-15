@@ -77,8 +77,32 @@ export class S3MultipartUpload {
         return this.uploadPartToS3(item);
       });
       const result = await Promise.all(pendingUploads);
-      // if not all uploads in batch completed, bail
-      if (!result.every(r => r)) return;
+      
+      // Check for failed parts and retry them
+      const failedParts = [];
+      result.forEach((success, index) => {
+        if (!success) {
+          const failedItem = batch[index];
+          const chunk = this.chunks.find(c => c.partNumber === failedItem.partNumber);
+          if (chunk && !chunk.retryCount) chunk.retryCount = 0;
+          if (chunk && chunk.retryCount < 3) {
+            chunk.retryCount++;
+            failedParts.push(failedItem);
+          } else {
+            // Max retries exceeded, abort upload
+            console.error(`Part ${failedItem.partNumber} failed after 3 retries`);
+            return;
+          }
+        }
+      });
+      
+      // Retry failed parts immediately
+      if (failedParts.length > 0) {
+        console.log(`Retrying ${failedParts.length} failed parts...`);
+        const retryUploads = failedParts.map(item => this.uploadPartToS3(item));
+        const retryResults = await Promise.all(retryUploads);
+        // If any retries still fail, they'll be caught in the next iteration
+      }
     }
     return await this.uploadParts();
   }
@@ -101,31 +125,44 @@ export class S3MultipartUpload {
     partNumber
   }) {
     const chunk = this.chunks.find(c => c.partNumber === partNumber);
-    if (!chunk) return;
-    return this.chunkAxios.put(url, chunk.blob, {
-      withCredentials: false,
-      signal: this.abortController.signal,
-      onUploadProgress: e => {
-        if (!e.event.lengthComputable) return;
-        chunk.bytesUploaded = e.loaded;
-        const totalUploaded = this.chunks.reduce((n, c) => n + c.bytesUploaded, 0);
-        this.config.onProgress?.({
-          bytesUploaded: totalUploaded,
-          bytesTotal: this.file.size
-        });
-      }
-    }).then(r => {
-      const etag = r.headers.etag;
+    if (!chunk) return false;
+    
+    try {
+      const response = await this.chunkAxios.put(url, chunk.blob, {
+        withCredentials: false,
+        signal: this.abortController.signal,
+        onUploadProgress: e => {
+          if (!e.event.lengthComputable) return;
+          chunk.bytesUploaded = e.loaded;
+          const totalUploaded = this.chunks.reduce((n, c) => n + c.bytesUploaded, 0);
+          this.config.onProgress?.({
+            bytesUploaded: totalUploaded,
+            bytesTotal: this.file.size
+          });
+        }
+      });
+      
+      const etag = response.headers.etag;
       if (etag) {
         chunk.done = true;
         chunk.etag = etag;
         return true;
       }
-    }).catch(err => {
-      if (!this.abortController.signal.aborted && err !== undefined) {
-        this.abortController.abort();
+      return false;
+    } catch (err) {
+      // Don't abort entire upload for individual part failures
+      if (this.abortController.signal.aborted) {
+        return false;
       }
-    });
+      
+      // Log the error for debugging
+      console.warn(`Part ${partNumber} upload failed:`, err.message || err);
+      
+      // Reset progress for failed chunk
+      chunk.bytesUploaded = 0;
+      
+      return false;
+    }
   }
   async createMultipartUpload() {
     const response = await apiClient.post('s3/multipart/create', {

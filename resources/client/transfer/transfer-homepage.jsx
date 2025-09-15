@@ -36,9 +36,6 @@ export function TransferHomepage() {
   }, []);
 
   const handleUploadStart = useCallback(async ({ files, totalSize, settings, formData: uploadFormData }) => {
-    console.log('🚀 Homepage received upload start - switching to progress view');
-    
-    // Set upload data and switch to progress view
     setUploadData({ files, totalSize, settings, formData: uploadFormData });
     setCurrentStep('progress');
     setUploadStatus('uploading');
@@ -57,7 +54,6 @@ export function TransferHomepage() {
   }, [abortController, uploadControlsRef]);
 
   const handleUploadPause = useCallback(() => {
-    console.log('🏠 Homepage: Pausing upload');
     if (uploadControlsRef?.handlePauseUpload) {
       uploadControlsRef.handlePauseUpload();
       setUploadStatus('paused');
@@ -65,7 +61,6 @@ export function TransferHomepage() {
   }, [uploadControlsRef]);
 
   const handleUploadResume = useCallback(() => {
-    console.log('🏠 Homepage: Resuming upload');
     if (uploadControlsRef?.handleResumeUpload) {
       uploadControlsRef.handleResumeUpload();
       setUploadStatus('uploading');
@@ -73,79 +68,46 @@ export function TransferHomepage() {
   }, [uploadControlsRef]);
 
   const handleProgressComplete = useCallback(() => {
-    console.log('🎯 handleProgressComplete called with status:', uploadStatus, 'completedFiles in storage:', !!window.completedUploadFiles);
-    
-    // Check for completed files first - this is the most reliable indicator
+    // Check for completed files first
     const completedFiles = window.completedUploadFiles;
     
     if (completedFiles && completedFiles.length > 0) {
-      console.log('🎉 Found completed files - transitioning directly to share page:', completedFiles);
       setUploadedFiles(completedFiles);
       setCurrentStep('share');
-      setUploadStatus('success'); // Ensure status is set to success
-      // Clean up the temporary storage
+      setUploadStatus('success');
       delete window.completedUploadFiles;
-      return; // Early return to prevent any other logic
+      return;
     }
     
-    // If no completed files but status is success, something went wrong
+    // Handle different states
     if (uploadStatus === 'success') {
-      console.error('❌ Status is success but no completed files found - staying on progress screen');
-      console.log('⚠️ Staying on progress screen for manual retry');
       return; // Stay on progress screen
     }
     
-    // Handle error and retry states
     if (uploadStatus === 'error' || uploadStatus === 'retrying') {
-      console.log('🔄 Staying on progress screen for error/retry status:', uploadStatus);
       return; // Stay on progress screen
     }
     
-    // Only go back to upload if explicitly cancelled or in an unexpected state
-    // AND there are no completed files
     if (uploadStatus === 'cancelled' || uploadStatus === 'idle') {
-      console.log('⚠️ Upload was cancelled or idle - going back to upload');
       setCurrentStep('upload');
       setUploadData(null);
       setUploadProgress(0);
       setUploadStatus('idle');
       setUploadedBytes(0);
-    } else {
-      // For any other unexpected status, stay on progress screen
-      console.log('⚠️ Unexpected status for progress complete:', uploadStatus, '- staying on progress screen');
     }
   }, [uploadStatus]);
 
   const handleProgressUpdate = useCallback(({ progress, uploadedBytes, totalBytes, uploadSpeed, timeRemaining, status }) => {
-    console.log('🏠 Homepage received progress update:', {
-      progress: `${progress}% (type: ${typeof progress})`,
-      uploadedBytes: `${uploadedBytes} (${prettyBytes(uploadedBytes)})`,
-      totalBytes: `${totalBytes} (${prettyBytes(totalBytes)})`,
-      uploadSpeed: `${uploadSpeed} (${prettyBytes(uploadSpeed)}/s)`,
-      timeRemaining,
-      status,
-      timestamp: new Date().toISOString().split('T')[1]
-    });
-    
     setUploadProgress(progress);
     setUploadedBytes(uploadedBytes);
     setUploadSpeed(uploadSpeed);
     setTimeRemaining(timeRemaining);
     setUploadStatus(status);
-    
-    console.log('📎 Homepage state after update:', {
-      uploadProgress: progress,
-      uploadedBytes,
-      uploadStatus: status
-    });
   }, []);
 
   const handleUploadComplete = useCallback(files => {
-    console.log('🎉 Homepage handleUploadComplete called with:', files?.length, 'files:', files);
-    console.log('⚠️ Note: This direct callback bypasses the progress screen');
     setUploadedFiles(files);
     setCurrentStep('share');
-    console.log('🔄 Homepage switched to share step with', files?.length, 'files');
   }, []);
 
   const handleNewTransfer = useCallback(() => {
@@ -157,8 +119,6 @@ export function TransferHomepage() {
     setUploadStatus('idle');
     setUploadedBytes(0);
   }, []);
-  // Debug logging
-  console.log('🏠 Homepage render - currentStep:', currentStep, 'uploadData:', !!uploadData);
   
   return <>
     {/* <DefaultMetaTags /> */}
@@ -234,22 +194,7 @@ function UPLOAD_SECTION({
   const [showSettings, setShowSettings] = useState(false);
   const [testMode, setTestMode] = useState(false);
   
-  // Debug logging for UPLOAD_SECTION
-  console.log('📍 UPLOAD_SECTION props:', {
-    uploadProgress,
-    uploadState,
-    uploadSpeed,
-    timeRemaining,
-    uploadedBytes,
-    totalBytes,
-    hasProgressUpdate: !!onProgressUpdate
-  });
   
-  // Test function to force upload state
-  const handleTestProgress = () => {
-    console.log('🧪 Activating test mode...');
-    setTestMode(true);
-  };
 
   return <div className="shadow-md p-1 rounded-xl overflow-hidden relative" onClick={() => {
     if (showSettings) {
@@ -288,13 +233,6 @@ function SHARE_SECTION({
 }) {
   // All files should share the same upload/share URL
   const shareUrl = files && files.length > 0 ? files[0]?.share_url || '' : '';
-  console.log('🎁 SHARE_SECTION received:', {
-    filesCount: files?.length,
-    files: files,
-    shareUrl: shareUrl,
-    firstFile: files?.[0],
-    transferSettings: transferSettings
-  });
 
   // Early return if no files are provided
   if (!files || files.length === 0) {

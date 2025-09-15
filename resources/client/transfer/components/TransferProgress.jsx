@@ -13,20 +13,20 @@ export function TransferProgress({
   status = 'uploading', // 'uploading', 'processing', 'paused', 'success', 'error', 'retrying'
   uploadedBytes = 0
 }) {
-  console.log('🚨 🚨 🚨 TRANSFER PROGRESS COMPONENT RENDERING 🚨 🚨 🚨');
-  console.log('TransferProgress props:', { files: files?.length, progress, status, uploadedBytes, totalSize });
   const [displayProgress, setDisplayProgress] = useState(progress);
   
   // Smooth progress animation - simplified
   useEffect(() => {
-    console.log(`🎨 TransferProgress: updating displayProgress from ${displayProgress}% to ${progress}%`);
-    setDisplayProgress(progress); // Direct update for now to debug
+    // Debug: Track progress updates received by TransferProgress
+    if (Math.abs(progress - displayProgress) > 5) {
+      console.log(`🎭 TransferProgress: Received ${progress}%, updating display from ${displayProgress}%`);
+    }
+    setDisplayProgress(progress);
   }, [progress]);
 
   // Auto complete when progress reaches 100% and status is success
   useEffect(() => {
     if (progress >= 100 && status === 'success') {
-      console.log('🚀 TransferProgress: Auto-completing on 100% + success status');
       const timer = setTimeout(() => {
         onComplete?.();
       }, 500);
@@ -75,32 +75,6 @@ export function TransferProgress({
 
   // const colors = getStatusColor();
 
-  console.log("🔄 TransferProgress Render:", {
-    files: files?.length, 
-    progress: `${progress}% (type: ${typeof progress})`,
-    displayProgress: `${displayProgress}% (type: ${typeof displayProgress})`,
-    progressDiff: Math.abs(progress - displayProgress),
-    status, 
-    totalSize: prettyBytes(totalSize), 
-    uploadedBytes: prettyBytes(uploadedBytes),
-    uploadSpeed: formatSpeed(uploadSpeed),
-    timeRemaining: formatTime(timeRemaining),
-    timestamp: new Date().toISOString().split('T')[1]
-  });
-  
-  // Log when we receive a new progress value
-  const prevProgressRef = React.useRef(progress);
-  if (prevProgressRef.current !== progress) {
-    console.log(`📈 Progress changed: ${prevProgressRef.current}% -> ${progress}%`);
-    prevProgressRef.current = progress;
-  }
-  
-  // Log when progress changes significantly
-  const prevProgress = React.useRef(0);
-  if (Math.abs(progress - prevProgress.current) >= 5) {
-    console.log(`📊 Progress Jump: ${prevProgress.current}% → ${progress}%`);
-    prevProgress.current = progress;
-  }
   return (
     <div className="column-center !h-[576px]">
       {/* Circle */}
@@ -137,10 +111,6 @@ export function TransferProgress({
           <span className="text-4xl font-bold text-gray-800">
             {Math.round(displayProgress)}%
           </span>
-          {/* Debug info - remove in production */}
-          <div className="text-xs text-gray-500 mt-1">
-            Real: {progress}% | Display: {displayProgress.toFixed(1)}%
-          </div>
         </div>
       </div>
 
@@ -166,7 +136,7 @@ export function TransferProgress({
             <p className="normal-para !mb-6">
               {status === 'retrying' ? 'Retrying upload...' : 
                status === 'paused' ? 'Click resume to continue' :
-               `${formatTime(timeRemaining)} remaining`}
+               `${formatTime(timeRemaining)} remaining sd`}
             </p>
           </>
         )}
@@ -187,19 +157,13 @@ export function TransferProgress({
         {status === 'uploading' && (
           <>
             <button
-              onClick={() => {
-                console.log('⏸️ Pause button clicked');
-                onPause?.();
-              }}
+            onClick={() => onPause?.()}
               className="px-6 py-3 rounded-xl font-medium transition-all duration-200 bg-yellow-500 text-white hover:bg-yellow-600 hover:scale-105"
             >
               Pause
             </button>
             <button
-              onClick={() => {
-                console.log('🛑 Cancel button clicked');
-                onCancel?.();
-              }}
+            onClick={() => onCancel?.()}
               className="px-6 py-3 rounded-xl font-medium transition-all duration-200 bg-red-500 text-white hover:bg-red-600 hover:scale-105"
             >
               Cancel
@@ -210,19 +174,13 @@ export function TransferProgress({
         {status === 'paused' && (
           <>
             <button
-              onClick={() => {
-                console.log('▶️ Resume button clicked');
-                onResume?.();
-              }}
+            onClick={() => onResume?.()}
               className="px-6 py-3 rounded-xl font-medium transition-all duration-200 bg-green-500 text-white hover:bg-green-600 hover:scale-105"
             >
               Resume
             </button>
             <button
-              onClick={() => {
-                console.log('🛑 Cancel button clicked');
-                onCancel?.();
-              }}
+            onClick={() => onCancel?.()}
               className="px-6 py-3 rounded-xl font-medium transition-all duration-200 bg-red-500 text-white hover:bg-red-600 hover:scale-105"
             >
               Cancel
@@ -233,10 +191,7 @@ export function TransferProgress({
         
         {status === 'retrying' && (
           <button
-            onClick={() => {
-              console.log('🛑 Cancel button clicked during retry');
-              onCancel?.();
-            }}
+            onClick={() => onCancel?.()}
             className="px-6 py-3 rounded-xl font-medium transition-all duration-200 bg-red-500 text-white hover:bg-red-600 hover:scale-105"
           >
             Cancel
@@ -245,15 +200,7 @@ export function TransferProgress({
         
         {(status === 'success' || status === 'error') && (
           <button
-            onClick={() => {
-              console.log('🔘 Continue/Try Again button clicked with status:', status);
-              console.log('💾 Files in storage before onComplete:', !!window.completedUploadFiles, window.completedUploadFiles?.length);
-              if (onComplete) {
-                onComplete();
-              } else {
-                console.log('⚠️ Button click ignored - onComplete:', !!onComplete);
-              }
-            }}
+            onClick={() => onComplete?.()}
             className={`px-8 py-3 rounded-xl font-medium transition-all duration-200 ${
               status === 'success'
                 ? 'bg-green-500 text-white hover:bg-green-600 hover:scale-105'

@@ -11,8 +11,8 @@ import { FileSize } from '@app/components/FileSize';
 import { apiClient } from '@common/http/query-client';
 import { prettyBytes } from '@ui/utils/files/pretty-bytes';
 
-const TUS_CHUNK_SIZE = 512 * 1024; // 512KB chunks to reduce API calls
-const TUS_RETRY_DELAYS = [0, 3000, 8000, 15000, 30000]; // Much longer delays for rate limiting
+const TUS_CHUNK_SIZE = 1024 * 1024; // 1MB chunks to reduce API calls
+const TUS_RETRY_DELAYS = [0, 3000, 8000]; // Reduced retries to prevent infinite loops
 
 export function FileUploadWidget({
   settings,
@@ -35,25 +35,23 @@ export function FileUploadWidget({
   const uploadsRef = useRef(new Map()); // Store TUS Upload instances
   const speedCalculatorRef = useRef({ lastBytes: 0, lastTime: Date.now() });
   
-  console.log("TUS FileUploadWidget state:", {
-    selectedFiles: selectedFiles.length,
-    uploadState,
-    totalProgress,
-    uploadedBytes,
-    totalBytes,
-    hasProgressUpdate: !!onProgressUpdate
-  });
 
   // Create TUS upload for a single file
-  const createTusUpload = useCallback((file, isFirstFile = false, groupHash = null) => {
-    console.log(`🚀 Creating TUS upload for: ${file.name} (${prettyBytes(file.size)}) - isFirstFile: ${isFirstFile}`);
+  const createTusUpload = useCallback((file, isFirstFile = false, groupHash = null, totalFilesCount = 1) => {
+    console.log(`🚀 Creating upload for: ${file.name} (${prettyBytes(file.size)}) - ${isFirstFile ? 'FIRST' : 'SUBSEQUENT'} file`);
     
     // First file doesn't send upload_group_hash (creates new group)
     // Subsequent files use the hash from the first file's response
     const uploadGroupHash = isFirstFile ? '' : (groupHash || guestUploadGroupHash || '');
-    console.log(`🏷️ Using upload group hash: '${uploadGroupHash}' (empty means create new group)`);
     
     const tusFingerprint = `guest-tus-${file.name}-${file.size}-${Date.now()}`;
+    
+    console.log(`🔧 TUS Upload Config for ${file.name}:`, {
+      endpoint: `${window.location.origin}/api/v1/tus/upload`,
+      chunkSize: TUS_CHUNK_SIZE,
+      retryDelays: TUS_RETRY_DELAYS,
+      fileSize: file.size
+    });
     
     const upload = new Upload(file, {
       fingerprint: () => Promise.resolve(tusFingerprint),
@@ -90,10 +88,15 @@ export function FileUploadWidget({
       },
 
       onError: (error) => {
-        console.error(`❌ TUS Upload Error for ${file.name}:`, error);
+        const statusCode = error.originalResponse?.getStatus();
+        console.error(`❌ Upload Error for ${file.name}:`, {
+          statusCode,
+          message: error.message,
+          originalResponse: error.originalResponse?.getBody(),
+          isRetryable: statusCode === 429 || statusCode >= 500 || !statusCode
+        });
         
         // Handle different types of errors
-        const statusCode = error.originalResponse?.getStatus();
         const isRateLimited = statusCode === 429;
         const isServerError = statusCode >= 500;
         const isNetworkError = !statusCode || statusCode === 0;
@@ -101,7 +104,8 @@ export function FileUploadWidget({
         
         let errorMessage = 'Upload failed';
         if (isRateLimited) {
-          errorMessage = 'Too many requests, retrying...';
+          errorMessage = 'Rate limited - too many requests, retrying...';
+          console.warn(`🚦 Rate limiting detected for ${file.name} - TUS will auto-retry with backoff`);
         } else if (isServerError) {
           errorMessage = 'Server error, retrying...';
         } else if (isNetworkError) {
@@ -111,9 +115,8 @@ export function FileUploadWidget({
         }
         
         if (isRetryableError) {
-          console.log(`⏱️ ${errorMessage} for ${file.name}, TUS will retry automatically`);
-          
           const retryCount = (uploadProgress[file.name]?.retryCount || 0) + 1;
+          console.log(`🔄 [Retry ${retryCount}] ${errorMessage} for ${file.name}`);
           
           setUploadProgress(prev => ({
             ...prev,
@@ -129,7 +132,7 @@ export function FileUploadWidget({
           onProgressUpdate?.({
             progress: totalProgress,
             uploadedBytes: uploadedBytes,
-            totalBytes: totalBytes,
+            totalBytes: window.totalBytesToUpload || 0,
             uploadSpeed: 0,
             timeRemaining: 0,
             status: 'retrying',
@@ -138,8 +141,7 @@ export function FileUploadWidget({
           
           // Keep upload state as uploading during retries
           setUploadState('uploading');
-          console.log(`🔄 Retry attempt ${retryCount} for ${file.name}`);
-          return; // Let TUS handle the retry
+          return; // Let TUS handle the retry with its built-in backoff
         }
         
         // Only set error state for non-retryable errors
@@ -153,7 +155,7 @@ export function FileUploadWidget({
         onProgressUpdate?.({
           progress: totalProgress,
           uploadedBytes: uploadedBytes,
-          totalBytes: totalBytes,
+          totalBytes: window.totalBytesToUpload || 0,
           uploadSpeed: 0,
           timeRemaining: 0,
           status: 'error',
@@ -173,6 +175,28 @@ export function FileUploadWidget({
 
       onProgress: (bytesUploaded, bytesTotal) => {
         const progress = Math.round((bytesUploaded * 100) / bytesTotal);
+        const now = Date.now();
+        
+        // Detect stalled uploads (no progress for 30 seconds)
+        const lastProgressTime = parseInt(localStorage.getItem(`lastProgressTime_${file.name}`) || now);
+        const lastBytes = parseInt(localStorage.getItem(`lastBytes_${file.name}`) || '0');
+        
+        if (bytesUploaded > lastBytes) {
+          // Progress made - update tracking
+          localStorage.setItem(`lastProgressTime_${file.name}`, now.toString());
+          localStorage.setItem(`lastBytes_${file.name}`, bytesUploaded.toString());
+        } else if (now - lastProgressTime > 30000) {
+          // No progress for 30 seconds - upload might be stalled
+          console.warn(`⚠️ Upload stalled for ${file.name} - no progress for 30s`);
+          console.warn(`   Current: ${prettyBytes(bytesUploaded)}, Last: ${prettyBytes(lastBytes)}`);
+        }
+        
+        // Log only significant file progress changes
+        const lastFileProgress = parseInt(localStorage.getItem(`fileProgress_${file.name}`) || '0');
+        if (Math.abs(progress - lastFileProgress) >= 10 || progress === 0 || progress === 100) {
+          console.log(`📡 ${file.name}: ${progress}% (${prettyBytes(bytesUploaded)}/${prettyBytes(bytesTotal)})`);
+          localStorage.setItem(`fileProgress_${file.name}`, progress.toString());
+        }
         
         // Update the uploads ref first
         uploadsRef.current.set(file.name, {
@@ -197,24 +221,75 @@ export function FileUploadWidget({
 
         setUploadState('uploading');
 
-        // Calculate and update total progress immediately
+        // Temporarily disable rate limiting to debug progress circle
+        // const progressKey = `progressCalc_${file.name}`;
+        // const lastCalcTime = parseInt(localStorage.getItem(progressKey) || '0');
+        // const calcNow = Date.now();
+        // 
+        // // Only calculate progress at most once every 500ms per file
+        // if (calcNow - lastCalcTime < 500) {
+        //   return; // Skip this calculation to prevent spam
+        // }
+        // localStorage.setItem(progressKey, calcNow.toString());
+        
+        // Calculate overall progress for ALL files
+        const allFiles = selectedFiles.flatMap(item => item.files ? item.files : item);
         const uploads = Array.from(uploadsRef.current.values());
-        let totalUploaded = 0;
-        let totalSize = 0;
-
-        uploads.forEach(({ bytesUploaded, bytesTotal }) => {
-          totalUploaded += bytesUploaded || 0;
-          totalSize += bytesTotal || 0;
+        
+        // Calculate bytes for currently uploading files (exclude completed ones)
+        let currentUploadedBytes = 0;
+        const completedFileNames = window.completedUploadFiles ? window.completedUploadFiles.map(f => f.name) : [];
+        
+        uploads.forEach(({ bytesUploaded, file }) => {
+          // Only count bytes from files that are still uploading (not completed)
+          if (!completedFileNames.includes(file.name)) {
+            currentUploadedBytes += bytesUploaded || 0;
+          }
         });
-
-        const totalProgressValue = totalSize > 0 ? Math.round((totalUploaded * 100) / totalSize) : 0;
-        setTotalProgress(totalProgressValue);
+        
+        // Add completed files bytes
+        let completedBytes = 0;
+        if (window.completedUploadFiles && window.completedUploadFiles.length > 0) {
+          completedBytes = window.completedUploadFiles.reduce((sum, f) => sum + (f.file_size || 0), 0);
+        }
+        
+        const totalUploaded = completedBytes + currentUploadedBytes;
+        // Use the globally stored totalBytes from handleUpload
+        const totalSize = window.totalBytesToUpload || 0; // This was set in handleUpload
+        
+        // Safety check: ensure totalSize is valid
+        if (totalSize === 0) {
+          console.warn(`⚠️ window.totalBytesToUpload is 0 or undefined - progress will show 0%`);
+          console.warn(`   This usually means handleUpload hasn't stored the total size yet`);
+        }
+        
+        // Debug: Show which files are being counted (less frequently)
+        const activeUploads = uploads.map(u => u.file.name).filter(name => !completedFileNames.includes(name));
+        console.log(`📊 Bytes calculation:`);
+        console.log(`   Completed files (${completedFileNames.length}): ${completedFileNames.join(', ')} = ${prettyBytes(completedBytes)}`);
+        console.log(`   Active uploads (${activeUploads.length}): ${activeUploads.join(', ')} = ${prettyBytes(currentUploadedBytes)}`);
+        console.log(`   Total: ${prettyBytes(totalUploaded)} / ${prettyBytes(totalSize)} (using window.totalBytesToUpload)`);
+        
+        // Safety check: uploaded bytes should never exceed total size
+        if (totalUploaded > totalSize && totalSize > 0) {
+          console.error(`🚨 BUG DETECTED: uploadedBytes (${prettyBytes(totalUploaded)}) > totalSize (${prettyBytes(totalSize)})`);
+          console.error(`   This suggests double-counting of completed files!`);
+          console.error(`   completedBytes: ${prettyBytes(completedBytes)}`);
+          console.error(`   currentUploadedBytes: ${prettyBytes(currentUploadedBytes)}`);
+        }
+        // Ensure we don't get division by zero or invalid values
+        const totalProgressValue = (totalSize > 0 && totalUploaded >= 0) ? Math.round((totalUploaded * 100) / totalSize) : 0;
+        
+        // Clamp progress between 0-100
+        const clampedProgress = Math.max(0, Math.min(100, totalProgressValue));
+        
+        setTotalProgress(clampedProgress);
         setUploadedBytes(totalUploaded);
         setTotalBytes(totalSize);
 
         // Calculate speed
-        const now = Date.now();
-        const timeDiff = (now - speedCalculatorRef.current.lastTime) / 1000;
+        const speedNow = Date.now();
+        const timeDiff = (speedNow - speedCalculatorRef.current.lastTime) / 1000;
         let currentSpeed = uploadSpeed; // Use existing speed as default
         let currentTimeRemaining = timeRemaining;
         
@@ -231,13 +306,23 @@ export function FileUploadWidget({
           }
 
           speedCalculatorRef.current.lastBytes = totalUploaded;
-          speedCalculatorRef.current.lastTime = now;
+          speedCalculatorRef.current.lastTime = speedNow;
         }
         
-        // Send progress updates to parent
-        if (onProgressUpdate) {
+        // Send progress updates to parent - ONLY during active upload
+        if (onProgressUpdate && clampedProgress >= 0) {
+          // Log only significant progress changes or every 10%
+          const lastLoggedProgress = parseInt(localStorage.getItem('lastProgressLogged') || '0');
+          if (Math.abs(clampedProgress - lastLoggedProgress) >= 10 || clampedProgress === 0 || clampedProgress === 100) {
+            console.log(`📈 Progress update: ${clampedProgress}% (${prettyBytes(totalUploaded)}/${prettyBytes(totalSize)})`);
+            localStorage.setItem('lastProgressLogged', clampedProgress.toString());
+          }
+          
+          // Debug: Show what we're sending to progress circle
+          console.log(`💰 Sending to progress circle: ${clampedProgress}% (${prettyBytes(totalUploaded)}/${prettyBytes(totalSize)})`);
+          
           onProgressUpdate({
-            progress: totalProgressValue,
+            progress: clampedProgress,
             uploadedBytes: totalUploaded,
             totalBytes: totalSize,
             uploadSpeed: currentSpeed,
@@ -307,16 +392,16 @@ export function FileUploadWidget({
           // Store the upload group hash for subsequent files to use
           if (response.data.upload_group_hash) {
             setGuestUploadGroupHash(response.data.upload_group_hash);
-            console.log(`🚀 Stored upload group hash for subsequent files: ${response.data.upload_group_hash}`);
+            console.log(`🏷️ Upload group created: ${response.data.upload_group_hash}`);
             
             // Start remaining uploads now that we have the group hash
             if (window.pendingUploads && window.pendingUploads.length > 0) {
-              console.log(`🎬 Starting ${window.pendingUploads.length} remaining uploads with group hash`);
+              console.log(`🚀 Starting ${window.pendingUploads.length} remaining files`);
               
               const startUpload = async (file, index) => {
-                console.log(`📤 Creating new upload for ${file.name} with group hash: ${response.data.upload_group_hash}`);
+                console.log(`📤 Starting ${file.name}`);
                 
-                // Create new upload with the correct group hash - pass it directly
+                // Create new upload with the correct group hash
                 const newUpload = createTusUpload(file, false, response.data.upload_group_hash);
                 
                 // Update the uploads ref
@@ -331,25 +416,20 @@ export function FileUploadWidget({
                 try {
                   const previousUploads = await newUpload.findPreviousUploads();
                   if (previousUploads.length) {
-                    console.log(`🔄 Resuming previous upload for: ${file.name}`);
                     newUpload.resumeFromPreviousUpload(previousUploads[0]);
                   }
                   newUpload.start();
                 } catch (error) {
-                  console.warn(`⚠️ Could not check for previous uploads for ${file.name}:`, error);
                   newUpload.start();
                 }
               };
               
-              // Start remaining uploads with small delays
+              // Start remaining uploads with delays
               window.pendingUploads.forEach(({ file }, index) => {
-                setTimeout(() => {
-                  console.log(`🎬 Starting upload ${index + 2}: ${file.name}`);
-                  startUpload(file, index);
-                }, index * 200); // 200ms delay between starts
+                const delay = (index + 1) * 5000;
+                setTimeout(() => startUpload(file, index), delay);
               });
               
-              // Clear the pending uploads
               window.pendingUploads = null;
             }
           }
@@ -387,17 +467,24 @@ export function FileUploadWidget({
           }
           window.completedUploadFiles.push(fileEntry);
           
-          // Check if all files are completed
-          const allUploads = Array.from(uploadsRef.current.values());
-          const completedCount = Object.values(uploadProgress).filter(p => p.status === 'completed').length + 1; // +1 for current file
-          const totalCount = allUploads.length;
+          // Remove this file from uploadsRef to prevent double counting in progress
+          uploadsRef.current.delete(file.name);
+          console.log(`🧹 Removed ${file.name} from active uploads tracking`);
           
-          if (completedCount === totalCount) {
-            // All files completed - mark upload as complete
+          // CRITICAL: Use stored total to avoid stale closure
+          const totalFiles = window.totalExpectedFiles || 1;
+          const completedFiles = window.completedUploadFiles.length;
+          
+          console.log(`✅ ${file.name} completed. Files: ${completedFiles}/${totalFiles}`);
+          
+          // ONLY trigger completion when ALL files are done
+          if (completedFiles >= totalFiles) {
+            console.log(`🎉 ALL FILES DONE - showing share link`);
             setUploadState('completed');
-            console.log(`🎉 All ${totalCount} TUS uploads completed!`);
             
-            // Send final progress update with success status
+            // Calculate totals from completedUploadFiles since allFiles might be stale
+            const totalBytes = window.completedUploadFiles.reduce((sum, f) => sum + f.file_size, 0);
+            
             onProgressUpdate?.({
               progress: 100,
               uploadedBytes: totalBytes,
@@ -407,19 +494,27 @@ export function FileUploadWidget({
               status: 'success'
             });
             
-            // Call onUploadComplete to trigger the success flow
             setTimeout(() => {
               onUploadComplete?.(window.completedUploadFiles);
             }, 100);
           } else {
-            // Still more files to upload - update progress but don't complete
-            const overallProgress = Math.round((completedCount / totalCount) * 100);
+            // More files still uploading - calculate progress from stored total
+            const uploadedSizeAll = window.completedUploadFiles.reduce((sum, f) => sum + f.file_size, 0);
+            // Use the globally stored totalBytes from handleUpload
+            const totalSizeAll = window.totalBytesToUpload || 0;
+            
+            // Prevent division by zero
+            const overallProgress = totalSizeAll > 0 ? Math.round((uploadedSizeAll * 100) / totalSizeAll) : 0;
+            
+            console.log(`⏳ ${completedFiles}/${totalFiles} files done, ${overallProgress}% overall progress`);
+            console.log(`📊 Progress calculation: ${prettyBytes(uploadedSizeAll)} / ${prettyBytes(totalSizeAll)}`);
+            
             onProgressUpdate?.({
               progress: overallProgress,
-              uploadedBytes: window.completedUploadFiles.reduce((sum, f) => sum + f.file_size, 0),
-              totalBytes: totalBytes,
-              uploadSpeed: uploadSpeed,
-              timeRemaining: timeRemaining,
+              uploadedBytes: uploadedSizeAll,
+              totalBytes: totalSizeAll,
+              uploadSpeed: 0,
+              timeRemaining: 0,
               status: 'uploading'
             });
           }
@@ -463,7 +558,7 @@ export function FileUploadWidget({
             onProgressUpdate?.({
               progress: 100,
               uploadedBytes: uploadedBytes,
-              totalBytes: totalBytes,
+              totalBytes: window.totalBytesToUpload || 0,
               uploadSpeed: 0,
               timeRemaining: 0,
               status: 'error',
@@ -479,7 +574,7 @@ export function FileUploadWidget({
     });
 
     return upload;
-  }, [settings, uploadProgress, onProgressUpdate, onUploadComplete, uploadSpeed, timeRemaining]);
+  }, [settings, uploadProgress, onProgressUpdate, onUploadComplete, uploadSpeed, timeRemaining, selectedFiles]);
 
   // Form data state - moved up to avoid temporal dead zone
   const [data, setData] = useState({
@@ -506,15 +601,15 @@ export function FileUploadWidget({
     console.log(`🚀 Starting TUS upload for ${selectedFiles.length} files`);
     
     const allFiles = selectedFiles.flatMap(item => item.files ? item.files : item);
-    console.log('📋 File breakdown:', {
-      selectedFiles: selectedFiles.length,
-      allFiles: allFiles.length,
-      fileDetails: allFiles.map(f => ({ name: f.name, size: f.size, type: f.type })),
-      totalFiles: allFiles.length
+    console.log('📋 Multi-file upload breakdown:', {
+      selectedItems: selectedFiles.length,
+      totalFiles: allFiles.length,
+      fileDetails: allFiles.map(f => ({ name: f.name, size: prettyBytes(f.size), type: f.type })),
+      uploadStrategy: 'sequential (first file creates group, others follow)'
     });
     
     const totalSize = allFiles.reduce((total, file) => total + file.size, 0);
-    console.log(`📊 Total size calculation: ${prettyBytes(totalSize)} from ${allFiles.length} files`);
+    console.log(`📊 Total upload size: ${prettyBytes(totalSize)} across ${allFiles.length} files`);
     
     // Verify the calculation
     const individualSizes = allFiles.map(f => f.size);
@@ -526,6 +621,24 @@ export function FileUploadWidget({
         files: allFiles.length
       });
     }
+    
+    // Store total bytes globally so progress calculation can always access it
+    window.totalBytesToUpload = totalSize;
+    console.log(`💾 Stored totalBytesToUpload globally: ${prettyBytes(totalSize)}`);
+    
+    // Clear previous upload state and progress tracking
+    window.completedUploadFiles = [];
+    window.totalExpectedFiles = 0; // Reset expected files count
+    localStorage.removeItem('lastLoggedProgress'); 
+    localStorage.removeItem('lastProgressLogged');
+    // Clear individual file progress tracking
+    allFiles.forEach(file => {
+      localStorage.removeItem(`fileProgress_${file.name}`);
+      localStorage.removeItem(`lastProgressTime_${file.name}`);
+      localStorage.removeItem(`lastBytes_${file.name}`);
+      localStorage.removeItem(`progressCalc_${file.name}`);
+    });
+    console.log('🧹 Cleared previous upload state and progress tracking');
     const maxFileSize = 3 * 1024 * 1024 * 1024; // 3GB in bytes
     const maxTotalSize = 5 * 1024 * 1024 * 1024; // 5GB total limit
     
@@ -597,6 +710,14 @@ export function FileUploadWidget({
     // Others will be created after we get the group hash
     const firstFile = allFiles[0];
     
+    console.log(`🎬 Upload Strategy:`);
+    console.log(`   1️⃣ First: ${firstFile.name} (${prettyBytes(firstFile.size)}) - creates upload group`);
+    if (allFiles.length > 1) {
+      allFiles.slice(1).forEach((file, index) => {
+        console.log(`   ${index + 2}️⃣ Queued: ${file.name} (${prettyBytes(file.size)}) - waits for group hash`);
+      });
+    }
+    
     // Create and start the first file upload immediately
     const firstUpload = createTusUpload(firstFile, true);
     uploadsRef.current.set(firstFile.name, {
@@ -607,29 +728,39 @@ export function FileUploadWidget({
       progress: 0
     });
     
-    console.log(`🥇 Starting first file: ${firstFile.name}`);
+    console.log(`🥇 Starting first file upload: ${firstFile.name}`);
     
     // Start first file
     const startUpload = async (upload, file) => {
+      console.log(`🎬 Starting TUS upload for ${file.name}...`);
       try {
         const previousUploads = await upload.findPreviousUploads();
         if (previousUploads.length) {
           console.log(`🔄 Resuming previous upload for: ${file.name}`);
           upload.resumeFromPreviousUpload(previousUploads[0]);
         }
+        console.log(`▶️ Starting upload for ${file.name}`);
         upload.start();
+        console.log(`🚀 Upload started for ${file.name}`);
       } catch (error) {
-        console.warn(`⚠️ Could not check for previous uploads for ${file.name}:`, error);
-        upload.start();
+        console.error(`❌ Error starting upload for ${file.name}:`, error);
+        console.warn(`⚠️ Could not check for previous uploads, starting fresh`);
+        try {
+          upload.start();
+          console.log(`🚀 Fresh upload started for ${file.name}`);
+        } catch (startError) {
+          console.error(`❌ Failed to start upload for ${file.name}:`, startError);
+        }
       }
     };
     
     startUpload(firstUpload, firstFile);
     
-    // Store remaining files (not uploads) to process after first completes
+    // Store remaining files and total count for completion logic
+    window.totalExpectedFiles = allFiles.length; // CRITICAL: Store total for closure
     if (allFiles.length > 1) {
       window.pendingUploads = allFiles.slice(1).map(file => ({ file }));
-      console.log(`⏳ ${window.pendingUploads.length} files waiting for group hash`);
+      console.log(`⏳ Queued ${window.pendingUploads.length} files for sequential upload after group creation`);
     }
   }, [selectedFiles, settings, createTusUpload]);
 
@@ -649,12 +780,12 @@ export function FileUploadWidget({
     onProgressUpdate?.({
       progress: totalProgress,
       uploadedBytes: uploadedBytes,
-      totalBytes: totalBytes,
+      totalBytes: window.totalBytesToUpload || 0,
       uploadSpeed: 0,
       timeRemaining: 0,
       status: 'paused'
     });
-  }, [onProgressUpdate, totalProgress, uploadedBytes, totalBytes]);
+  }, [onProgressUpdate, totalProgress, uploadedBytes]);
 
   // Resume all uploads
   const handleResumeUpload = useCallback(async () => {
@@ -666,7 +797,7 @@ export function FileUploadWidget({
     onProgressUpdate?.({
       progress: totalProgress,
       uploadedBytes: uploadedBytes,
-      totalBytes: totalBytes,
+      totalBytes: window.totalBytesToUpload || 0,
       uploadSpeed: 0,
       timeRemaining: 0,
       status: 'uploading'
@@ -691,7 +822,7 @@ export function FileUploadWidget({
       
       upload.start();
     }
-  }, [createTusUpload, onProgressUpdate, totalProgress, uploadedBytes, totalBytes]);
+  }, [createTusUpload, onProgressUpdate, totalProgress, uploadedBytes]);
 
   // Cancel all uploads
   const handleCancelUpload = useCallback(() => {
