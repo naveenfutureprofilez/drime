@@ -4,7 +4,7 @@ This document provides an overview of the guest uploads feature, including its c
 
 RUN PROJECT
 for windows
-import bedrive sql database which is present in root
+import drime sql database which is present in root
 composer update --ignore-platform-req=ext-pcntl --ignore-platform-req=ext-posix
 npm install esbuild --platform=win32 --arch=x64 --save-dev --force
 npm run dev --force

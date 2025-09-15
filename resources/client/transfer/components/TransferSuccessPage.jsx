@@ -118,11 +118,16 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
                 {displayType === 'Email' && (
                     <div className="manage-col mt-3 mb-4 md:mb-8 p-1 md:p-3">
                         <p className="normal-para text-center mb-3">
-                            Files have been uploaded successfully and the shareable link has been shared on your mail ID.
+                            Your transfer has been sent to your recipient(s)
                         </p>
-                        <button className="button-sm sm:button-md md:button-lg " onClick={onNewTransfer}>
-                            Start new transfer
-                        </button>
+                        <div className="center-align mb-4">
+                            <button 
+                                className="button-sm sm:button-md md:button-lg bg-[#08CF65] text-white hover:bg-green-600 transition-colors"
+                                onClick={() => window.open(downloadLink, '_blank')}
+                            >
+                                View transfer
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>

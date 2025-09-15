@@ -89,7 +89,7 @@ export function TransferProgress({
   // const colors = getStatusColor();
 
   return (
-    <div className="column-center !h-[576px]">
+    <div className="column-center !h-[500px]">
       {/* Circle */}
       <div className="relative w-64 h-64 mx-auto mb-6">
         <svg className="w-full h-full" viewBox="0 0 140 140">
@@ -143,9 +143,11 @@ export function TransferProgress({
                status === 'paused' ? '' :
                formatSpeed(uploadSpeed)}
             </p>
+
             {/* <p className="normal-para mt-2">
               {prettyBytes(uploadedBytes)} of {prettyBytes(totalSize)} • {files.length} file{files.length !== 1 ? 's' : ''}
             </p> */}
+
             <p className="normal-para !mb-4 mt-2">
               {/* {status === 'retrying' ? 'Retrying upload...' : 
                status === 'paused' ? 'Click resume to continue' :

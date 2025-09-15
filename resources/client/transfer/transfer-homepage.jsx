@@ -196,7 +196,7 @@ function UPLOAD_SECTION({
   
   
 
-  return <div className="shadow-md p-1 rounded-xl overflow-hidden relative" onClick={() => {
+  return <div className="shadow-md rounded-xl overflow-hidden relative" onClick={() => {
     if (showSettings) {
       setShowSettings(false);
     }
@@ -211,16 +211,7 @@ function UPLOAD_SECTION({
       onProgressUpdate={onProgressUpdate}
       onSetUploadControls={setUploadControlsRef}
     />
-
  
-    {/* Settings Modal */}
-    {showSettings && (
-      <SettingsPanel
-        settings={settings}
-        onSettingsChange={onSettingsChange}
-        onClose={() => setShowSettings(false)}
-      />
-    )}
   </div>;
 }
 

@@ -1,6 +1,6 @@
 # Admin Panel Setup Complete ✅
 
-Your BeDrive application is now set up with full admin access!
+Your Drime application is now set up with full admin access!
 
 ## 🎯 Access Information
 

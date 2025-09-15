@@ -16,6 +16,10 @@ use ZipStream\ZipStream;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use App\Helpers\FilePathResolver;
 use App\Services\FileDownloadErrorHandler;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\GuestUploadSent;
+use App\Models\ShareableLink;
+use App\Helpers\EmailUrlHelper;
 
 class GuestUploadController extends BaseController
 {
@@ -579,5 +583,89 @@ class GuestUploadController extends BaseController
                 'Content-Transfer-Encoding' => 'binary',
             ],
         );
+    }
+
+    /**
+     * Send email notification for a guest upload
+     */
+    public function sendEmail(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'from_email' => 'required|email',
+            'message' => 'nullable|string|max:500',
+            'share_url' => 'required|string',
+            'files' => 'required|array|min:1',
+            'files.*.filename' => 'required|string',
+            'files.*.size' => 'required|integer',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $fromEmail = $request->input('from_email');
+            $message = $request->input('message');
+            $shareUrl = $request->input('share_url');
+            $files = $request->input('files');
+
+            // Extract hash from share URL
+            $hash = basename(parse_url($shareUrl, PHP_URL_PATH));
+            
+            // Find the guest upload by hash
+            $guestUpload = GuestUpload::where('hash', $hash)->with(['files', 'shareableLink'])->first();
+            
+            if (!$guestUpload) {
+                return response()->json([
+                    'message' => 'Upload not found'
+                ], 404);
+            }
+
+            // Update guest upload record with email information
+            $guestUpload->update([
+                'sender_email' => $fromEmail,
+            ]);
+
+            // Create or get shareable link for the transfer
+            $shareableLink = $guestUpload->shareableLink;
+            if (!$shareableLink) {
+                // If no shareable link exists, create one
+                $shareableLink = ShareableLink::create([
+                    'entry_id' => $guestUpload->files->first()->id ?? null,
+                    'hash' => \Illuminate\Support\Str::random(30),
+                    'is_guest' => true,
+                    'expires_at' => $guestUpload->expires_at,
+                    'allow_download' => true,
+                    'allow_edit' => false,
+                ]);
+
+                // Update guest upload with the new link
+                $guestUpload->update(['link_id' => $shareableLink->hash]);
+            }
+
+            $linkUrl = EmailUrlHelper::emailUrl("/share/{$guestUpload->hash}");
+
+            // Send confirmation email to the sender
+            Mail::to($fromEmail)->queue(
+                new GuestUploadSent($shareableLink, $guestUpload, $fromEmail, $linkUrl, $message)
+            );
+
+            return response()->json([
+                'message' => 'Email sent successfully',
+                'data' => [
+                    'sender_email' => $fromEmail,
+                    'link_url' => $linkUrl,
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to send email',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

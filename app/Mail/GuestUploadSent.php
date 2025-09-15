@@ -93,7 +93,7 @@ class GuestUploadSent extends Mailable implements ShouldQueue
                 'filesList' => $filesList,
                 'linkUrl' => $this->linkUrl,
                 'customMessage' => $this->customMessage,
-                'appName' => config('app.name', 'BeDrive'),
+                'appName' => config('app.name', 'Drime'),
             ]
         );
     }

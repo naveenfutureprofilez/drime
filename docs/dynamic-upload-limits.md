@@ -1,10 +1,10 @@
 # Dynamic Upload Limits Configuration
 
-This document explains how to configure and manage file upload limits in BeDrive using the new dynamic limits system.
+This document explains how to configure and manage file upload limits in Drime using the new dynamic limits system.
 
 ## Overview
 
-BeDrive now supports dynamic file upload limits controlled by the `GUEST_UPLOAD_MAX_FILE_SIZE` environment variable. This replaces the previous hard-coded 3GB limits with a flexible, environment-based configuration.
+Drime now supports dynamic file upload limits controlled by the `GUEST_UPLOAD_MAX_FILE_SIZE` environment variable. This replaces the previous hard-coded 3GB limits with a flexible, environment-based configuration.
 
 ## Environment Variable
 
@@ -31,7 +31,7 @@ GUEST_UPLOAD_MAX_FILE_SIZE=5368709120
 
 ## How It Works
 
-When BeDrive starts, the `AppServiceProvider` reads the `GUEST_UPLOAD_MAX_FILE_SIZE` environment variable and automatically:
+When Drime starts, the `AppServiceProvider` reads the `GUEST_UPLOAD_MAX_FILE_SIZE` environment variable and automatically:
 
 1. **Sets PHP ini limits**:
    - `upload_max_filesize` = File size limit

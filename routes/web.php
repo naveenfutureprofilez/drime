@@ -44,6 +44,9 @@ Route::prefix('api/v1')->group(function() {
     Route::get('quick-share/link/{hash}/download', [QuickShareController::class, 'download']);
     Route::get('quick-share/link/{hash}/download/{fileId}', [QuickShareController::class, 'downloadFile']);
     Route::get('quick-share/link/{hash}/download-all', [QuickShareController::class, 'downloadAll']);
+    
+    // GUEST UPLOADS EMAIL SHARING
+    Route::post('guest-uploads/send-email', [GuestUploadController::class, 'sendEmail'])->middleware(['throttle:100,1']);
 });
 
 // Manifest.json route with CORS support

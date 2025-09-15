@@ -1620,10 +1620,10 @@ export function FileUploadWidget({
               <div className='flex items-center space-x-1 cursor-pointer hover:opacity-75 transition-opacity' onClick={handleSettingsClick}>
                 <CiSettings size={28} className="text-black" />
                 <div>
-                  <h6 className="heading !font-[700] ps-0 text-start text-sm">
+                  <h6 className="heading !font-[700] ps-0 text-start !text-[13px] ">
                     {formatExpiryTime(settings.expiresInHours)}
                   </h6>
-                  <p className="normal-para text-start text-sm ">
+                  <p className="normal-para text-start !text-[13px] ">
                     {settings.password ? "Password protected" : "No password added"}
                   </p>
                 </div>
@@ -1632,7 +1632,7 @@ export function FileUploadWidget({
               {/* Upload Control - Only show Create Transfer button */}
               <div className="flex gap-2">
                 <button 
-                  className="button-sm md:button-md" 
+                  className="button-sm !text-[15px] md:button-md" 
                   onClick={handleUpload}
                   disabled={selectedFiles.length === 0}
                 >

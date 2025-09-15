@@ -14,19 +14,17 @@ export function EmailPanel({
   onClose
 }) {
   const [fromEmail, setFromEmail] = useState('');
-  const [toEmails, setToEmails] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const handleSendEmail = async () => {
-    if (!fromEmail || !toEmails) {
-      toast.danger('Please fill in sender and recipient email addresses');
+    if (!fromEmail) {
+      toast.danger('Please fill in your email address');
       return;
     }
     setSending(true);
     try {
       await apiClient.post('guest-uploads/send-email', {
         from_email: fromEmail,
-        to_emails: toEmails.split(',').map(email => email.trim()),
         message: message,
         share_url: files[0]?.share_url,
         files: files.map(file => ({
@@ -81,9 +79,6 @@ export function EmailPanel({
           {/* From Email */}
           <FormTextField name="fromEmail" label={<Trans message="Your email" />} type="email" value={fromEmail} onChange={e => setFromEmail(e.target.value)} placeholder="your@email.com" required />
 
-          {/* To Emails */}
-          <FormTextField name="toEmails" label={<Trans message="Send to" />} type="email" value={toEmails} onChange={e => setToEmails(e.target.value)} placeholder="recipient@email.com, another@email.com" description={<Trans message="Separate multiple emails with commas" />} required />
-
           {/* Message */}
           <FormTextField name="message" inputElementType="textarea" label={<Trans message="Message (optional)" />} value={message} onChange={e => setMessage(e.target.value)} placeholder="Add a personal message..." rows={4} />
         </div>
@@ -93,7 +88,7 @@ export function EmailPanel({
         <Button variant="text" onClick={onClose} disabled={sending}>
           <Trans message="Cancel" />
         </Button>
-        <Button variant="flat" color="primary" onClick={handleSendEmail} disabled={sending || !fromEmail || !toEmails} startIcon={sending ? undefined : <EmailIcon />}>
+        <Button variant="flat" color="primary" onClick={handleSendEmail} disabled={sending || !fromEmail} startIcon={sending ? undefined : <EmailIcon />}>
           {sending ? <Trans message="Sending..." /> : <Trans message="Send email" />}
         </Button>
       </DialogFooter>
