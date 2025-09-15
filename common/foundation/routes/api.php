@@ -96,11 +96,11 @@ Route::group(['prefix' => 'v1'], function () {
         Route::post('s3/entries', [S3FileEntryController::class, 'store']);
         Route::post('s3/cors/upload', [S3CorsController::class, 'uploadCors']);
 
-        // TUS UPLOADS
+        // TUS UPLOADS (with higher rate limits for chunk uploads)
         Route::post('tus/entries', [TusFileEntryController::class, 'store']);
-        Route::any('/tus/upload/{any?}', function () {
+        Route::any('tus/upload/{any?}', function () {
            return app(TusServer::class)->serve();
-        })->where('any', '.*');
+        })->where('any', '.*')->middleware('throttle:5000,1'); // 5000 requests per minute for chunk uploads
 
         // NOTIFICATIONS
         Route::get('notifications', [NotificationController::class, 'index']);

@@ -21,8 +21,21 @@ export function TransferProgress({
     if (Math.abs(progress - displayProgress) > 5) {
       console.log(`🎭 TransferProgress: Received ${progress}%, updating display from ${displayProgress}%`);
     }
+    
+    // For resumed uploads, don't go backwards unless it's a genuine restart
+    if ((status === 'uploading' || status === 'retrying') && progress < displayProgress && displayProgress > 10) {
+      console.log(`⚠️ Ignoring backwards progress: ${progress}% < ${displayProgress}% during ${status}`);
+      return; // Don't update display progress backwards during resume or retries
+    }
+    
+    // For paused state, maintain the current progress
+    if (status === 'paused' && progress === 0 && displayProgress > 0) {
+      console.log(`⏸️ Maintaining paused progress at ${displayProgress}%`);
+      return; // Don't reset to 0 when paused
+    }
+    
     setDisplayProgress(progress);
-  }, [progress]);
+  }, [progress, status, displayProgress]);
 
   // Auto complete when progress reaches 100% and status is success
   useEffect(() => {
@@ -35,14 +48,14 @@ export function TransferProgress({
   }, [progress, status, onComplete]);
 
   const formatTime = useCallback((seconds) => {
-    if (!seconds || seconds === Infinity) return '--';
+    if (!seconds || seconds === Infinity) return '';
     if (seconds < 60) return `${Math.round(seconds)}s`;
     if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
     return `${Math.round(seconds / 3600)}h`;
   }, []);
 
   const formatSpeed = useCallback((bytesPerSecond) => {
-    if (!bytesPerSecond) return '--';
+    if (!bytesPerSecond) return '';
     return `${prettyBytes(bytesPerSecond)}/s`;
   }, []);
 
@@ -127,16 +140,18 @@ export function TransferProgress({
           <>
             <p className="normal-para mt-2">
               {status === 'retrying' ? 'Reconnecting...' : 
-               status === 'paused' ? 'Upload paused' :
+               status === 'paused' ? '' :
                formatSpeed(uploadSpeed)}
             </p>
-            <p className="normal-para mt-2">
+            {/* <p className="normal-para mt-2">
               {prettyBytes(uploadedBytes)} of {prettyBytes(totalSize)} • {files.length} file{files.length !== 1 ? 's' : ''}
-            </p>
-            <p className="normal-para !mb-6">
-              {status === 'retrying' ? 'Retrying upload...' : 
+            </p> */}
+            <p className="normal-para !mb-4 mt-2">
+              {/* {status === 'retrying' ? 'Retrying upload...' : 
                status === 'paused' ? 'Click resume to continue' :
-               `${formatTime(timeRemaining)} remaining sd`}
+               `${formatTime(timeRemaining)} remaining sd`} */}
+              {status === 'retrying' ? 'Retrying upload...' : 
+               status === 'paused' ? 'Click resume to continue': ''}
             </p>
           </>
         )}
@@ -158,16 +173,16 @@ export function TransferProgress({
           <>
             <button
             onClick={() => onPause?.()}
-              className="px-6 py-3 rounded-xl font-medium transition-all duration-200 bg-yellow-500 text-white hover:bg-yellow-600 hover:scale-105"
+              className="!text-black px-6 py-3 rounded-xl font-medium transition-all duration-200 bg-yellow-500 text-black hover:bg-yellow-600 hover:scale-105"
             >
               Pause
             </button>
-            <button
+            {/* <button
             onClick={() => onCancel?.()}
-              className="px-6 py-3 rounded-xl font-medium transition-all duration-200 bg-red-500 text-white hover:bg-red-600 hover:scale-105"
+              className="!text-black px-6 py-3 rounded-xl font-medium transition-all duration-200 bg-red-500 text-black hover:bg-red-600 hover:scale-105"
             >
               Cancel
-            </button>
+            </button> */}
           </>
         )}
         
@@ -175,16 +190,16 @@ export function TransferProgress({
           <>
             <button
             onClick={() => onResume?.()}
-              className="px-6 py-3 rounded-xl font-medium transition-all duration-200 bg-green-500 text-white hover:bg-green-600 hover:scale-105"
+              className="px-6 py-3 rounded-xl font-medium transition-all duration-200 bg-green-500 text-black hover:bg-green-600 hover:scale-105"
             >
               Resume
             </button>
-            <button
+            {/* <button
             onClick={() => onCancel?.()}
               className="px-6 py-3 rounded-xl font-medium transition-all duration-200 bg-red-500 text-white hover:bg-red-600 hover:scale-105"
             >
               Cancel
-            </button>
+            </button> */}
           </>
         )}
         
@@ -192,8 +207,7 @@ export function TransferProgress({
         {status === 'retrying' && (
           <button
             onClick={() => onCancel?.()}
-            className="px-6 py-3 rounded-xl font-medium transition-all duration-200 bg-red-500 text-white hover:bg-red-600 hover:scale-105"
-          >
+            className="px-6 py-3 rounded-xl font-medium transition-all duration-200 bg-red-500 text-black hover:bg-red-600 hover:scale-105" >
             Cancel
           </button>
         )}
@@ -203,8 +217,8 @@ export function TransferProgress({
             onClick={() => onComplete?.()}
             className={`px-8 py-3 rounded-xl font-medium transition-all duration-200 ${
               status === 'success'
-                ? 'bg-green-500 text-white hover:bg-green-600 hover:scale-105'
-                : 'bg-red-500 text-white hover:bg-red-600 hover:scale-105'
+                ? 'bg-green-500 text-black hover:bg-green-600 hover:scale-105'
+                : 'bg-red-500 text-black hover:bg-red-600 hover:scale-105'
             }`}
           >
             {status === "success" ? "Continue" : "Try again"}

@@ -23,9 +23,9 @@ Route::get('download/{hash}/{fileId}', [GuestUploadController::class, 'downloadF
 
 // GUEST UPLOAD API ROUTES (NO AUTH NEEDED - BYPASS SANCTUM MIDDLEWARE)
 Route::prefix('api/v1')->group(function() {
-    // GUEST UPLOADS
-    Route::post('guest/upload', [GuestUploadController::class, 'store'])->middleware(['throttle:1000,1']);
-    Route::post('guest/tus/entries', [GuestTusController::class, 'createEntry'])->middleware(['throttle:1000,1']);
+    // GUEST UPLOADS (increased rate limits for large file uploads)
+    Route::post('guest/upload', [GuestUploadController::class, 'store'])->middleware(['throttle:5000,1']);
+    Route::post('guest/tus/entries', [GuestTusController::class, 'createEntry'])->middleware(['throttle:5000,1']);
     
     // Guest upload read operations (no throttling for reading)
     Route::get('guest/upload/{hash}', [GuestUploadController::class, 'show']);

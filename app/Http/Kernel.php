@@ -68,6 +68,12 @@ class Kernel extends HttpKernel
             'throttle:1000,1',
             SubstituteBindings::class,
         ],
+        
+        'api_uploads' => [
+            EnsureFrontendRequestsAreStateful::class,
+            'throttle:5000,1', // Higher limit for TUS uploads (5000 requests per minute)
+            SubstituteBindings::class,
+        ],
     ];
 
     /**

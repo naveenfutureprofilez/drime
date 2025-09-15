@@ -125,8 +125,6 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
                         </button>
                     </div>
                 )}
-
-
             </div>
         </div>
 
@@ -134,18 +132,7 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
                 <p className='text-black font-semibold text-center'>Need to send more files? <button onClick={onNewTransfer} className=" text-black underline">
                     Start new transfer
                 </button> </p>
-                {/* <button onClick={() => window.open(downloadLink, '_blank')}>
-                    Open download page
-                </button> */}
-
-                
             </div>
-            {/* <p className="pt-[30px] md:pt-[69px] text-[14px] md:text-[16px] text-black font-[600] leading-5 text-center">
-                            Need to send more files?{' '}
-                            <Link to="#" onClick={() => { setStep(4) }} className="underline">
-                                Start new transfer
-                            </Link> 
-                        </p> */}
     </>
     );
 };
