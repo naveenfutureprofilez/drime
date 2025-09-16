@@ -29,7 +29,9 @@ class GuestUpload extends Model
         'recipient_emails',
         'title',
         'message',
-        'last_downloaded_at'
+        'last_downloaded_at',
+        'email_sent',
+        'email_sent_at'
     ];
 
     protected $casts = [
@@ -40,6 +42,8 @@ class GuestUpload extends Model
         'max_downloads' => 'integer',
         'expires_at' => 'datetime',
         'last_downloaded_at' => 'datetime',
+        'email_sent_at' => 'datetime',
+        'email_sent' => 'boolean',
         'metadata' => 'array',
         // recipient_emails is now a string, not array
     ];

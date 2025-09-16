@@ -141,7 +141,8 @@ export function TransferProgress({
             <p className="normal-para mt-2">
               {status === 'retrying' ? 'Reconnecting...' : 
                status === 'paused' ? '' :
-               formatSpeed(uploadSpeed)}
+              //  formatSpeed(uploadSpeed)
+              '' }
             </p>
 
             {/* <p className="normal-para mt-2">
@@ -149,9 +150,6 @@ export function TransferProgress({
             </p> */}
 
             <p className="normal-para !mb-4 mt-2">
-              {/* {status === 'retrying' ? 'Retrying upload...' : 
-               status === 'paused' ? 'Click resume to continue' :
-               `${formatTime(timeRemaining)} remaining sd`} */}
               {status === 'retrying' ? 'Retrying upload...' : 
                status === 'paused' ? 'Click resume to continue': ''}
             </p>

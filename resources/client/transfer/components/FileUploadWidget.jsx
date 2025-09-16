@@ -40,8 +40,9 @@ export function FileUploadWidget({
   
 
   // Create TUS upload for a single file
-  const createTusUpload = useCallback((file, isFirstFile = false, groupHash = null, totalFilesCount = 1) => {
+  const createTusUpload = useCallback((file, isFirstFile = false, groupHash = null, totalFilesCount = 1, formData = null) => {
     console.log(`🚀 Creating upload for: ${file.name} (${prettyBytes(file.size)}) - ${isFirstFile ? 'FIRST' : 'SUBSEQUENT'} file`);
+    console.log('📧 Form data received in createTusUpload:', formData);
     
     // First file doesn't send upload_group_hash (creates new group)
     // Subsequent files use the hash from the first file's response
@@ -95,9 +96,18 @@ export function FileUploadWidget({
         expires_in_hours: settings?.expiresInHours?.toString() || '72',
         max_downloads: settings?.maxDownloads?.toString() || '',
         upload_group_hash: uploadGroupHash,
+        // Form data fields
+        sender_email: formData?.email || '',
+        sender_name: formData?.name || '',
+        message: formData?.message || '',
       },
-
+      
       onError: (error) => {
+        console.log('🔧 TUS Metadata being sent:', {
+          sender_email: formData?.email || '',
+          sender_name: formData?.name || '',
+          message: formData?.message || '',
+        });
         const statusCode = error.originalResponse?.getStatus();
         
         // Check if this is a manual pause - don't treat as error
@@ -527,9 +537,9 @@ export function FileUploadWidget({
             password: settings?.password,
             expires_in_hours: settings?.expiresInHours || 72,
             max_downloads: settings?.maxDownloads,
-            sender_email: data?.email, // Use form data, not settings
-            sender_name: data?.name, // Use form data, not settings
-            message: data?.message // Use form data, not settings
+            sender_email: formData?.email, // Use formData parameter, not data
+            sender_name: formData?.name, // Use formData parameter, not data
+            message: formData?.message // Use formData parameter, not data
           };
           
           console.log(`📤 Sending file entry request:`, requestPayload);
@@ -587,11 +597,14 @@ export function FileUploadWidget({
             if (window.pendingUploads && window.pendingUploads.length > 0) {
               console.log(`🚀 Starting ${window.pendingUploads.length} remaining files`);
               
+              // Store the length before we set pendingUploads to null
+              const totalPendingFiles = window.pendingUploads.length;
+              
               const startUpload = async (file, index) => {
                 console.log(`📤 Starting ${file.name}`);
                 
-                // Create new upload with the correct group hash
-                const newUpload = createTusUpload(file, false, response.data.upload_group_hash);
+                // Create new upload with the correct group hash - use stored length
+                const newUpload = createTusUpload(file, false, response.data.upload_group_hash, totalPendingFiles, data);
                 
                 // Update the uploads ref
                 uploadsRef.current.set(file.name, {
@@ -674,6 +687,11 @@ export function FileUploadWidget({
           }
           window.completedUploadFiles.push(fileEntry);
           
+          // Store the upload response data for the success page
+          if (!window.uploadResponseData) {
+            window.uploadResponseData = response.data;
+          }
+          
           // Remove this file from uploadsRef to prevent double counting in progress
           uploadsRef.current.delete(file.name);
           console.log(`🧹 Removed ${file.name} from active uploads tracking`);
@@ -739,7 +757,7 @@ export function FileUploadWidget({
             });
             
             setTimeout(() => {
-              onUploadComplete?.(window.completedUploadFiles);
+              onUploadComplete?.(window.completedUploadFiles, window.uploadResponseData);
             }, 100);
           } else {
             // More files still uploading - calculate progress from stored total
@@ -842,7 +860,7 @@ export function FileUploadWidget({
     
     try {
       // Create a new TUS upload instance
-      const newUpload = createTusUpload(file, false, guestUploadGroupHash);
+      const newUpload = createTusUpload(file, false, guestUploadGroupHash, 1, data);
       
       // Try to find previous upload and resume
       let actualResumeBytes = resumeFromBytes;
@@ -922,6 +940,13 @@ export function FileUploadWidget({
     if (selectedFiles.length === 0) return;
     
     console.log(`🚀 Starting TUS upload for ${selectedFiles.length} files`);
+    console.log('📧 Form data at upload time:', data);
+    console.log('📧 Form data keys:', Object.keys(data || {}));
+    console.log('📧 Form data values:', {
+      email: data?.email,
+      name: data?.name, 
+      message: data?.message
+    });
     
     const allFiles = selectedFiles.flatMap(item => item.files ? item.files : item);
     console.log('📋 Multi-file upload breakdown:', {
@@ -1040,7 +1065,7 @@ export function FileUploadWidget({
     }
     
     // Create and start the first file upload immediately
-    const firstUpload = createTusUpload(firstFile, true);
+    const firstUpload = createTusUpload(firstFile, true, null, selectedFiles.length, data);
     uploadsRef.current.set(firstFile.name, {
       upload: firstUpload,
       file: firstFile,
@@ -1083,7 +1108,7 @@ export function FileUploadWidget({
       window.pendingUploads = allFiles.slice(1).map(file => ({ file }));
       console.log(`⏳ Queued ${window.pendingUploads.length} files for sequential upload after group creation`);
     }
-  }, [selectedFiles, settings, createTusUpload]);
+  }, [selectedFiles, settings, createTusUpload, data]);
 
   
   // Pause all uploads
@@ -1205,7 +1230,7 @@ export function FileUploadWidget({
 
     for (const [fileName, { file }] of uploadsRef.current.entries()) {
       // ✅ FIX: Pass correct parameters - (file, isFirstFile=false, groupHash)
-      const upload = createTusUpload(file, false, resumeGroupHash);
+      const upload = createTusUpload(file, false, resumeGroupHash, 1, data);
       
       console.log(`🔄 Resuming ${fileName} with group hash: ${resumeGroupHash || 'none'}`);
       
@@ -1300,7 +1325,7 @@ export function FileUploadWidget({
           console.log(`📤 Starting pending file: ${file.name}`);
           
           // Create new upload with the group hash
-          const newUpload = createTusUpload(file, false, resumeGroupHash);
+          const newUpload = createTusUpload(file, false, resumeGroupHash, 1, data);
           
           // Add to uploads ref
           uploadsRef.current.set(file.name, {
@@ -1395,11 +1420,14 @@ export function FileUploadWidget({
     setIsMenuOpen(!isMenuOpen);
   };
   const handleChange = (e) => {
+    console.log('📝 Input change:', e.target.name, '=', e.target.value);
     setData((prevalue) => {
-      return {
+      const newData = {
         ...prevalue,
         [e.target.name]: e.target.value
-      }
+      };
+      console.log('📊 Updated data state:', newData);
+      return newData;
     })
   }
 
@@ -1587,7 +1615,7 @@ export function FileUploadWidget({
             <FileData selectedFiles={selectedFiles} setSelectedFiles={setSelectedFiles} />
             {activeTab === "Email" && (
               <>
-                <input
+                <input autoComplete="email"
                   type="email"
                   name='email'
                   value={data?.email}
@@ -1632,7 +1660,14 @@ export function FileUploadWidget({
               <div className="mt-3 md:mt-0 md:flex gap-2">
                 <button 
                   className="button-sm !text-[15px] w-full md:w-auto md:button-md" 
-                  onClick={handleUpload}
+                  onClick={() => {
+                    console.log('🔴 Button clicked - Current data state:', data);
+                    console.log('🔴 Data state keys:', Object.keys(data || {}));
+                    console.log('🔴 Data state email:', data?.email);
+                    console.log('🔴 Data state name:', data?.name);
+                    console.log('🔴 Data state message:', data?.message);
+                    handleUpload();
+                  }}
                   disabled={selectedFiles.length === 0}
                 >
                   Create Transfer

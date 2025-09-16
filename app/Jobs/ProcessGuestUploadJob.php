@@ -57,12 +57,50 @@ class ProcessGuestUploadJob implements ShouldQueue
 
             // Send confirmation email if recipient email is provided
             if ($this->recipientEmail && !$guestUpload->email_sent) {
-                app(GuestUploadService::class)->sendConfirmationEmailAsync($guestUpload, $this->recipientEmail);
+                Log::info('About to send confirmation email', [
+                    'recipient_email' => $this->recipientEmail,
+                    'guest_upload_hash' => $this->guestUploadHash,
+                    'current_email_sent_status' => $guestUpload->email_sent,
+                    'guest_upload_id' => $guestUpload->id,
+                    'files_count' => $guestUpload->files()->count()
+                ]);
                 
-                // Mark email as sent to prevent duplicate sends
-                $guestUpload->update([
-                    'email_sent' => true,
-                    'email_sent_at' => now()
+                try {
+                    Log::info('Calling GuestUploadService::sendConfirmationEmailAsync', [
+                        'service_class' => GuestUploadService::class,
+                        'method' => 'sendConfirmationEmailAsync'
+                    ]);
+                    
+                    app(GuestUploadService::class)->sendConfirmationEmailAsync($guestUpload, $this->recipientEmail);
+                    
+                    Log::info('Email sending service call completed successfully');
+                    
+                    // Mark email as sent to prevent duplicate sends
+                    $guestUpload->update([
+                        'email_sent' => true,
+                        'email_sent_at' => now()
+                    ]);
+                    
+                    Log::info('Database updated with email_sent = true', [
+                        'guest_upload_id' => $guestUpload->id,
+                        'email_sent_at' => $guestUpload->fresh()->email_sent_at
+                    ]);
+                } catch (\Exception $emailException) {
+                    Log::error('Email sending failed in ProcessGuestUploadJob', [
+                        'error' => $emailException->getMessage(),
+                        'trace' => $emailException->getTraceAsString(),
+                        'file' => $emailException->getFile(),
+                        'line' => $emailException->getLine(),
+                        'guest_upload_hash' => $this->guestUploadHash,
+                        'recipient_email' => $this->recipientEmail
+                    ]);
+                }
+            } else {
+                Log::info('Skipping email send', [
+                    'recipient_email' => $this->recipientEmail,
+                    'email_already_sent' => $guestUpload->email_sent,
+                    'reason' => !$this->recipientEmail ? 'no_recipient_email' : 'email_already_sent',
+                    'guest_upload_hash' => $this->guestUploadHash
                 ]);
             }
 

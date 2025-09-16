@@ -86,7 +86,7 @@ export function SettingsPanel({
             <p className='font-bold !text-start'>Password</p>
             <div className=" !w-full  md:!max-w-[200px]">
               <input
-                type="password"
+                type="password" autoComplete={false}
                 value={localSettings.password}
                 onChange={(e) => {
                   const newPassword = e.target.value;

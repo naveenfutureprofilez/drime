@@ -147,7 +147,7 @@ export const GuestDownloadView = ({
         totalSize={totalSize} 
         itemCount={files ? files.length : 0}
       />
-      <div className='!pt-0 p-[5px] lg:p-[30px]'>
+      <div className='!pt-0 p-[0px] lg:p-[30px]'>
         {/* <div className='ma÷x-h-[32vh] overflow-y-auto'> */}
           {/* <div className='pe-[20px]'> */}
             <FileData 

@@ -141,7 +141,7 @@ export default function FileData({ step, selectedFiles, setSelectedFiles, setSte
        ${step === 4 ? "max-h-[33vh]" : "max-h-[130px]"}
          mt-2
          custom-scroll
-         overflow-y-auto pe-[20px]
+         overflow-y-auto pe-[10px] md:pe-[20px]
         `}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -155,8 +155,8 @@ export default function FileData({ step, selectedFiles, setSelectedFiles, setSte
                             <div className="flex items-center space-x-2 ">
                                 <div>{fileIcons[getMime(file.type)]}</div>
                                 <div className='max-w-[90%]'>
-                                    <h6 className="heading text-start break-all line-clamp-2 font-bold">{file.filename || file.folderName || file?.name}</h6>
-                                    <p className="normal-para !text-left ">
+                                    <h6 className="heading text-start break-all text-sm md:!text-[16px] line-clamp-2 font-bold">{file.filename || file.folderName || file?.name}</h6>
+                                    <p className="normal-para text-sm md:!text-[16px] !text-left ">
                                         Size : {FileSize(file.size || file.files.reduce((acc, f) => acc + (f.size || 0), 0))}
                                         {/* {file.files?.length > 0 && <span className="ml-1">{file.files.length} files</span>} */}
                                     </p>

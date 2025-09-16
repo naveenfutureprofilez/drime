@@ -251,7 +251,7 @@
         </div>
 
         <div class="footer">
-            <p>Need to send more files? <a href="{{ env('DOMAIN_URL', config('app.url')) }}">Start a new transfer</a></p>
+            <p>Need to send more files? <a href="{{ config('app.url') }}">Start a new transfer</a></p>
             <p style="margin-top: 20px;">
                 <a href="#">About {{ $appName }}</a> • 
                 <a href="#">Help</a> • 

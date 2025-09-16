@@ -46,14 +46,35 @@ const getExpiryMessage = (files, expiresInHours) => {
 };
 
 const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onNewTransfer, files, expiresInHours, uploadResponse }) => {
+    // Debug logging
+    console.log('🔍 TransferSuccessPage Debug:', {
+        uploadResponse,
+        email_sent: uploadResponse?.email_sent,
+        type: typeof uploadResponse?.email_sent,
+        uploadResponseKeys: uploadResponse ? Object.keys(uploadResponse) : 'null'
+    });
+    
     // Determine the display type based on whether email was sent
     const emailWasSent = uploadResponse?.email_sent || false;
-    const recipientEmail = uploadResponse?.recipient_email;
+    
+    // Get recipient email from the fileEntry data structure
+    const recipientEmail = uploadResponse?.fileEntry?.recipient_emails || 
+                          uploadResponse?.recipient_emails || 
+                          uploadResponse?.fileEntry?.fileEntry?.recipient_emails;
+    
     const displayType = emailWasSent ? 'Email' : 'Link';
+    
+    console.log('🎯 Display Logic:', {
+        emailWasSent,
+        displayType,
+        recipientEmail
+    });
     
     const headingText = displayType === 'Link'
         ? 'Your link is ready'
-        : `Files sent successfully to ${recipientEmail}`;
+        : recipientEmail 
+            ? `Your transfer has been sent to your recipient(s)`
+            : 'Your transfer has been sent';
 
     const [copied, setCopied] = useState(false);
     const copyToClipboard = async () => {
@@ -96,7 +117,7 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
                                         type="text"
                                         readOnly
                                         value={downloadLink}
-                                        className="w-full pr-12 pl-4 py-3 rounded-[13px] border border-gray-300 bg-gray-50 font-mono text-sm text-gray-700 pe-[60px] focus:outline-none transition"
+                                        className="w-full pr-12 pl-4 py-3 rounded-[13px] border border-gray-300 !bg-[#e7e7e7] font-mono text-sm !text-gray-600 pe-[60px] focus:outline-none transition"
                                     />
                                     <button
                                         onClick={copyToClipboard}

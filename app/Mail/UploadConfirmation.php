@@ -10,6 +10,7 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class UploadConfirmation extends Mailable implements ShouldQueue
 {
@@ -20,6 +21,14 @@ class UploadConfirmation extends Mailable implements ShouldQueue
         public ShareableLink $shareableLink,
         public string $linkUrl
     ) {
+        Log::info('UploadConfirmation mailable created', [
+            'guest_upload_id' => $this->guestUpload->id,
+            'guest_upload_hash' => $this->guestUpload->hash,
+            'shareable_link_id' => $this->shareableLink->id,
+            'shareable_link_hash' => $this->shareableLink->hash,
+            'link_url' => $this->linkUrl,
+            'files_count' => $this->guestUpload->files()->count()
+        ]);
     }
 
     public function envelope(): Envelope
@@ -32,6 +41,13 @@ class UploadConfirmation extends Mailable implements ShouldQueue
             $subject = "Your file has been uploaded successfully";
         }
         
+        Log::info('UploadConfirmation envelope created', [
+            'subject' => $subject,
+            'from_address' => config('mail.from.address', 'hello@example.com'),
+            'items_count' => $itemsCount,
+            'guest_upload_hash' => $this->guestUpload->hash
+        ]);
+        
         return new Envelope(
             from: config('mail.from.address', 'hello@example.com'),
             subject: $subject,
@@ -40,11 +56,17 @@ class UploadConfirmation extends Mailable implements ShouldQueue
 
     public function content(): Content
     {
+        Log::info('UploadConfirmation content method called', [
+            'guest_upload_hash' => $this->guestUpload->hash,
+            'shareable_link_hash' => $this->shareableLink->hash
+        ]);
+        
         // Build files list and totals (supports multi-file uploads)
         $files = $this->guestUpload->files;
         if ($files->isEmpty() && $this->shareableLink->entry) {
             // Legacy single file
             $files = collect([$this->shareableLink->entry]);
+            Log::info('Using legacy single file from shareable link entry');
         }
 
         $itemsCount = $files->count();
@@ -69,6 +91,15 @@ class UploadConfirmation extends Mailable implements ShouldQueue
 
         $totalSizeFormatted = $formatBytes($totalBytes);
         $expiresAtFormatted = $this->shareableLink->expires_at ? $this->shareableLink->expires_at->format('F j, Y') : null;
+
+        Log::info('UploadConfirmation content data prepared', [
+            'items_count' => $itemsCount,
+            'total_size_formatted' => $totalSizeFormatted,
+            'expires_at_formatted' => $expiresAtFormatted,
+            'files_list_count' => count($filesList),
+            'link_url' => $this->linkUrl,
+            'guest_upload_hash' => $this->guestUpload->hash
+        ]);
 
         return new Content(
             view: 'emails.upload-confirmation',

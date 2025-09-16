@@ -5,10 +5,10 @@ namespace App\Services;
 use App\Models\GuestUpload;
 use App\Models\FileEntry;
 use App\Models\ShareableLink;
-use App\Services\GuestUploadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Illuminate\Validation\ValidationException;
 use App\Mail\UploadConfirmation;
@@ -187,7 +187,16 @@ class GuestUploadService
         // Get or create GuestUpload based on upload_group_hash
         $uploadGroupHash = $request->string('upload_group_hash')->toString();
         $recipientEmail = $request->string('sender_email')->toString();
+        $senderName = $request->string('sender_name')->toString();
+        $message = $request->string('message')->toString();
         $isNewUploadGroup = !$uploadGroupHash;
+        
+        logger('GuestUploadService::handleTusUpload - Form data extracted', [
+            'recipient_email' => $recipientEmail,
+            'sender_name' => $senderName,
+            'message' => $message,
+            'upload_group_hash' => $uploadGroupHash
+        ]);
         
         if ($uploadGroupHash) {
             // Find existing GuestUpload by upload_group_hash
@@ -203,15 +212,15 @@ class GuestUploadService
             );
             
             // Process form data for TUS uploads too
-            $title = $request->string('sender_name')->toString(); // Frontend sends as 'sender_name' but it's actually title
+            $title = $senderName ?: null; // Use extracted sender_name as title
             
             $guestUpload = GuestUpload::create([
                 'password' => $request->string('password')->toString() ?: null,
                 'expires_at' => $expiresAt,
                 'max_downloads' => $request->integer('max_downloads'),
                 'sender_email' => null,
-                'title' => $title ?: null,
-                'message' => $request->string('message')->toString() ?: null,
+                'title' => $title,
+                'message' => $message ?: null,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
                 'metadata' => [
@@ -332,19 +341,27 @@ class GuestUploadService
         }
         
         // Email sending is completely optional - dispatch with delay
+        $emailWillBeSent = false;
         if ($isNewUploadGroup && $recipientEmail) {
             \App\Jobs\ProcessGuestUploadJob::dispatch(
                 $guestUpload->hash,
                 $fileEntry->id,
                 $recipientEmail
             )->delay(now()->addSeconds(10)); // Much longer delay since it's not critical
+            
+            $emailWillBeSent = true;
+            logger('Email job dispatched for guest upload', [
+                'guest_upload_hash' => $guestUpload->hash,
+                'recipient_email' => $recipientEmail
+            ]);
         }
 
         logger('GuestUploadService::handleTusUpload - Completed', [
             'upload_key' => $uploadKey,
             'total_elapsed_ms' => (microtime(true) - $startTime) * 1000,
             'file_entry_id' => $fileEntry->id,
-            'guest_upload_hash' => $guestUpload->hash
+            'guest_upload_hash' => $guestUpload->hash,
+            'email_will_be_sent' => $emailWillBeSent
         ]);
         
         return [
@@ -363,6 +380,7 @@ class GuestUploadService
             'expires_at' => $guestUpload->expires_at->toISOString(),
             'download_url' => EmailUrlHelper::emailUrl("/download/{$guestUpload->hash}"),
             'share_url' => EmailUrlHelper::emailUrl("/share/{$guestUpload->hash}"),
+            'email_sent' => $emailWillBeSent, // Only true if email job was actually dispatched
         ];
     }
 
@@ -666,14 +684,26 @@ class GuestUploadService
      */
     public function sendConfirmationEmailAsync(GuestUpload $guestUpload, string $email): void
     {
+        \Illuminate\Support\Facades\Log::info('GuestUploadService::sendConfirmationEmailAsync called', [
+            'guest_upload_id' => $guestUpload->id,
+            'guest_upload_hash' => $guestUpload->hash,
+            'email' => $email,
+            'current_email_sent_status' => $guestUpload->email_sent
+        ]);
+        
         try {
+            \Illuminate\Support\Facades\Log::info('Calling private sendUploadConfirmation method');
             $this->sendUploadConfirmation($guestUpload, $email);
+            \Illuminate\Support\Facades\Log::info('sendUploadConfirmation completed successfully');
         } catch (\Exception $e) {
             // Log error but don't throw - email failure shouldn't break the upload
-            logger()->error('Async email sending failed', [
+            \Illuminate\Support\Facades\Log::error('Async email sending failed in GuestUploadService', [
                 'guest_upload_hash' => $guestUpload->hash,
                 'email' => $email,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
             ]);
         }
     }

@@ -38,10 +38,10 @@ export default function Download({ expiresAt, totalSize, itemCount = 1 }) {
     return (
         <div className="column-center border-apply p-4">
             <img src={Vector} alt="" className="h-12 w-12 object-cover" />
-            <h3 className="normal-heading mt-1 ">
+            <h3 className="mt-2 normal-heading text-sm md:!text-[18px] mt-1 ">
                 You received {itemCount} {itemCount === 1 ? 'item' : 'items'}
             </h3>
-            <p className="normal-para mt-1">{formatExpiry(expiresAt, totalSize)}</p>
+            <p className="normal-para text-sm md:!text-[16px] mt-1">{formatExpiry(expiresAt, totalSize)}</p>
         </div>
     )
 }

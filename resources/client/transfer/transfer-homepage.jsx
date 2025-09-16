@@ -105,8 +105,9 @@ export function TransferHomepage() {
     setUploadStatus(status);
   }, []);
 
-  const handleUploadComplete = useCallback(files => {
+  const handleUploadComplete = useCallback((files, response = null) => {
     setUploadedFiles(files);
+    setUploadResponse(response);
     setCurrentStep('share');
   }, []);
 
