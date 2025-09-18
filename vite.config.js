@@ -18,12 +18,11 @@ module.exports = defineConfig({
     port: 5173,
     strictPort: true,   // don't auto-switch to another port
     watch: { followSymlinks: true },
-    hmr: false, // Disable HMR to prevent auto-refresh
-    // hmr: {
-    //   protocol: 'ws',
-    //   host: 'localhost',
-    //   port: 5173,
-    // },
+    hmr: {
+      protocol: 'ws',
+      host: 'localhost',
+      port: 5173,
+    },
     origin: 'http://localhost:5173', // 👈 this fixes the injected script URLs
   },
 
@@ -49,7 +48,7 @@ module.exports = defineConfig({
   },
   plugins: [
     react(),
-    laravel({ input: ['resources/client/main.jsx'], refresh: false }),
+    laravel({ input: ['resources/client/main.jsx'], refresh: true }),
     basePath(),
     replace({ preventAssignment: true, __SENTRY_DEBUG__: false }),
   ],

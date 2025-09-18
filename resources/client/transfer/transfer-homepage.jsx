@@ -145,8 +145,8 @@ export function TransferHomepage() {
         )}
 
         {currentStep === 'share' && (
-          <div className="bg-white rounded-2xl  overflow-hidden">
-            <SHARE_SECTION 
+          <div className="bg-white rounded-[15px] shadow-lg overflow-hidden m-4">
+            <SHARE_SECTION
               files={uploadedFiles} 
               transferSettings={transferSettings} 
               onNewTransfer={handleNewTransfer} 

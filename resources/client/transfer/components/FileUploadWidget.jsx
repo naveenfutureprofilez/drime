@@ -1,11 +1,11 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Upload } from 'tus-js-client';
 import FileData from './FileData';
-import { VscAdd } from "react-icons/vsc";
+import PlusIcon from '../../../../src/assets/icons/PlusIcon';
 
 import Menu from '@app/components/Menu';
 import { useFileDrop } from '@app/components/useFileDrop';
-import { CiSettings } from 'react-icons/ci';
+import { FigmaPlusIcon, FigmaSettingsIcon, ImportFileIcon, ImportFolderIcon } from '../../components/FigmaIcons';
 import { SettingsPanel } from './SettingsPanel';
 import { FileSize } from '@app/components/FileSize';
 import { apiClient } from '@common/http/query-client';
@@ -70,7 +70,6 @@ export function FileUploadWidget({
       
       // Add upload throttling to prevent rate limiting
       uploadDataDuringCreation: false, // Don't upload data immediately
-      chunkSize: TUS_CHUNK_SIZE,
       
       metadata: {
         name: (() => {
@@ -932,7 +931,7 @@ export function FileUploadWidget({
     // Format the date as MM/DD/YYYY
     const formattedDate = expiryDate.toLocaleDateString('en-US');
     
-    return `Expires on ${formattedDate}`;
+    return `Expire on ${formattedDate}`;
   }
 
 
@@ -1503,8 +1502,8 @@ export function FileUploadWidget({
   return <div className="text-center">
     {selectedFiles.length === 0 ?
       <div
-        className={`p-[20px] md:p-[30px] center-align flex-col h-[60vh] max-h-[500px] rounded-[15px] transition
-                ${isDragging ? "border-green-500 bg-green-50" : "border-gray-300"}`}
+        className={`p-[20px] md:p-[30px] center-align flex-col h-[60vh] xl:h-[576px] max-h-[500px] xl:max-h-[576px] rounded-[15px] shadow-lg transition-all duration-200
+                ${isDragging ? "border-green-500 bg-green-50 shadow-xl" : "border-gray-300 bg-white"}`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -1527,12 +1526,12 @@ export function FileUploadWidget({
           />
           <label
             onClick={() => addInputRef.current.click()}
-            className="btn-border rounded-[30px] p-4 mb-6 cursor-pointer inline-block"
+            className="mb-6 cursor-pointer inline-block"
           >
-            <VscAdd size={56} />
+            <PlusIcon   />
           </label>
 
-          <p className="para mt-[10px]">Let us begin by adding some files</p>
+          <p className="para mt-[10px]">Let's begin by adding some files</p>
           <p
             onClick={() => folderInputRef.current.click()}
             className="transefer mt-1 inline-block cursor-pointer"
@@ -1540,25 +1539,25 @@ export function FileUploadWidget({
             Or select folder
           </p>
         </div>
-      </div>
+      </div> 
       :
       <div>
-        <div className=" relative ">
+        <div className=" relative   h-[60vh] xl:h-[700px] max-h-[500px] xl:max-h-[576px] rounded-[15px] shadow-lg transition-all duration-200 border-gray-300 bg-white">
           <div className='p-[20px] md:p-[30px]'>
             <div className="between-align">
               <div>
-                <h2 className="heading-md mb-1 !text-left">{selectedFiles?.length} items</h2>
-                <p className="para !text-[#999999]">{FileSize(selectedFiles.size || totalSizeAll)} out of 100 GB</p>
+                <h2 className="text-[18px] font-semibold mb-1 !text-left">{selectedFiles?.length} items</h2>
+                <p className="text-[16px]  text-[#0009]">{FileSize(selectedFiles.size || totalSizeAll)} out of 100 GB</p>
               </div>
-              <div className="btn-border border-[3px] !bg-[#fff]  rounded-[16px] flex items-center justify-center p-2 py-[9px] cursor-pointer" onClick={toggleMenu}>
-                <VscAdd size={24} color='#08cf65' />
+              <div className='cursor-pointer' onClick={toggleMenu}>
+                <FigmaPlusIcon />
               </div>
             </div>
             {isMenuOpen && <Menu setSelectedFiles={setSelectedFiles} toggleMenu={toggleMenu} />}
             
             {/* Error message display */}
             {errorMessage && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-4 mb-4">
+              <div className="bg-red-50 border border-red-200 rounded-[10px] p-4 mt-4 mb-4 shadow-md">
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
                     <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -1596,7 +1595,7 @@ export function FileUploadWidget({
                 className="column-center cursor-pointer mb-[-2px]"
                 onClick={() => setActiveTab('Link')}
               >
-                <span className={`text-lg p-1 font-medium transition-colors duration-200 ${activeTab === 'Link' ? 'text-[#08CF65] border-b-[2px] border-[#08CF65]' : 'text-[#999999]'}`}
+                <span className={`text-[18px] p-1 font-medium transition-colors duration-200 ${activeTab === 'Link' ? 'text-[#08CF65] border-b-[2px] border-[#08CF65]' : 'text-[#0009]'}`}
                 >
                   Link
                 </span>
@@ -1606,7 +1605,7 @@ export function FileUploadWidget({
                 onClick={() => setActiveTab('Email')}
               >
                 <span
-                  className={`text-lg p-1 font-medium transition-colors duration-200 ${activeTab === 'Email' ? 'text-[#08CF65] border-b-[2px] border-[#08CF65]' : 'text-[#999999]'
+                  className={`text-[18px] p-1 font-medium transition-colors duration-200 ${activeTab === 'Email' ? 'text-[#08CF65] border-b-[2px] border-[#08CF65]' : 'text-[#0009]'
                     }`} >
                   Email
                 </span>
@@ -1621,7 +1620,7 @@ export function FileUploadWidget({
                   value={data?.email}
                   onChange={handleChange}
                   placeholder="Email"
-                  className="input"
+                  className="input mb-0"
                 />
               </>
             )}
@@ -1634,7 +1633,7 @@ export function FileUploadWidget({
               onChange={handleChange}
             />
             <textarea
-              rows={3}
+              rows={activeTab === "Email" ? 2 : 5}
               placeholder="Message"
               className="textarea"
               name='message'
@@ -1644,13 +1643,18 @@ export function FileUploadWidget({
             {/* Progress display removed - now handled by TransferProgress component */}
             
             <div className='md:between-align pt-[7px] md:pt-[20px] gap-5 md:gap-0'>
-              <div className='flex items-center space-x-1 cursor-pointer hover:opacity-75 transition-opacity' onClick={handleSettingsClick}>
-                <CiSettings size={28} className="text-black" />
+              <div className='flex items-start space-x-1 cursor-pointer hover:opacity-75 transition-opacity' onClick={handleSettingsClick}>
+                
+                <div className='mt-1 me-2'>
+                <FigmaSettingsIcon  />
+                  </div>
+
+
                 <div>
-                  <h6 className="heading !font-[700] ps-0 text-start !text-[13px] ">
+                  <h6 className=" !font-semibold ps-0 text-start !text-[16px] text-[#111111] ">
                     {formatExpiryTime(settings.expiresInHours)}
                   </h6>
-                  <p className="normal-para text-start !text-[13px] ">
+                  <p className="ps-0 text-start !text-[14px] text-gray-600">
                     {settings.password ? "Password protected" : "No password added"}
                   </p>
                 </div>
@@ -1659,13 +1663,8 @@ export function FileUploadWidget({
               {/* Upload Control - Only show Create Transfer button */}
               <div className="mt-3 md:mt-0 md:flex gap-2">
                 <button 
-                  className="button-sm !text-[15px] w-full md:w-auto md:button-md" 
+                  className="button-sm !text-[14px] w-full" 
                   onClick={() => {
-                    console.log('🔴 Button clicked - Current data state:', data);
-                    console.log('🔴 Data state keys:', Object.keys(data || {}));
-                    console.log('🔴 Data state email:', data?.email);
-                    console.log('🔴 Data state name:', data?.name);
-                    console.log('🔴 Data state message:', data?.message);
                     handleUpload();
                   }}
                   disabled={selectedFiles.length === 0}

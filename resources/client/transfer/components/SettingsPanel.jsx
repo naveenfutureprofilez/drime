@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Trans } from '@ui/i18n/trans';
 import { MdClose } from 'react-icons/md';
+import { CalenderIcon } from '@app/components/FigmaIcons';
 
 export function SettingsPanel({
   settings,
@@ -43,31 +44,34 @@ export function SettingsPanel({
         className="absolute inset-0 bg-[#0006] bg-opacity-50 flex items-end justify-center z-50 transition-all duration-300 ease-in-out" 
         onClick={onClose} >
         <div 
-          className="bg-white w-full max-w-md rounded-t-2xl shadow-xl p-6 transform transition-transform duration-300 ease-out translate-y-0 animate-slideUpFromBottom"
+          className="bg-white w-full max-w-md shadow-xl p-8 transform transition-transform duration-300 ease-out translate-y-0 animate-slideUpFromBottom"
           onClick={(e) => e.stopPropagation()}
         >
       
-          <div className="flex items-center justify-between space-x-3 text-center mb-2">
-            <h3 className="normal-heading text-lg font-semibold text-gray-800">Transfer settings</h3>
+          <div className="flex items-center justify-between space-x-3 text-center mb-4">
+            <h3 className="normal-heading text-[20px] font-semibold text-[#111111]">Transfer settings</h3>
             <div onClick={onClose} className="cursor-pointer text-gray-500 hover:text-gray-700 transition">
               <MdClose size={24} />
             </div>
           </div>
 
-<div className="mb-2 md:flex items-center gap-5 justify-between">
-            <p className="font-bold !text-start">
+          <div className="mb-2 md:flex items-center gap-5 justify-between">
+            <p className="text-[18px] font-semibold text-[#111111]">
               Expiration
             </p>
+            <div className='w-full max-w-[220px] relative '>
+              <div className='absolute right-2 top-1/2 transform -translate-y-1/2 '>
+                <CalenderIcon /> 
+              </div>
             <select
               value={localSettings.expiresInHours}
               onChange={(e) => {
                 const newExpiry = parseInt(e.target.value);
-                console.log('Expiry changed to:', newExpiry);
                 setLocalSettings({ ...localSettings, expiresInHours: newExpiry });
               }}
               onClick={(e) => e.stopPropagation()}
               onFocus={(e) => e.stopPropagation()}
-              className="input-sm sm:input !w-full md:!max-w-[200px]  px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
+              className="input w-full !py-[11px]  appearance-none focus:outline-none focus:ring-2 focus:ring-green-500 transition-all  focus:shadow-md"
             >
               <option value={1}>1 hour</option>
               <option value={6}>6 hours</option>
@@ -80,20 +84,18 @@ export function SettingsPanel({
               <option value={720}>30 days</option>
               <option value={8760}>1 year</option>
             </select>
+            </div>
           </div>
 
           <div className="mb-2 md:flex items-center gap-5 justify-between">
-            <p className='font-bold !text-start'>Password</p>
-            <div className=" !w-full  md:!max-w-[200px]">
+            <p className='text-[18px] font-semibold text-[#111111]'>Password</p>
+            <div className=" !w-full  md:!max-w-[220px]">
               <input
                 type="password" autoComplete={false}
                 value={localSettings.password}
                 onChange={(e) => {
                   const newPassword = e.target.value;
-                  console.log('Password changed to:', newPassword);
                   setLocalSettings({ ...localSettings, password: newPassword });
-                  
-                  // Clear error when user starts typing
                   if (passwordError) {
                     setPasswordError('');
                   }
@@ -101,7 +103,7 @@ export function SettingsPanel({
                 onClick={(e) => e.stopPropagation()}
                 onFocus={(e) => e.stopPropagation()}
                 placeholder="Enter password"
-                className={` input-sm sm:input !w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
+                className={`w-full input !py-[11px] focus:outline-none focus:ring-2 focus:ring-green-500 transition-all  focus:shadow-md ${
                   passwordError 
                     ? 'border-red-500 focus:ring-red-500' 
                     : 'border-gray-300 focus:ring-green-500'
@@ -140,21 +142,12 @@ export function SettingsPanel({
 
           {/* Footer */}
           <div className="px-2 py-2 flex justify-end gap-3">
-            {/* <button
-              onClick={() => {
-                console.log('Cancel clicked');
-                onClose();
-              }}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
-            >
-              <Trans message="Cancel" />
-            </button> */}
             <button
               onClick={() => {
                 console.log('Save clicked with settings:', localSettings);
                 handleSave();
               }}
-              className="button-lg"
+              className="button !text-[14px] !px-[45px]"
             >
               <Trans message="Done" />
             </button>

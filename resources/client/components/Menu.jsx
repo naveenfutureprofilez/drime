@@ -1,4 +1,5 @@
 import  { useRef } from "react";
+import { ImportFileIcon, ImportFolderIcon } from "./FigmaIcons";
 
 const Menu = ({ setSelectedFiles, toggleMenu }) => {
   const fileInputRef = useRef(null);
@@ -31,7 +32,7 @@ const Menu = ({ setSelectedFiles, toggleMenu }) => {
 
 
   return (
-    <div className="absolute right-1 top-[60px] mt-2 w-64 bg-white rounded-lg shadow-xl p-2 z-50">
+    <div className="absolute right-[30px] border !border-[#0001] top-[70px] mt-2 w-64 bg-white rounded-[15px] shadow-xl p-1 z-50">
       {/* Hidden Inputs */}
       <input
         type="file"
@@ -51,20 +52,20 @@ const Menu = ({ setSelectedFiles, toggleMenu }) => {
 
       {/* Import Files */}
       <div
-        className="flex items-center p-2 text-gray-700 hover:bg-gray-100 rounded-lg cursor-pointer"
+        className="flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-[10px] cursor-pointer transition-all duration-200 font-medium"
         onClick={() => fileInputRef.current.click()}
       >
-        <span className="mr-2">📄</span>
-        <span>Import files</span>
+        <ImportFileIcon className="me-3 text-lg" />
+        <span className="ms-3 text-[16px] text-black">Import files</span>
       </div>
 
       {/* Import Folder */}
       <div
-        className="flex items-center p-2 text-gray-700 hover:bg-gray-100 rounded-lg cursor-pointer"
+        className="flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-[10px] cursor-pointer transition-all duration-200 font-medium"
         onClick={() => folderInputRef.current.click()}
       >
-        <span className="mr-2">📁</span>
-        <span>Import folder</span>
+        <ImportFolderIcon className="me-3 text-lg" />
+        <span className="ms-3 text-[16px] text-black">Import folder</span>
       </div>
 
     </div>

@@ -1,6 +1,5 @@
-import { MdInsertDriveFile, MdClose, MdDownload } from 'react-icons/md';
-import { IoMdDocument } from 'react-icons/io';
-import { FaImage, FaFileAudio, FaFileVideo } from 'react-icons/fa';
+import { MdDownload } from 'react-icons/md';
+import { FigmaVideoIcon, FigmaImageIcon, FigmaAudioIcon, FigmaDocumentIcon, FigmaCloseIcon, VideoIcon, CloseIcon } from '../../components/FigmaIcons';
 import { RiEyeLine } from "react-icons/ri";
 import { FileSize } from '../../components/FileSize';
 import NoData from '../../components/NoData';
@@ -26,11 +25,11 @@ export default function FileData({ step, selectedFiles, setSelectedFiles, setSte
     };
 
     const fileIcons = {
-        video: <FaFileVideo className="text-red-600" size={28} />,
-        image: <FaImage className="text-blue-600" size={28} />,
-        audio: <FaFileAudio className="text-purple-600" size={28} />,
-        other: <MdInsertDriveFile className="text-gray-600" size={28} />,
-        doc: <IoMdDocument className="text-blue-600" size={28} />,
+        video: <VideoIcon  className="" />,
+        image: <FigmaImageIcon size={30} className="" />,
+        audio: <FigmaAudioIcon size={30} className="" />,
+        other: <FigmaDocumentIcon size={30} className="" />,
+        doc: <FigmaDocumentIcon size={30} className="" />,
     };
 
     const handleRemove = (index) => {
@@ -140,8 +139,8 @@ export default function FileData({ step, selectedFiles, setSelectedFiles, setSte
        ${isDragging ? "bg-green-50" : "bg-white"}
        ${step === 4 ? "max-h-[33vh]" : "max-h-[130px]"}
          mt-2
-         custom-scroll
-         overflow-y-auto pe-[10px] md:pe-[20px]
+         custom-scroll low
+         overflow-y-auto  
         `}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -151,26 +150,46 @@ export default function FileData({ step, selectedFiles, setSelectedFiles, setSte
                     <NoData />
                 ) : (
                     selectedFiles.map((file, index) => (
-                        <div key={index} className="between-align  py-2">
-                            <div className="flex items-center space-x-2 ">
-                                <div>{fileIcons[getMime(file.type)]}</div>
+                        <div key={index} className="between-align  bg-white rounded-[10px]   transition-all duration-200 mb-3 border border-gray-100">
+                            <div className="flex items-center">
+                                <div className="flex-shrink-0 p-2 bg-gray-50 rounded-[10px]">
+                                    {fileIcons[getMime(file.type)]}
+                                </div>
                                 <div className='max-w-[90%]'>
-                                    <h6 className="heading text-start break-all text-sm md:!text-[16px] line-clamp-2 font-bold">{file.filename || file.folderName || file?.name}</h6>
-                                    <p className="normal-para text-sm md:!text-[16px] !text-left ">
-                                        Size : {FileSize(file.size || file.files.reduce((acc, f) => acc + (f.size || 0), 0))}
-                                        {/* {file.files?.length > 0 && <span className="ml-1">{file.files.length} files</span>} */}
+                                    <h6 className="heading text-start break-all text-[16px] md:!text-[18px] line-clamp-1 font-semibold text-black">
+                                        {file.filename || file.folderName || file?.name}
+                                    </h6>
+                                    <p className="normal-para text-[14px] md:!text-[16px] !text-left text-gray-500">
+                                        {FileSize(file.size || file.files.reduce((acc, f) => acc + (f.size || 0), 0))}
+                                        {file.files?.length > 0 && <span className="ml-1 text-gray-400">• {file.files.length} files</span>}
                                     </p>
                                 </div>
                             </div>
-                            <div className="ml-auto ps-3 flex items-center gap-3">
+                            <div className="ml-auto ps-3 flex items-center gap-2">
                                 {step === 4 && !file.files && (
                                     <>
-                                        <button onClick={() => handleView(file)}><RiEyeLine size={24} className='text-gray-700 hover:text-gray-400' /></button>
-                                        <button onClick={() => handleIndividualDownload(file)}><MdDownload size={24} className='text-gray-700 hover:text-gray-400' /></button>
-
+                                        <button 
+                                            onClick={() => handleView(file)}
+                                            className="p-2 rounded-[10px] bg-gray-100 hover:bg-gray-200 transition-all duration-200"
+                                        >
+                                            <RiEyeLine size={20} className='text-gray-600' />
+                                        </button>
+                                        <button 
+                                            onClick={() => handleIndividualDownload(file)}
+                                            className="p-2 rounded-[10px] bg-green-100 hover:bg-green-200 transition-all duration-200"
+                                        >
+                                            <MdDownload size={20} className='text-green-600' />
+                                        </button>
                                     </>
                                 )}
-                                {step !== 4 && <button onClick={() => handleRemove(index)}><MdClose size={24} className='text-gray-700 hover:text-gray-400' /></button>}
+                                {step !== 4 && (
+                                    <button 
+                                        onClick={() => handleRemove(index)}
+                                        className="mb-4 p-2 rounded-[10px] bg-red-100 hover:bg-red-200 transition-all duration-200"
+                                    >
+                                        <CloseIcon size={16} className='text-red-600' />
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ))

@@ -90,7 +90,7 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
     };
 
     return (
-    <div className='bg-white p-[20px] md:p-[30px]'>
+    <div className='bg-white p-[20px] md:p-[30px] rounded-[15px] shadow-lg'>
         <div className="center-align">
             <div className="manage-col px-3 min-h-[370px]">
                 <div className="center-align mb-6">
@@ -117,13 +117,13 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
                                         type="text"
                                         readOnly
                                         value={downloadLink}
-                                        className="w-full pr-12 pl-4 py-3 rounded-[13px] border border-gray-300 !bg-[#e7e7e7] font-mono text-sm !text-gray-600 pe-[60px] focus:outline-none transition"
+                                        className="w-full pr-12 pl-4 py-4 rounded-[10px] border border-gray-300 !bg-[#e7e7e7] font-mono text-sm !text-gray-600 pe-[60px] focus:outline-none transition shadow-sm"
                                     />
                                     <button
                                         onClick={copyToClipboard}
-                                        className="absolute right-0 p-3 px-4 rounded-[13px] bg-[#08CF65] text-white hover:bg-green-600 transition-colors flex items-center justify-center"
+                                        className="absolute right-0 p-3 px-4 rounded-[10px] bg-[#08CF65] text-white hover:bg-green-600 transition-all duration-200 flex items-center justify-center shadow-md hover:shadow-lg"
                                     >
-                                        <AiOutlineCopy className="h-5 w-5" />
+                                        <AiOutlineCopy className="h-4 w-4" />
                                     </button>
                                 </div>
                             </div>
@@ -143,7 +143,7 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
                         </p>
                         <div className="center-align mb-4">
                             <button 
-                                className="button-sm sm:button-md md:button-lg bg-[#08CF65] text-white hover:bg-green-600 transition-colors"
+                                className="button-md bg-[#08CF65] text-white hover:bg-green-600 transition-all duration-200 shadow-md hover:shadow-lg"
                                 onClick={() => window.open(downloadLink, '_blank')}
                             >
                                 View transfer

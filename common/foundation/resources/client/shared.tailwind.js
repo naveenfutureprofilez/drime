@@ -157,9 +157,9 @@ module.exports = {
       inherit: 'inherit',
     },
     borderRadius: {
-      button: 'var(--be-button-radius, 0.25rem)',
-      input: 'var(--be-input-radius, 0.25rem)',
-      panel: 'var(--be-panel-radius, 0.25rem)',
+      button: 'var(--be-button-radius, 0.5rem)',
+      input: 'var(--be-input-radius, 0.5rem)',
+      panel: 'var(--be-panel-radius, 0.75rem)',
     },
     flex: {
       2: '2 1 0%',
@@ -252,15 +252,19 @@ module.exports = {
           // ICONS
           '.icon-2xs': {
             'font-size': '0.75rem',
+            'stroke-width': '1.5px',
           },
           '.icon-xs': {
             'font-size': '1rem',
+            'stroke-width': '1.5px',
           },
           '.icon-sm': {
             'font-size': '1.25rem',
+            'stroke-width': '1.5px',
           },
           '.icon-md': {
             'font-size': '1.5rem',
+            'stroke-width': '1.5px',
           },
           '.icon-lg': {
             'font-size': '2.1875rem',

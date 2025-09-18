@@ -89,11 +89,9 @@ export function TransferProgress({
   // const colors = getStatusColor();
 
   return (
-    <div className="column-center !h-[500px]">
-      {/* Circle */}
-      <div className="relative w-64 h-64 mx-auto mb-6">
+    <div className="column-center !h-[500px] bg-white  m-4">
+      <div className="relative w-48 h-48 mx-auto mb-6">
         <svg className="w-full h-full" viewBox="0 0 140 140">
-          {/* Background Circle */}
           <circle
             cx="70"
             cy="70"
@@ -102,7 +100,6 @@ export function TransferProgress({
             stroke="#e5e7eb"
             strokeWidth="8"
           />
-          {/* Progress Circle */}
           <circle
             cx="70"
             cy="70"
@@ -121,15 +118,14 @@ export function TransferProgress({
           />
         </svg>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
-          <span className="text-4xl font-bold text-gray-800">
-            {Math.round(displayProgress)}%
+          <span className="text-[45px] font-bold text-gray-800 flex items-center justify-center"> 
+            {Math.round(displayProgress)}<sup className='text-[20px] !text-[#0006] inline ms-[2px]'>%</sup>
           </span>
         </div>
       </div>
 
-      {/* Text and Button */}
       <div className="flex flex-col items-center text-center">
-        <h3 className="normal-heading">
+        <h3 className="font-semibold !text-[18px] text-black">
           {status === 'success' ? 'Transfer Complete!' : 
            status === 'error' ? 'Upload Failed' : 
            status === 'retrying' ? 'Retrying Upload...' :
@@ -138,43 +134,40 @@ export function TransferProgress({
         </h3>
         {(status === 'uploading' || status === 'retrying' || status === 'paused') && (
           <>
-            <p className="normal-para mt-2">
-              {status === 'retrying' ? 'Reconnecting...' : 
-               status === 'paused' ? '' :
-              //  formatSpeed(uploadSpeed)
-              '' }
+
+            <p className="font-normal !text-[16px] text-gray-500 mt-2">
+              {prettyBytes(uploadedBytes)} of {prettyBytes(totalSize)} • {files.length} file{files.length !== 1 ? 's' : ''}
             </p>
 
-            {/* <p className="normal-para mt-2">
-              {prettyBytes(uploadedBytes)} of {prettyBytes(totalSize)} • {files.length} file{files.length !== 1 ? 's' : ''}
-            </p> */}
 
-            <p className="normal-para !mb-4 mt-2">
+            <p className="font-normal !text-[16px] text-gray-500 mt-2 mb-4">
               {status === 'retrying' ? 'Retrying upload...' : 
                status === 'paused' ? 'Click resume to continue': ''}
             </p>
           </>
         )}
+
         {status === 'success' && (
-          <p className="normal-para mt-2 text-green-600">
+          <p className="font-normal !text-[16px] text-green-500 mt-2 mb-4">
             {files.length} file{files.length !== 1 ? 's' : ''} uploaded successfully!
           </p>
         )}
+
         {status === 'error' && (
-          <p className="normal-para mt-2 text-red-600">
+          <p className="font-normal !text-[16px] text-red-500 mt-2 mb-4">
             Please check your connection and try again.
           </p>
         )}
+
       </div>
 
       {/* Action buttons based on status */}
-      <div className="flex gap-3">
+      <div className="flex gap-3 mt-3">
         {status === 'uploading' && (
           <>
             <button
             onClick={() => onPause?.()}
-              className="!text-black px-6 py-3 rounded-xl font-medium transition-all duration-200 bg-yellow-500 text-black hover:bg-yellow-600 hover:scale-105"
-            >
+              className="button" >
               Pause
             </button>
             {/* <button
@@ -190,7 +183,7 @@ export function TransferProgress({
           <>
             <button
             onClick={() => onResume?.()}
-              className="px-6 py-3 rounded-xl font-medium transition-all duration-200 bg-green-500 text-black hover:bg-green-600 hover:scale-105"
+              className="px-8 py-4 rounded-[10px] font-medium transition-all duration-200 bg-green-500 text-black hover:bg-green-600 hover:scale-105 shadow-md hover:shadow-lg"
             >
               Resume
             </button>
@@ -207,7 +200,7 @@ export function TransferProgress({
         {status === 'retrying' && (
           <button
             onClick={() => onCancel?.()}
-            className="px-6 py-3 rounded-xl font-medium transition-all duration-200 bg-red-500 text-black hover:bg-red-600 hover:scale-105" >
+            className="px-8 py-4 rounded-[10px] font-medium transition-all duration-200 bg-red-500 text-black hover:bg-red-600 hover:scale-105 shadow-md hover:shadow-lg" >
             Cancel
           </button>
         )}
@@ -215,7 +208,7 @@ export function TransferProgress({
         {(status === 'success' || status === 'error') && (
           <button
             onClick={() => onComplete?.()}
-            className={`px-8 py-3 rounded-xl font-medium transition-all duration-200 ${
+            className={`px-10 py-4 rounded-[10px] font-medium transition-all duration-200 shadow-md hover:shadow-lg ${
               status === 'success'
                 ? 'bg-green-500 text-black hover:bg-green-600 hover:scale-105'
                 : 'bg-red-500 text-black hover:bg-red-600 hover:scale-105'
