@@ -28,7 +28,6 @@ export function TransferProgress({
       return; // Don't update display progress backwards during resume or retries
     }
     
-    // For paused state, maintain the current progress
     if (status === 'paused' && progress === 0 && displayProgress > 0) {
       console.log(`⏸️ Maintaining paused progress at ${displayProgress}%`);
       return; // Don't reset to 0 when paused
@@ -59,37 +58,11 @@ export function TransferProgress({
     return `${prettyBytes(bytesPerSecond)}/s`;
   }, []);
 
-  // Calculate stroke dash properties for circular progress
   const radius = 90;
   const circumference = 2 * Math.PI * radius;
-
-  // const getStatusColor = () => {
-  //   switch (status) {
-  //     case 'success':
-  //       return {
-  //         ring: '#10b981', // green
-  //         bg: 'rgba(16, 185, 69, 0.1)',
-  //         text: '#10b981'
-  //       };
-  //     case 'error':
-  //       return {
-  //         ring: '#ef4444', // red
-  //         bg: 'rgba(239, 68, 68, 0.1)',
-  //         text: '#ef4444'
-  //       };
-  //     default:
-  //       return {
-  //         ring: '#ffffff', // white
-  //         bg: 'rgba(255, 255, 255, 0.1)',
-  //         text: '#ffffff'
-  //       };
-  //   }
-  // };
-
-  // const colors = getStatusColor();
-
+   
   return (
-    <div className="column-center !h-[500px] bg-white  m-4">
+    <div className="column-center  h-full bg-white  m-4">
       <div className="relative w-48 h-48 mx-auto mb-6">
         <svg className="w-full h-full" viewBox="0 0 140 140">
           <circle
@@ -135,15 +108,19 @@ export function TransferProgress({
         {(status === 'uploading' || status === 'retrying' || status === 'paused') && (
           <>
 
-            <p className="font-normal !text-[16px] text-gray-500 mt-2">
-              {prettyBytes(uploadedBytes)} of {prettyBytes(totalSize)} • {files.length} file{files.length !== 1 ? 's' : ''}
+            <p className="font-normal !text-[16px] text-gray-500 mt-1">
+              {prettyBytes(uploadedBytes)} out of {prettyBytes(totalSize)}
+               {/* • {files.length} file{files.length !== 1 ? 's' : ''} */}
+            </p>
+            <p className="font-normal !text-[16px] text-gray-500 mt-1 mb-2">
+              3m25Sec remaining
             </p>
 
 
-            <p className="font-normal !text-[16px] text-gray-500 mt-2 mb-4">
+            {/* <p className="font-normal !text-[16px] text-gray-500 mt-2 mb-4">
               {status === 'retrying' ? 'Retrying upload...' : 
                status === 'paused' ? 'Click resume to continue': ''}
-            </p>
+            </p> */}
           </>
         )}
 

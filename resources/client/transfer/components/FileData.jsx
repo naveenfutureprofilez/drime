@@ -6,7 +6,7 @@ import NoData from '../../components/NoData';
 import { useFileDrop } from '../../components/useFileDrop';
 import { useState } from 'react';
 
-export default function FileData({ step, selectedFiles, setSelectedFiles, setStep, hash, hasPassword, password }) {
+export default function FileData({ isLocked, step, selectedFiles, setSelectedFiles, setStep, hash, hasPassword, password }) {
 
     const handleDropAction = (newItems) => {
         setSelectedFiles((prev) => [...prev, ...newItems]);
@@ -44,6 +44,9 @@ export default function FileData({ step, selectedFiles, setSelectedFiles, setSte
     };
 
     const handleIndividualDownload = (file) => {
+        if (isLocked) {
+            return false;
+        }
         if (!hash || !file.id) {
             alert("Invalid download link or file.");
             return;
@@ -61,7 +64,6 @@ export default function FileData({ step, selectedFiles, setSelectedFiles, setSte
             alert("Something went wrong while downloading this file.");
         }
     };
-    console.log("selectedFiles", selectedFiles)
 
     // Flatten all files for total size
     const allFiles = selectedFiles.flatMap(item => item.files ? item.files : item);
@@ -78,12 +80,11 @@ export default function FileData({ step, selectedFiles, setSelectedFiles, setSte
         0
     );
 
-    // Get count of files in 1 item (file = 1, folder = length)
     const getItemCount = (file) => {
         if (file.files?.length > 0) {
             return file.files.length;
         }
-        return 1; // single file
+        return 1;
     };
     const totalFileCount = selectedFiles.reduce(
         (acc, item) => acc + getItemCount(item),
@@ -93,6 +94,9 @@ export default function FileData({ step, selectedFiles, setSelectedFiles, setSte
     const [loading, setLoading] = useState(false);
 
     const handleDownload = async () => {
+        if (isLocked) {
+            return false;
+        }
         if (!hash) {
             alert("Invalid download link.");
             return;
@@ -134,14 +138,10 @@ export default function FileData({ step, selectedFiles, setSelectedFiles, setSte
 
     return (
         <>
-            <div
-                className={`
-       ${isDragging ? "bg-green-50" : "bg-white"}
-       ${step === 4 ? "max-h-[290px]" : "max-h-[130px]"} mt-2 custom-scroll low overflow-y-auto   `}
+            <div className={`${isDragging ? "bg-green-50" : "bg-white"} ${step === 4 ? "h-[290px] max-h-[290px]" : "h-[130px] max-h-[130px] "} mt-2 custom-scroll low overflow-y-auto   `}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-            >
+                onDrop={handleDrop} >
                 {selectedFiles.length === 0 ? (
                     <NoData />
                 ) : (
@@ -190,18 +190,8 @@ export default function FileData({ step, selectedFiles, setSelectedFiles, setSte
                         </div>
                     ))
                 )}
-
-
             </div>
-
-            {/* <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="flex justify-between text-sm">
-                    <h6 className="heading !text-left font-bold">Total Size:</h6>
-                    <span className="font-medium">
-                        {FileSize(totalSizeAll)} ({totalFileCount} files)
-                    </span>
-                </div>
-            </div> */}
+            
         </>
     );
 }

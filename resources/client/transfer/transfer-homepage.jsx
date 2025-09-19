@@ -7,6 +7,8 @@ import { Trans } from '@ui/i18n/trans';
 import Layout from '@app/components/Layout';
 import TransferSuccessPage from './components/TransferSuccessPage';
 import { prettyBytes } from '@ui/utils/files/pretty-bytes';
+import UploadSection from './UploadSection.jsx';
+import ShareSection from './ShareSection.jsx';
 
 
 export function TransferHomepage() {
@@ -19,7 +21,6 @@ export function TransferHomepage() {
     maxDownloads: null
   });
 
-  // Upload progress state
   const [uploadData, setUploadData] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadSpeed, setUploadSpeed] = useState(0);
@@ -68,7 +69,6 @@ export function TransferHomepage() {
   }, [uploadControlsRef]);
 
   const handleProgressComplete = useCallback(() => {
-    // Check for completed files first
     const completedFiles = window.completedUploadFiles;
     
     if (completedFiles && completedFiles.length > 0) {
@@ -81,11 +81,11 @@ export function TransferHomepage() {
     
     // Handle different states
     if (uploadStatus === 'success') {
-      return; // Stay on progress screen
+      return; 
     }
     
     if (uploadStatus === 'error' || uploadStatus === 'retrying') {
-      return; // Stay on progress screen
+      return; 
     }
     
     if (uploadStatus === 'cancelled' || uploadStatus === 'idle') {
@@ -122,12 +122,10 @@ export function TransferHomepage() {
   }, []);
   
   return <>
-    {/* <DefaultMetaTags /> */}
     <Layout>
-      <div className="bg-white text-black">
+      <div className="bg-white h-full text-black">
         {currentStep === 'upload' && (
-          <div className="bg-white ">
-            <UPLOAD_SECTION
+            <UploadSection
               settings={transferSettings}
               onSettingsChange={handleSettingsChange}
               onUploadComplete={handleUploadComplete}
@@ -141,12 +139,11 @@ export function TransferHomepage() {
               totalBytes={uploadData?.totalSize || 0}
               setUploadControlsRef={setUploadControlsRef}
             />
-          </div>
         )}
 
         {currentStep === 'share' && (
-          <div className="p-[20px] md:p-[30px] relative center-align h-[576px]">
-            <SHARE_SECTION
+          <div className="p-[20px] md:p-[30px] h-full relative center-align ">
+            <ShareSection
               files={uploadedFiles} 
               transferSettings={transferSettings} 
               onNewTransfer={handleNewTransfer} 
@@ -177,77 +174,4 @@ export function TransferHomepage() {
     </Layout>
   </>;
 }
-
-function UPLOAD_SECTION({
-  settings,
-  onSettingsChange,
-  onUploadComplete,
-  onUploadStart,
-  onProgressUpdate,
-  uploadProgress = 0,
-  uploadState = 'idle',
-  uploadSpeed = 0,
-  timeRemaining = 0,
-  uploadedBytes = 0,
-  totalBytes = 0,
-  setUploadControlsRef
-}) {
-  const [showSettings, setShowSettings] = useState(false);
-  const [testMode, setTestMode] = useState(false);
-  
-  
-
-  return <div className="relative" onClick={() => {
-    if (showSettings) {
-      setShowSettings(false);
-    }
-  }}
-  >
-    {/* File Upload Widget with regular upload functionality */}
-    <FileUploadWidget
-      settings={settings}
-      onUploadStart={onUploadStart}
-      onUploadComplete={onUploadComplete}
-      onSettingsChange={onSettingsChange}
-      onProgressUpdate={onProgressUpdate}
-      onSetUploadControls={setUploadControlsRef}
-    />
  
-  </div>;
-}
-
-function SHARE_SECTION({
-  files,
-  transferSettings,
-  onNewTransfer,
-  onShowEmailPanel,
-  uploadResponse
-}) {
-  // All files should share the same upload/share URL
-  const shareUrl = files && files.length > 0 ? files[0]?.share_url || '' : '';
-
-  // Early return if no files are provided
-  if (!files || files.length === 0) {
-    return (
-      <div className="text-center">
-        <div className="text-red-600">
-          <Trans message="No files to share. Please upload files first." />
-        </div>
-        <button onClick={onNewTransfer} className="px-8 text-primary mt-4">
-          <Trans message="Start new transfer" />
-        </button>
-      </div>
-    );
-  }
-  return <div className="">
-    <TransferSuccessPage 
-      downloadLink={shareUrl} 
-      onEmailTransfer={onShowEmailPanel} 
-      files={files} 
-      expiresInHours={transferSettings?.expiresInHours}
-      onNewTransfer={onNewTransfer}
-      uploadResponse={uploadResponse}
-    />
-    {/* <ShareLinkPanel shareUrl={shareUrl} files={files}  onEmailTransfer={onShowEmailPanel}  /> */}
-  </div>;
-}

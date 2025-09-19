@@ -5,6 +5,9 @@ import Download from '@app/components/Download';
 import FileData from '@app/transfer/components/FileData';
 import StoragePopup from '@app/components/StoragePopup';
 import Layout from '@app/components/Layout';
+import { CloseIcon } from '@app/components/FigmaIcons';
+import { toast } from '@ui/toast/toast';
+import { Link } from 'react-router';
 export const GuestDownloadView = ({
   files,
   totalSize,
@@ -60,6 +63,9 @@ export const GuestDownloadView = ({
       alert("Invalid download link.");
       return;
     }
+    if (hasPassword && !isUnlocked) {
+      return false;
+    }
 
     setLoading(true);
 
@@ -89,80 +95,73 @@ export const GuestDownloadView = ({
   };
 
   // If password protected and not unlocked, show password form
-  if (hasPassword && !isUnlocked) {
-    return (
-      <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="box">
-          {/* Modal Header */}
-          <div className="flex justify-between items-center p-4 border-b">
-            <h3 className="text-lg font-bold text-gray-800">Enter the password</h3>
-            <button onClick={() => setIspassword(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
-              <MdClose className="h-6 w-6" />
-            </button>
-          </div>
-          {/* Modal Body */}
-          <div className="p-4">
-            <p className="text-sm text-gray-600 mb-4">
-              To access this link, you will need its password. If you do not have
-              the password, contact the creator of the link.
-            </p>
-            <input
-              type="password"
-              placeholder="Enter the password"
-              value={password}
-              onChange={handleInputChange}
-              className="inut-sm  sm:input"
-            />
-          </div>
-          {/* Modal Footer */}
-          <div className="flex justify-end items-center p-4 space-x-2 border-t">
-            <button onClick={() => setIspassword(false)} className="px-4 py-2 text-white bg-red-600 rounded-lg font-medium hover:bg-red-500 transition-colors">
-              Cancel
-            </button>
-            <button
-              disabled={isVerifying || !password.trim()}
-              onClick={handlePasswordSubmit}
-              className="button-sm md:button-md lg:button-lg "
-            >
-              {isVerifying ? (
-                <p>
-                  Verifying..
-                </p>
-              ) : (
-                <p>
-                  Access Files
-                </p>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  
 
   return <div className="space-y-6 bg-white">
     <>
+
+    {(hasPassword && !isUnlocked) ? 
+        <div className="fixed inset-0 w-full bg-gray-600 bg-opacity-50 flex items-center justify-center  z-50">
+          <div className="box max-w-[500px] border border-gray-500 p-[20px] md:p-[30px]">  
+            <div className="flex justify-between items-center  ">
+              <h3 className="text-[18px] font-semibold text-gray-800">Enter the password </h3>
+              <button onClick={() => setIspassword(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <CloseIcon className="h-6 w-6" />
+              </button>
+            </div>
+              <p className="text-[16px] mt-4 text-gray-600 mb-4">  
+                To access this link, you will need its password. If you do not have the password, contact the creator of the link.
+              </p>
+              <input
+                type="password" autoComplete='off'
+                placeholder="Enter the password" autoComplete='off'
+                value={password}
+                onChange={handleInputChange}
+                className="inut-sm  sm:input"
+              />
+            <div className="flex justify-end items-center p-4 gap-4">
+              <button onClick={() => setIspassword(false)} className="button !bg-transparent !text-black shadow-none hover:shadow-none hover:opacity-[0.5] !p-[12px]">
+                Cancel
+              </button>
+              <button
+                disabled={isVerifying || !password.trim()}
+                onClick={handlePasswordSubmit}
+                className="button font-semibold !p-[12px] !px-[20px] rounded-[14px] min-w-[80px] !shadow-none" 
+              >
+                {isVerifying ? (
+                  <p>
+                    Verifying..
+                  </p>
+                ) : (
+                  <p>
+                    Ok
+                  </p>
+                )}
+              </button>
+            </div>
+          </div>
+        </div> : ''
+    }
       <Download 
         expiresAt={expiresAt} 
         totalSize={totalSize} 
         itemCount={files ? files.length : 0}
       />
-      <div className='!pt-0 p-[0px] lg:p-[30px]'>
+      <div className=' mt-0 px-[20px] md:!px-[30px]    '>
             <FileData 
               step={4} 
               selectedFiles={files} 
-              hash={hash} 
+              hash={hash}  isLocked={hasPassword && !isUnlocked}
               hasPassword={hasPassword} 
               password={password} 
             />
         <div className="between-align mt-6 absolute left-0 p-[30px] bottom-0 w-full">
-          <a href='/' className="text-[16px]  text-black font-[600] leading-5 underline">
+          <Link to='/' className="text-[16px]  text-black font-[600] leading-5 underline">
             Create a transfer
-          </a>
+          </Link>
           <button
             onClick={handleDownload}
-            className="button-md "
-          >
+            className="button-md ">
             Download
           </button>
         </div>

@@ -15,6 +15,12 @@ export const EyeFigmaIcon = () => (
 <path fill-rule="evenodd" clip-rule="evenodd" d="M15.0788 13.4657C15.0788 11.7667 13.7008 10.3887 12.0018 10.3887C10.3038 10.3887 8.92578 11.7667 8.92578 13.4657C8.92578 15.1637 10.3038 16.5417 12.0018 16.5417C13.7008 16.5417 15.0788 15.1637 15.0788 13.4657Z" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
 );
+export const FigmaCheckIcon = () => (
+   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M7.78216 3H16.2169C19.165 3 21 5.08119 21 8.02638V15.9736C21 18.9188 19.165 21 16.2159 21H7.78216C4.83405 21 3 18.9188 3 15.9736V8.02638C3 5.08119 4.84281 3 7.78216 3Z" stroke="#08CF65" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8.53516 12.0003L10.845 14.3091L15.4627 9.69141" stroke="#08CF65" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+);
 
 
 export const DownloadFigmaIcon = () => (

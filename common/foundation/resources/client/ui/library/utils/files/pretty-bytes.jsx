@@ -17,7 +17,7 @@ export function prettyBytes(num, fractionDigits = 1) {
   if (num >= 10 || num % 1 === 0) {
     // Do not show decimals when the number is two-digit, or if the number has no
     // decimal component.
-    return `${(neg ? '-' : '') + num.toFixed(0)} ${unit}`;
+    return `${(neg ? '-' : '') + num.toFixed(1)} ${unit}`;
   }
   return `${(neg ? '-' : '') + num.toFixed(fractionDigits)} ${unit}`;
 }

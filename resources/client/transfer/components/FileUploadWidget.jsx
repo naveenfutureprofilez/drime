@@ -1499,11 +1499,11 @@ export function FileUploadWidget({
     }
   }, [onSetUploadControls, handlePauseUpload, handleResumeUpload, handleCancelUpload]);
 
-  return <div className="text-center">
+  return <>
     {selectedFiles.length === 0 ?
       <div
-        className={`p-[20px] md:p-[30px] center-align flex-col h-[60vh] xl:h-[576px] max-h-[500px] xl:max-h-[576px] rounded-[15px] shadow-lg transition-all duration-200
-                ${isDragging ? "border-green-500 bg-green-50 shadow-xl" : "border-gray-300 bg-white"}`}
+        className={`p-[20px] md:p-[30px] center-align flex-col rounded-[15px] transition-all duration-200
+                ${isDragging ? "border-green-500 bg-green-50 " : "border-gray-300 bg-white"}`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -1541,8 +1541,8 @@ export function FileUploadWidget({
         </div>
       </div> 
       :
-      <div>
-        <div className=" relative h-[60vh] md:h-[576px] rounded-[15px] shadow-lg transition-all duration-200 border-gray-300 bg-white">
+      <>
+        <div className=" relative transition-all duration-200 border-gray-300 bg-white">
           <div className='p-[20px] md:p-[30px]'>
             <div className="between-align">
               <div>
@@ -1677,10 +1677,12 @@ export function FileUploadWidget({
             <SettingsPanel
               settings={settings}
               onSettingsChange={onSettingsChange}
-              onClose={() => setShowSettings(false)}
+              onClose={() => {
+                setShowSettings(false);
+              }}  
             />
           )}
         </div>
-      </div>}
-  </div>;
+      </>}
+  </>;
 }

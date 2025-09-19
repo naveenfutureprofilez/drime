@@ -25,9 +25,6 @@ export function SettingsPanel({
   };
 
   const handleSave = () => {
-    console.log('handleSave called with:', localSettings);
-    
-    // Validate password before saving
     const passwordValidationError = validatePassword(localSettings.password);
     if (passwordValidationError) {
       setPasswordError(passwordValidationError);
@@ -147,9 +144,8 @@ export function SettingsPanel({
                 console.log('Save clicked with settings:', localSettings);
                 handleSave();
               }}
-              className="button !text-[14px] !px-[45px]"
-            >
-              <Trans message="Done" />
+              className="button !text-[14px] !px-[45px]" >
+              Done
             </button>
           </div>
         </div>

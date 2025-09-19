@@ -82,7 +82,8 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
         try {
             await navigator.clipboard.writeText(downloadLink);
             // toast.success("Copied successfully!");
-            setCopied(true)
+            setCopied(true);
+            setTimeout(() => setCopied(false), 3000); // Reset after 2 seconds
         } catch (err) {
             console.error("Failed to copy: ", err);
             // toast.error("Failed to copy text.");
@@ -91,7 +92,7 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
     };
 
     return (
-    <div className='bg-white '>
+    <>
         <div className="center-align">
             <div className="manage-col px-3 min-h-[370px]">
                 <div className="center-align mb-6 ">
@@ -118,25 +119,21 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
                                         type="text"
                                         readOnly
                                         value={downloadLink}
-                                        className="input pe-[60px] !py-[10px] !px-[12px]"
+                                        className="input !my-0 pe-[60px] !py-[10px] !px-[12px]"
                                     />
                                     <button
                                         onClick={copyToClipboard}
-                                        className="absolute right-0 min-w-[50px] h-[45px] rounded-r-[10px] bg-[#08CF65] 
+                                        className="absolute right-0 min-w-[50px] px-4 h-[45px] rounded-r-[10px] bg-[#08CF65] 
                                         text-white hover:bg-green-600 transition-all h-full  
                                         duration-200 flex items-center justify-center shadow-md hover:shadow-lg"
                                     >
-                                        <CopyIcon />
+                                        {copied ? 'Copied' : <CopyIcon />}  
+                                        
                                     </button>
                                 </div>
                             </div>
 
                         </div>
-                        {copied && (
-                            <p className="normal-para text-[13px] mt-1">
-                                Link copied to clipboard!
-                            </p>
-                        )}
                     </>
                 )}
                 {displayType === 'Email' && (
@@ -157,12 +154,12 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
             </div>
         </div>
 
-            <div className="justify-center  absolute bottom-0 mb-6 w-full left-0">
-                <p className='text-black font-semibold text-[14px] text-center'>Need to send more files? <button onClick={onNewTransfer} className=" text-black underline">
-                    Start new transfer
-                </button> </p>
-            </div>
-    </div>
+        <div className="justify-center  absolute bottom-0 mb-6 w-full left-0">
+            <p className='text-black font-semibold text-[14px] text-center'>Need to send more files? <button onClick={onNewTransfer} className=" text-black underline">
+                Start new transfer
+            </button> </p>
+        </div>
+    </>
     );
 };
 
