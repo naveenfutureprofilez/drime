@@ -1,5 +1,5 @@
 import { MdDownload } from 'react-icons/md';
-import { FigmaVideoIcon, FigmaImageIcon, FigmaAudioIcon, FigmaDocumentIcon, FigmaCloseIcon, VideoIcon, CloseIcon } from '../../components/FigmaIcons';
+import { FigmaVideoIcon, FigmaImageIcon, FigmaAudioIcon, FigmaDocumentIcon, FigmaCloseIcon, VideoIcon, CloseIcon, EyeFigmaIcon, DownloadFigmaIcon } from '../../components/FigmaIcons';
 import { RiEyeLine } from "react-icons/ri";
 import { FileSize } from '../../components/FileSize';
 import NoData from '../../components/NoData';
@@ -137,11 +137,7 @@ export default function FileData({ step, selectedFiles, setSelectedFiles, setSte
             <div
                 className={`
        ${isDragging ? "bg-green-50" : "bg-white"}
-       ${step === 4 ? "max-h-[33vh]" : "max-h-[130px]"}
-         mt-2
-         custom-scroll low
-         overflow-y-auto  
-        `}
+       ${step === 4 ? "max-h-[290px]" : "max-h-[130px]"} mt-2 custom-scroll low overflow-y-auto   `}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
@@ -150,7 +146,7 @@ export default function FileData({ step, selectedFiles, setSelectedFiles, setSte
                     <NoData />
                 ) : (
                     selectedFiles.map((file, index) => (
-                        <div key={index} className="between-align  bg-white rounded-[10px]   transition-all duration-200 mb-3 border border-gray-100">
+                        <div key={index} className="between-align  bg-white rounded-[10px]   transition-all duration-200 mb-3">
                             <div className="flex items-center">
                                 <div className="flex-shrink-0 p-2 bg-gray-50 rounded-[10px]">
                                     {fileIcons[getMime(file.type)]}
@@ -172,13 +168,13 @@ export default function FileData({ step, selectedFiles, setSelectedFiles, setSte
                                             onClick={() => handleView(file)}
                                             className="p-2 rounded-[10px] bg-gray-100 hover:bg-gray-200 transition-all duration-200"
                                         >
-                                            <RiEyeLine size={20} className='text-gray-600' />
+                                            <EyeFigmaIcon />
                                         </button>
                                         <button 
                                             onClick={() => handleIndividualDownload(file)}
                                             className="p-2 rounded-[10px] bg-green-100 hover:bg-green-200 transition-all duration-200"
                                         >
-                                            <MdDownload size={20} className='text-green-600' />
+                                            <DownloadFigmaIcon/>
                                         </button>
                                     </>
                                 )}

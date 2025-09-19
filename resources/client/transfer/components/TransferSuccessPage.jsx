@@ -5,6 +5,7 @@ import { AiOutlineCopy } from 'react-icons/ai';
 import Shared from "../../../../public/images/Shared.png"
 import Mail from "../../../../public/images/Mail.png"
 import { EmailIcon } from '@ui/icons/material/Email';
+import { CopyIcon, LinkShareIcon } from '@app/components/FigmaIcons';
 
 // Helper function to calculate and format expiry message
 const getExpiryMessage = (files, expiresInHours) => {
@@ -22,7 +23,7 @@ const getExpiryMessage = (files, expiresInHours) => {
         } else if (daysRemaining === 1) {
             return `The download link expires tomorrow (${formattedDate}).`;
         } else {
-            return `The download link expires in ${daysRemaining} days (${formattedDate}).`;
+            return `The download link for your transfer will expire in ${daysRemaining} days (${formattedDate}).`;
         }
     }
     
@@ -90,40 +91,42 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
     };
 
     return (
-    <div className='bg-white p-[20px] md:p-[30px] rounded-[15px] shadow-lg'>
+    <div className='bg-white '>
         <div className="center-align">
             <div className="manage-col px-3 min-h-[370px]">
-                <div className="center-align mb-6">
+                <div className="center-align mb-6 ">
                     {displayType === "Link" ? (
-                        <img src={Shared} alt='' className='h-32 w-32' />
+                        <LinkShareIcon />
                     ) : (
                         <img src={Mail} alt='' className='h-32 w-32' />
                     )}
                 </div>
 
-                <div className="mb-2 text-center">
-                    <h2 className="normal-heading">{headingText}</h2>
+                <div className="mb-2 text-center pt-[35px]">
+                    <h2 className="text-[18px] font-bold text-black">{headingText}</h2>
                 </div>
 
                 {displayType === 'Link' && (
                     <>
-                        <p className="normal-para mb-4 md:p-3">
+                        <p className="text-[16px] mb-4 text-center text-gray-600">
                             {getExpiryMessage(files, expiresInHours)}
                         </p>
                         <div className="center-align ">
-                            <div className="w-full max-w-xl">
+                            <div className="w-full max-w-[300px]">
                                 <div className="relative flex items-center">
                                     <input
                                         type="text"
                                         readOnly
                                         value={downloadLink}
-                                        className="w-full pr-12 pl-4 py-4 rounded-[10px] border border-gray-300 !bg-[#e7e7e7] font-mono text-sm !text-gray-600 pe-[60px] focus:outline-none transition shadow-sm"
+                                        className="input pe-[60px] !py-[10px] !px-[12px]"
                                     />
                                     <button
                                         onClick={copyToClipboard}
-                                        className="absolute right-0 p-3 px-4 rounded-[10px] bg-[#08CF65] text-white hover:bg-green-600 transition-all duration-200 flex items-center justify-center shadow-md hover:shadow-lg"
+                                        className="absolute right-0 min-w-[50px] h-[45px] rounded-r-[10px] bg-[#08CF65] 
+                                        text-white hover:bg-green-600 transition-all h-full  
+                                        duration-200 flex items-center justify-center shadow-md hover:shadow-lg"
                                     >
-                                        <AiOutlineCopy className="h-4 w-4" />
+                                        <CopyIcon />
                                     </button>
                                 </div>
                             </div>
@@ -154,8 +157,8 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
             </div>
         </div>
 
-            <div className="justify-center  pt-4">
-                <p className='text-black font-semibold text-center'>Need to send more files? <button onClick={onNewTransfer} className=" text-black underline">
+            <div className="justify-center  absolute bottom-0 mb-6 w-full left-0">
+                <p className='text-black font-semibold text-[14px] text-center'>Need to send more files? <button onClick={onNewTransfer} className=" text-black underline">
                     Start new transfer
                 </button> </p>
             </div>

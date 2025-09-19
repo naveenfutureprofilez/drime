@@ -36,12 +36,12 @@ const formatFileSize = (bytes) => {
 
 export default function Download({ expiresAt, totalSize, itemCount = 1 }) {
     return (
-        <div className="column-center border-apply p-4">
+        <div className="column-center border-apply p-6">
             <img src={Vector} alt="" className="h-12 w-12 object-cover" />
-            <h3 className="mt-2 normal-heading text-sm md:!text-[18px] mt-1 ">
+            <h3 className="mt-2 font-semibold !text-[18px] mt-1 ">
                 You received {itemCount} {itemCount === 1 ? 'item' : 'items'}
             </h3>
-            <p className="normal-para text-sm md:!text-[16px] mt-1">{formatExpiry(expiresAt, totalSize)}</p>
+            <p className="text-gray-500 text-[16px] mt-1">{formatExpiry(expiresAt, totalSize)}</p>
         </div>
     )
 }

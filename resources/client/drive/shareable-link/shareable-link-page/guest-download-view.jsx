@@ -140,7 +140,7 @@ export const GuestDownloadView = ({
     );
   }
 
-  return <div className="space-y-6">
+  return <div className="space-y-6 bg-white">
     <>
       <Download 
         expiresAt={expiresAt} 
@@ -148,8 +148,6 @@ export const GuestDownloadView = ({
         itemCount={files ? files.length : 0}
       />
       <div className='!pt-0 p-[0px] lg:p-[30px]'>
-        {/* <div className='ma÷x-h-[32vh] overflow-y-auto'> */}
-          {/* <div className='pe-[20px]'> */}
             <FileData 
               step={4} 
               selectedFiles={files} 
@@ -157,9 +155,7 @@ export const GuestDownloadView = ({
               hasPassword={hasPassword} 
               password={password} 
             />
-          {/* </div> */}
-        {/* </div> */}
-        <div className="between-align mt-6">
+        <div className="between-align mt-6 absolute left-0 p-[30px] bottom-0 w-full">
           <a href='/' className="text-[16px]  text-black font-[600] leading-5 underline">
             Create a transfer
           </a>

@@ -183,7 +183,7 @@ export function TransferProgress({
           <>
             <button
             onClick={() => onResume?.()}
-              className="px-8 py-4 rounded-[10px] font-medium transition-all duration-200 bg-green-500 text-black hover:bg-green-600 hover:scale-105 shadow-md hover:shadow-lg"
+              className="button"
             >
               Resume
             </button>
@@ -200,7 +200,7 @@ export function TransferProgress({
         {status === 'retrying' && (
           <button
             onClick={() => onCancel?.()}
-            className="px-8 py-4 rounded-[10px] font-medium transition-all duration-200 bg-red-500 text-black hover:bg-red-600 hover:scale-105 shadow-md hover:shadow-lg" >
+            className="button" >
             Cancel
           </button>
         )}
@@ -208,7 +208,7 @@ export function TransferProgress({
         {(status === 'success' || status === 'error') && (
           <button
             onClick={() => onComplete?.()}
-            className={`px-10 py-4 rounded-[10px] font-medium transition-all duration-200 shadow-md hover:shadow-lg ${
+            className={`button ${
               status === 'success'
                 ? 'bg-green-500 text-black hover:bg-green-600 hover:scale-105'
                 : 'bg-red-500 text-black hover:bg-red-600 hover:scale-105'

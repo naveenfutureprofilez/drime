@@ -1542,7 +1542,7 @@ export function FileUploadWidget({
       </div> 
       :
       <div>
-        <div className=" relative   h-[60vh] xl:h-[700px] max-h-[500px] xl:max-h-[576px] rounded-[15px] shadow-lg transition-all duration-200 border-gray-300 bg-white">
+        <div className=" relative h-[60vh] md:h-[576px] rounded-[15px] shadow-lg transition-all duration-200 border-gray-300 bg-white">
           <div className='p-[20px] md:p-[30px]'>
             <div className="between-align">
               <div>
@@ -1595,7 +1595,7 @@ export function FileUploadWidget({
                 className="column-center cursor-pointer mb-[-2px]"
                 onClick={() => setActiveTab('Link')}
               >
-                <span className={`text-[18px] p-1 font-medium transition-colors duration-200 ${activeTab === 'Link' ? 'text-[#08CF65] border-b-[2px] border-[#08CF65]' : 'text-[#0009]'}`}
+                <span className={`text-[18px] p-1 font-medium transition-colors duration-200 ${activeTab === 'Link' ? 'text-[#08CF65] border-b-[2px] border-[#08CF65]' : 'border-b-[2px] !border-transparent text-[#0009]'}`}
                 >
                   Link
                 </span>
@@ -1605,7 +1605,7 @@ export function FileUploadWidget({
                 onClick={() => setActiveTab('Email')}
               >
                 <span
-                  className={`text-[18px] p-1 font-medium transition-colors duration-200 ${activeTab === 'Email' ? 'text-[#08CF65] border-b-[2px] border-[#08CF65]' : 'text-[#0009]'
+                  className={`text-[18px] p-1 font-medium transition-colors duration-200 ${activeTab === 'Email' ? 'text-[#08CF65] border-b-[2px] border-[#08CF65]' : 'border-b-[2px] !border-transparent text-[#0009]'
                     }`} >
                   Email
                 </span>
@@ -1632,10 +1632,9 @@ export function FileUploadWidget({
               value={data?.name}
               onChange={handleChange}
             />
-            <textarea
-              rows={activeTab === "Email" ? 2 : 5}
+            <textarea 
               placeholder="Message"
-              className="textarea"
+              className={`textarea ${activeTab === 'Email' ? 'h-[79px]' : 'h-[137px]'}`}
               name='message'
               value={data?.message}
               onChange={handleChange}
