@@ -21,11 +21,37 @@ import { MessageIcon } from '@ui/icons/material/Message';
 import { FolderIcon } from '@ui/icons/material/Folder';
 import { IconButton } from '@ui/buttons/icon-button';
 import { Tooltip } from '@ui/tooltip/tooltip';
+import { FileIcon } from '@ui/icons/material/InsertDriveFile';
+import { VideoFileIcon } from '@ui/icons/material/VideoFile';
+import { AudioFileIcon } from '@ui/icons/material/AudioFile';
+import { ImageIcon } from '@ui/icons/material/Image';
+import { PictureAsPdfIcon } from '@ui/icons/material/PictureAsPdf';
 
 function useTransferDetail(transferId) {
   return useQuery({
     queryKey: ['transfer-files', transferId],
-    queryFn: () => apiClient.get(`admin/transfer-files/${transferId}`).then(response => response.data),
+    queryFn: async () => {
+      console.log('Fetching transfer details for ID:', transferId);
+      try {
+        const response = await apiClient.get(`admin/transfer-files/${transferId}`);
+        console.log('Transfer API response:', response.data);
+        return response.data;
+      } catch (error) {
+        console.error('Transfer API error:', error);
+        throw error;
+      }
+    },
+    enabled: !!transferId,
+    retry: (failureCount, error) => {
+      console.log('Query retry attempt:', failureCount, 'Error:', error);
+      return failureCount < 2;
+    },
+    onError: (error) => {
+      console.error('useTransferDetail error:', error);
+    },
+    onSuccess: (data) => {
+      console.log('useTransferDetail success:', data);
+    }
   });
 }
 
@@ -33,11 +59,20 @@ export function TransferDetailPage() {
   const { transferId } = useParams();
   const { data: transfer, isLoading, error } = useTransferDetail(transferId);
 
-  if (isLoading || error) {
+  console.log('TransferDetailPage render:', { transferId, isLoading, error, transfer });
+
+  if (isLoading) {
+    console.log('Showing loading state');
+    return <PageStatus query={{ isLoading, error }} loaderClassName="absolute inset-0 m-auto" />;
+  }
+
+  if (error) {
+    console.log('Showing error state:', error);
     return <PageStatus query={{ isLoading, error }} loaderClassName="absolute inset-0 m-auto" />;
   }
 
   if (!transfer) {
+    console.log('No transfer data found');
     return (
       <div className="p-24 text-center">
         <Trans message="Transfer not found" />
@@ -45,6 +80,7 @@ export function TransferDetailPage() {
     );
   }
 
+  console.log('Rendering transfer details:', transfer);
   const getStatusColor = (status) => {
     switch (status) {
       case 'expired':
@@ -59,11 +95,28 @@ export function TransferDetailPage() {
   const getStatusMessage = (status) => {
     switch (status) {
       case 'expired':
-        return 'Expired';
+        return <Trans message="Expired" />;
       case 'download_limit_reached':
-        return 'Limit Reached';
+        return <Trans message="Download limit reached" />;
+      case 'active':
       default:
-        return 'Active';
+        return <Trans message="Active" />;
+    }
+  };
+
+  const getFileIcon = (mimeType) => {
+    if (!mimeType) return <FileIcon className="text-muted" />;
+    
+    if (mimeType.startsWith('image/')) {
+      return <ImageIcon className="text-blue-500" />;
+    } else if (mimeType.startsWith('video/')) {
+      return <VideoFileIcon className="text-red-500" />;
+    } else if (mimeType.startsWith('audio/')) {
+      return <AudioFileIcon className="text-green-500" />;
+    } else if (mimeType === 'application/pdf') {
+      return <PictureAsPdfIcon className="text-red-600" />;
+    } else {
+      return <FileIcon className="text-muted" />;
     }
   };
 
@@ -205,6 +258,83 @@ export function TransferDetailPage() {
               </div>
             </div>
           </div>
+
+          {/* Files List */}
+          {transfer.files && transfer.files.length > 0 && (
+            <div className="rounded-panel border bg-paper shadow-sm mt-24">
+              <div className="p-4 pb-2">
+                <h2 className="text-lg font-semibold flex items-center gap-8">
+                  <FolderIcon />
+                  <Trans message="Files" />
+                  <Chip color="primary" size="sm">
+                    {transfer.files.length}
+                  </Chip>
+                </h2>
+              </div>
+              <div className="p-4 pt-0">
+                <div className="space-y-12">
+                  {transfer.files.map((file, index) => (
+                    <div key={file.id} className="flex items-center justify-between p-12 rounded-md bg-alt/30 hover:bg-alt/50 transition-colors">
+                      <div className="flex items-center gap-12 min-w-0 flex-1">
+                        <div className="flex-shrink-0">
+                          {getFileIcon(file.mime)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-sm truncate" title={file.name}>
+                            {file.name}
+                          </div>
+                          <div className="flex items-center gap-8 text-xs text-muted mt-1">
+                            <span>{file.formatted_size}</span>
+                            <span>•</span>
+                            <span>{file.mime || 'Unknown type'}</span>
+                            <span>•</span>
+                            <span>
+                              <Trans message="Uploaded" /> <FormattedDate date={file.created_at} />
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-8 ml-12">
+                        <Chip color="chip" size="xs">
+                          #{index + 1}
+                        </Chip>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Files Summary */}
+                <div className="mt-16 pt-16 border-t">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-sm">
+                    <div className="text-center">
+                      <div className="font-medium text-muted">
+                        <Trans message="Total Files" />
+                      </div>
+                      <div className="text-lg font-semibold mt-1">
+                        {transfer.files.length}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-medium text-muted">
+                        <Trans message="Total Size" />
+                      </div>
+                      <div className="text-lg font-semibold mt-1">
+                        <FormattedBytes bytes={transfer.file_size} />
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-medium text-muted">
+                        <Trans message="Average Size" />
+                      </div>
+                      <div className="text-lg font-semibold mt-1">
+                        <FormattedBytes bytes={Math.round(transfer.file_size / transfer.files.length)} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Sidebar Information */}

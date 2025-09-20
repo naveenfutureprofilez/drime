@@ -21,6 +21,7 @@ export function BasicInfoPanel({ user }) {
     defaultValues: {
       first_name: user.first_name || '',
       last_name: user.last_name || '',
+      email: user.email || '',
       image: user.image,
     },
   });
@@ -107,6 +108,20 @@ export function BasicInfoPanel({ user }) {
             <FormTextField
               className="mb-4"
               name="last_name"
+            />
+          </div>
+
+          {/* Email Field */}
+          <div className='flex flex-wrap flex-row'>
+            <div className='w-full w-full lg:w-5/12 xl:w-4/12 lg:pr-3 mb-2 lg:mb-0'>
+              <h2 className='block text-[#000000] font-medium text-base xl:text-xl mb-1 tracking-[-0.04em]'> Email </h2>
+              <p className='block text-[#535353] font-medium text-sm xl:text-base  tracking-[-0.04em] mb-0'>your email address
+              </p>
+            </div>
+            <FormTextField
+              className="mb-4"
+              name="email"
+              type="email"
             />
           </div>
         </div>

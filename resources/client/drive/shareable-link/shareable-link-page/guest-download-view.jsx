@@ -114,7 +114,7 @@ export const GuestDownloadView = ({
               </p>
               <input
                 type="password" autoComplete='off'
-                placeholder="Enter the password" autoComplete='off'
+                placeholder="Enter the password"
                 value={password}
                 onChange={handleInputChange}
                 className="inut-sm  sm:input"

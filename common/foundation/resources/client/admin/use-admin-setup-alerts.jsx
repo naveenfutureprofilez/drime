@@ -1,11 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@common/http/query-client';
+
 export function useAdminSetupAlerts() {
   return useQuery({
     queryKey: ['admin-setup-alerts'],
-    queryFn: () => fetchAlerts()
+    queryFn: () => fetchAlerts(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false
   });
 }
+
 function fetchAlerts() {
   return apiClient.get(`admin/setup-alerts`).then(response => response.data);
 }

@@ -90,7 +90,7 @@ function ComboBox(props, ref) {
       }
     }}>
               <ComboboxEndAdornment isLoading={isLoading} icon={endAdornmentIcon} />
-            </IconButton> : null} aria-expanded={isOpen ? 'true' : 'false'} aria-haspopup="listbox" aria-controls={isOpen ? listboxId : undefined} aria-autocomplete="list" autoComplete="off" autoCorrect="off" spellCheck="false" onChange={onInputChange} value={useOptionLabelAsInputValue && textLabel ? textLabel : inputValue} onBlur={e => {
+            </IconButton> : null} aria-expanded={isOpen ? 'true' : 'false'} aria-haspopup="listbox" aria-controls={isOpen ? listboxId : undefined} aria-autocomplete="list" autoCorrect="off" spellCheck="false" onChange={onInputChange} value={useOptionLabelAsInputValue && textLabel ? textLabel : inputValue} onBlur={e => {
       if (allowCustomValue) {
         selectValues(e.target.value);
       } else if (!clearInputOnItemSelection) {

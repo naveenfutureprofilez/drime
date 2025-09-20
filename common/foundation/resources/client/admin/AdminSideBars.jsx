@@ -1,21 +1,26 @@
-import { useState } from "react";
+import { useState, useCallback, memo } from "react";
 import { MdClose, MdDashboard, MdLogout, MdSettings, MdPerson, MdTransferWithinAStation, MdSecurity } from "react-icons/md";
 import { IoReorderThreeOutline } from "react-icons/io5";
 import { AdminSidebarAuthUserItem } from "./AdminSidebarAuthUserItem";
 import { useLogout } from "@common/auth/requests/logout";
+import { Link } from "react-router";
 
-function AdminSidebars() {
+const AdminSidebars = memo(function AdminSidebars() {
     const [isOpen, setIsOpen] = useState(false);
 
-    const toggleSidebar = () => setIsOpen(!isOpen);
+    const toggleSidebar = useCallback(() => setIsOpen(!isOpen), []);
 
-    const handleLinkClick = () => {
+    const handleLinkClick = useCallback(() => {
         if (isOpen) {
             setIsOpen(false);
         }
-    };
+    }, [isOpen]);
 
     const logout = useLogout();
+
+    const handleLogout = useCallback(() => {
+        logout.mutate();
+    }, [logout]);
 
     return (
         <>
@@ -39,59 +44,57 @@ function AdminSidebars() {
 
                     {/* Menu Items */}
                     <nav className="flex flex-col space-y-2 mt-10 xl:mt-0">
-                        <a
-                            href="/admin"
+                        <Link
+                            to="/admin"
                             onClick={handleLinkClick}
                             className="flex items-center gap-3 p-3 rounded-lg 
                          text-black hover:bg-[#e5e7eb] transition"
                         >
                             <MdDashboard className="text-pink-500 text-xl" />
                             <span>Dashboard </span>
-                        </a>
-                        <a
-                            href="/admin/profile"
+                        </Link>
+                        <Link
+                            to="/admin/profile"
                             onClick={handleLinkClick}
                             className="flex items-center gap-3 p-3 rounded-lg 
                          text-black hover:bg-[#e5e7eb] transition"
                         >
                             <MdPerson className="text-pink-500 text-xl" />
                             <span>Profile</span>
-                        </a>
-                        <a
-                            href="/admin/transfer-files"
+                        </Link>
+                        <Link
+                            to="/admin/transfer-files"
                             onClick={handleLinkClick}
                             className="flex items-center gap-3 p-3 rounded-lg 
                          text-black hover:bg-[#e5e7eb] transition"
                         >
                             <MdTransferWithinAStation className="text-pink-500 text-xl" />
                             <span>Transfer Files</span>
-                        </a>
-                        <a
-                            href="/admin/settings"
+                        </Link>
+                        {/* <Link
+                            to="/admin/settings"
                             onClick={handleLinkClick}
                             className="flex items-center gap-3 p-3 rounded-lg 
                          text-black hover:bg-[#e5e7eb] transition"
                         >
                             <MdSettings className="text-pink-500 text-xl" />
                             <span>Settings</span>
-                        </a>
-                        <a
-                            href="/admin/2fa"
+                        </Link> */}
+                        <Link
+                            to="/admin/2fa"
                             onClick={handleLinkClick}
                             className="flex items-center gap-3 p-3 rounded-lg 
                          text-black hover:bg-[#e5e7eb] transition"
                         >
                             <MdSecurity className="text-pink-500 text-xl" />
                             <span>Two-Factor Authentication</span>
-                        </a>
+                        </Link>
                     </nav>
                 </div>
                 {/* Bottom Auth/User Item */}
                 <div className="mt-auto">
                     <div
-                        onClick={() => {
-                            logout.mutate();
-                        }}
+                        onClick={handleLogout}
                         className="flex items-center gap-3 p-3 rounded-lg 
              text-black hover:bg-[#e5e7eb] transition cursor-pointer"
                     >
@@ -103,6 +106,6 @@ function AdminSidebars() {
             </div>
         </>
     );
-}
+});
 
 export default AdminSidebars;

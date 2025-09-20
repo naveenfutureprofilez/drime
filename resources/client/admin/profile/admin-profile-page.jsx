@@ -148,4 +148,6 @@ export function AdminProfilePage() {
   );
 }
 
+// For lazy loading compatibility
+export const Component = AdminProfilePage;
 export default AdminProfilePage;

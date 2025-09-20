@@ -2,22 +2,32 @@
 
 namespace App\Console;
 
+use App\Console\Commands\CheckAdminUser;
+use App\Console\Commands\CheckSpecificUser;
+use App\Console\Commands\CheckUserPermissions;
 use App\Console\Commands\CleanDemoSite;
 use App\Console\Commands\CleanupExpiredGuestUploads;
 use App\Console\Commands\ClearFrontendCache;
+use App\Console\Commands\CreateAdminUser;
 use App\Console\Commands\CreateDemoAccounts;
 use App\Console\Commands\DeleteExpiredLinks;
 use App\Console\Commands\MigrateGuestUploadToPivot;
+use App\Console\Commands\TestUserLogin;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
 class Kernel extends ConsoleKernel
 {
     protected $commands = [
+        CheckAdminUser::class,
+        CheckSpecificUser::class,
+        CheckUserPermissions::class,
+        CreateAdminUser::class,
         DeleteExpiredLinks::class,
         CleanupExpiredGuestUploads::class,
         MigrateGuestUploadToPivot::class,
         ClearFrontendCache::class,
+        TestUserLogin::class,
     ];
 
     protected function schedule(Schedule $schedule)

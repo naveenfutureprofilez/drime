@@ -17,7 +17,15 @@ class RedirectIfAuthenticated
     public function handle($request, Closure $next, $guard = null)
     {
         if (Auth::guard($guard)->check()) {
-            return redirect('/home');
+            $user = Auth::guard($guard)->user();
+            
+            // Check if user has admin role and redirect accordingly
+            if ($user && $user->roles->contains('name', 'admin')) {
+                return redirect('/admin');
+            }
+            
+            // Default redirect for regular users (remove drive reference)
+            return redirect('/');
         }
 
         return $next($request);

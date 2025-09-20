@@ -65,7 +65,7 @@ export const MenuTrigger = forwardRef((props, ref) => {
       focusItem('increment', i);
     }
   };
-  return <Listbox onClick={e => e.stopPropagation()} listbox={listbox} onKeyDownCapture={!showSearchField ? handleListboxTypeSelect : undefined} onKeyDown={handleListboxKeyboardNavigation} onClose={showSearchField ? () => setInputValue('') : undefined} aria-labelledby={id} isLoading={isLoading} searchField={showSearchField ? <TextField size="sm" placeholder={searchPlaceholder} startAdornment={<SearchIcon />} className="flex-shrink-0 px-8 pb-8 pt-4" autoFocus aria-expanded={isOpen ? 'true' : 'false'} aria-haspopup="listbox" aria-controls={isOpen ? listboxId : undefined} aria-autocomplete="list" autoComplete="off" autoCorrect="off" spellCheck="false" value={inputValue} onChange={onInputChange} onKeyDown={e => {
+  return <Listbox onClick={e => e.stopPropagation()} listbox={listbox} onKeyDownCapture={!showSearchField ? handleListboxTypeSelect : undefined} onKeyDown={handleListboxKeyboardNavigation} onClose={showSearchField ? () => setInputValue('') : undefined} aria-labelledby={id} isLoading={isLoading} searchField={showSearchField ? <TextField size="sm" placeholder={searchPlaceholder} startAdornment={<SearchIcon />} className="flex-shrink-0 px-8 pb-8 pt-4" autoFocus aria-expanded={isOpen ? 'true' : 'false'} aria-haspopup="listbox" aria-controls={isOpen ? listboxId : undefined} aria-autocomplete="list" autoCorrect="off" spellCheck="false" value={inputValue} onChange={onInputChange} onKeyDown={e => {
     handleListboxSearchFieldKeydown(e);
   }} /> : null}>
         {cloneElement(menuTrigger, {

@@ -36,6 +36,7 @@ export function useLogin(form) {
 export function useHandleLoginSuccess() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { getRedirectUri } = useAuth();
   
   // Store the current path for later use
   React.useEffect(() => {
@@ -58,34 +59,18 @@ export function useHandleLoginSuccess() {
       return;
     }
     
-    // Get the login path from localStorage
-    const loginPath = localStorage.getItem('loginPath') || '/login';
-    localStorage.removeItem('loginPath'); // Clean up
+    // Clean up stored login path
+    localStorage.removeItem('loginPath');
     
-    // Determine redirect URI based on login route used or current context
-    let redirectUri = '/'; // default redirect for /login (home page)
+    // Use the auth system's getRedirectUri method which checks admin permissions
+    const redirectUri = getRedirectUri();
     
-    // Debug: log the stored login path
-    console.log('Login redirect - Stored login path:', loginPath);
-    console.log('Login redirect - Current pathname:', location.pathname);
-    console.log('Login redirect - Current URL:', window.location.href);
-    
-    // Check multiple ways to determine if this should redirect to admin
-    const shouldRedirectToAdmin = loginPath === '/admin/login' || 
-                                 location.pathname.includes('/admin') || 
-                                 window.location.href.includes('/admin');
-    
-    if (shouldRedirectToAdmin) {
-      console.log('Admin login detected, redirecting to /admin');
-      redirectUri = '/admin';
-    } else {
-      console.log('Regular login, redirecting to home page');
-    }
+    console.log('Login redirect - Using auth system redirect URI:', redirectUri);
     
     navigate(redirectUri, {
       replace: true
     });
-  }, [navigate, location]);
+  }, [navigate, location, getRedirectUri]);
 }
 function login(payload) {
   return apiClient.post('auth/login', payload).then(response => response.data);

@@ -6,7 +6,8 @@ export function useAuth() {
   const data = useBootstrapDataStore(s => s.data);
   const {
     auth: {
-      redirectUri = '/'
+      redirectUri = '/',
+      adminRedirectUri = '/admin'
     }
   } = useContext(SiteConfigContext);
   return useMemo(() => {
@@ -23,13 +24,20 @@ export function useAuth() {
       // where to redirect user after successful login
       getRedirectUri: () => {
         const onboarding = getFromLocalStorage('be.onboarding.selected');
+        
         if (onboarding) {
           return `/checkout/${onboarding.productId}/${onboarding.priceId}`;
         }
+        
+        // Check if user has admin permissions and redirect to admin area
+        if (auth.hasPermission('admin.access')) {
+          return adminRedirectUri;
+        }
+        
         return redirectUri;
       }
     };
-  }, [data, redirectUri]);
+  }, [data, redirectUri, adminRedirectUri]);
 }
 class _Auth {
   get data() {

@@ -33,7 +33,7 @@ class CheckAdminUser extends Command
             $this->info('User ID: ' . $user->id);
             $this->info('Email verified: ' . ($user->email_verified_at ? 'Yes' : 'No'));
             $this->info('Roles: ' . $user->roles->pluck('name')->implode(', '));
-            $this->info('Has api.access: ' . ($user->hasPermissionTo('api.access') ? 'Yes' : 'No'));
+            $this->info('Has admin permission: ' . ($user->hasPermission('admin') ? 'Yes' : 'No'));
             
             // Check password
             if (\Hash::check('password123', $user->password)) {

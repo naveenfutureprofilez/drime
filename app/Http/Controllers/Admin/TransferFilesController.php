@@ -111,6 +111,70 @@ class TransferFilesController extends BaseController
     }
 
     /**
+     * Get a specific transfer file by ID
+     */
+    public function show(int $id): JsonResponse
+    {
+        // $this->authorize('index', \Common\Settings\Setting::class); // Temporarily disabled
+
+        try {
+            $guestUpload = GuestUpload::with(['files', 'shareableLink'])->findOrFail($id);
+
+            // Calculate total file size and get file info
+            $totalSize = $guestUpload->files->sum('file_size');
+            $firstFile = $guestUpload->files->first();
+            $fileNames = $guestUpload->files->pluck('name')->filter()->join(', ');
+            
+            // Use the first file's name as original_filename if original_filename is empty
+            $displayName = $guestUpload->original_filename ?: ($firstFile ? $firstFile->name : 'Untitled');
+            
+            $data = [
+                'id' => $guestUpload->id,
+                'hash' => $guestUpload->hash,
+                'original_filename' => $displayName,
+                'file_name' => $firstFile ? $firstFile->name : null,
+                'file_names' => $fileNames,
+                'files_count' => $guestUpload->files->count(),
+                'file_size' => $totalSize,
+                'mime_type' => $firstFile ? $firstFile->mime : null,
+                'download_count' => $guestUpload->download_count,
+                'max_downloads' => $guestUpload->max_downloads,
+                'has_password' => !is_null($guestUpload->password),
+                'sender_email' => $guestUpload->sender_email,
+                'recipient_emails' => $guestUpload->recipient_emails,
+                'title' => $guestUpload->title,
+                'message' => $guestUpload->message,
+                'expires_at' => $guestUpload->expires_at,
+                'created_at' => $guestUpload->created_at,
+                'updated_at' => $guestUpload->updated_at,
+                'is_expired' => $guestUpload->expires_at && Carbon::parse($guestUpload->expires_at)->isPast(),
+                'share_url' => $this->generateShareUrl($guestUpload),
+                'formatted_size' => $this->formatBytes($totalSize),
+                'status' => $this->getFileStatus($guestUpload),
+                'files' => $guestUpload->files->map(function ($file) {
+                    return [
+                        'id' => $file->id,
+                        'name' => $file->name,
+                        'file_name' => $file->file_name,
+                        'file_size' => $file->file_size,
+                        'mime' => $file->mime,
+                        'formatted_size' => $this->formatBytes($file->file_size),
+                        'created_at' => $file->created_at,
+                        'updated_at' => $file->updated_at,
+                    ];
+                })
+            ];
+
+            return $this->success($data);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return $this->error('Transfer file not found', 404);
+        } catch (\Exception $e) {
+            return $this->error('Failed to retrieve transfer file: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * Delete a transfer file
      */
     public function destroy(Request $request, int $id): JsonResponse
