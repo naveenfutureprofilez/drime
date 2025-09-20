@@ -128,51 +128,50 @@ const columnConfig = [
     header: () => <Trans message="Timeline" />,
     width: 'w-48',
     body: (file) => (
-      <div className="space-y-2">
-        <div className="flex items-center space-x-2 text-sm">
-          <CalendarTodayIcon className="h-4 w-4 text-muted flex-shrink-0" />
-          <div>
-            <div className="font-medium">
-              <FormattedDate date={file.created_at} preset="short" />
-            </div>
-            <div className="text-xs text-muted">
-              <FormattedRelativeTime date={file.created_at} />
-            </div>
-          </div>
-        </div>
-        {file.expires_at && (
-          <div className="text-xs text-muted">
-            Expires: <FormattedDate date={file.expires_at} preset="short" />
-          </div>
-        )}
-      </div>
+    <div className="space-y-2">
+  <div className="flex items-center space-x-2 text-sm">
+    <CalendarTodayIcon className="h-4 w-4 text-muted flex-shrink-0 mt-0.5" /> 
+    <div className="flex flex-col leading-tight">
+      <span className="font-semibold">
+        <FormattedDate date={file.created_at} preset="short" /> <FormattedRelativeTime date={file.created_at} />
+      </span>
+    </div>
+  </div>
+
+  {/* Expires at */}
+  {file.expires_at && (
+    <div className="text-xs text-muted ml-2">
+      Expires: <FormattedDate date={file.expires_at} preset="short" />
+    </div>
+  )}
+</div>
+
     ),
   },
-  {
-    key: 'message',
-    allowsSorting: false,
-    header: () => <Trans message="Message" />,
-    width: 'w-64',
-    body: (file) => (
-      <div className="text-sm">
-        {file.message ? (
-          <Tooltip label={file.message}>
-            <div className="truncate max-w-xs p-2 bg-alt/30 rounded text-xs">
-              {file.message}
-            </div>
-          </Tooltip>
-        ) : (
-          <span className="text-muted italic text-xs">No message</span>
-        )}
-      </div>
-    ),
-  },
+  // {
+  //   key: 'message',
+  //   allowsSorting: false,
+  //   header: () => <Trans message="Message" />,
+  //   width: 'w-64',
+  //   body: (file) => (
+  //     <div className="text-sm">
+  //       {file.message ? (
+  //         <Tooltip label={file.message}>
+  //           <div className="truncate max-w-xs p-2 bg-alt/30 rounded text-xs">
+  //             {file.message}
+  //           </div>
+  //         </Tooltip>
+  //       ) : (
+  //         <span className="text-muted italic text-xs">No message</span>
+  //       )}
+  //     </div>
+  //   ),
+  // },
   {
     key: 'actions',
     header: () => <Trans message="Actions" />,
-    hideHeader: true,
-    align: 'end',
-    width: 'w-32',
+    // hideHeader: true,
+    width: 'w-48',
     body: (file) => <RowActions file={file} />,
   },
 ];
@@ -181,7 +180,7 @@ function RowActions({ file }) {
   const deleteFiles = useDeleteTransferFiles();
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center justify-center gap-2">
       <Tooltip label={<Trans message="View details" />}>
         <IconButton
           size="sm"

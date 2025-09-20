@@ -7,8 +7,8 @@ export function useTableCellStyle({
 }) {
   const {
     columns,
-    cellHeight = 'h-32',
-    headerCellHeight = 'h-32'
+    cellHeight = 'h-24',
+    headerCellHeight = 'h-24'
   } = useContext(TableContext);
   const column = columns[index];
   const userPadding = column?.padding;

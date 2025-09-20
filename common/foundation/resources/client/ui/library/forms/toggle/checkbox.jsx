@@ -66,7 +66,7 @@ export const Checkbox = forwardRef((props, ref) => {
   return <div>
         <label className={mergedClassName}>
           <div className={clsx('relative flex items-center', orientation === 'vertical' && 'flex-col flex-col-reverse')}>
-            <input className="absolute left-0 top-0 h-24 w-24 appearance-none overflow-hidden rounded outline-none ring-inset transition-shadow focus-visible:ring" type="checkbox" aria-checked={isIndeterminate ? 'mixed' : isSelected} aria-invalid={invalid || undefined} onChange={updateChecked} ref={inputObjRef} required={required} disabled={disabled} value={value} name={name} data-testid={inputTestId} />
+            <input className="absolute left-0 top-0 h-12 w-12 appearance-none overflow-hidden rounded outline-none ring-inset transition-shadow focus-visible:ring" type="checkbox" aria-checked={isIndeterminate ? 'mixed' : isSelected} aria-invalid={invalid || undefined} onChange={updateChecked} ref={inputObjRef} required={required} disabled={disabled} value={value} name={name} data-testid={inputTestId} />
             <CheckboxIcon size={size} className={clsx('pointer-events-none', disabled ? 'text-disabled' : checkboxColor)} />
             {children && <div className={clsx('first-letter:capitalize', style.size.font, orientation === 'vertical' ? 'mb-6' : 'ml-6')}>
                 {children}

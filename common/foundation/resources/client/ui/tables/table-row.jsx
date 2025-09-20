@@ -105,6 +105,8 @@ export function TableRow({
   });
   const RowElement = renderAs || 'div';
   return <RowElement role="row" aria-rowindex={index + 1 + (hideHeaderRow ? 0 : 1)} aria-selected={isSelected} tabIndex={-1} className={clsx(className, styleClassName)} item={RowElement === 'div' ? undefined : item} onDoubleClick={createEventHandler(doubleClickHandler)} onKeyDown={createEventHandler(keyboardHandler)} onContextMenu={createEventHandler(contextMenuHandler)} onPointerEnter={createEventHandler(() => setIsHovered(true))} onPointerLeave={createEventHandler(() => setIsHovered(false))} style={style} {...domProps}>
-      {columns.map((column, cellIndex) => <TableCell rowIndex={index} rowIsHovered={isHovered} index={cellIndex} item={item} key={`${item.id}-${column.key}`} />)}
+      {columns.map((column, cellIndex) => 
+      <TableCell rowIndex={index} rowIsHovered={isHovered} index={cellIndex} item={item} key={`${item.id}-${column.key}`} />
+      )}
     </RowElement>;
 }

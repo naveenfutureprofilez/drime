@@ -85,7 +85,7 @@ export function DataTable({
       })} actions={actions} filters={filters} filtersLoading={filtersLoading} key="default" />}
       </AnimatePresence>
 
-      {filters && <div className="mb-14">
+      {filters && <div className="mb-6">
           <AnimatePresence initial={false} mode="wait">
             {filtersLoading && (encodedFilters || pinnedFilters?.length) ? <FilterListSkeleton /> : <m.div key="filter-list" {...opacityAnimation}>
                 <FilterList filters={filters} pinnedFilters={pinnedFilters} />
