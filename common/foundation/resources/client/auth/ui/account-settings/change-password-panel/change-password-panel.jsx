@@ -12,7 +12,7 @@ export function ChangePasswordPanel() {
   const formId = useId();
   const updatePassword = useUpdatePassword(form);
   return <AccountSettingsPanel id={AccountSettingsId.Password} title={<Trans message="Update password" />} actions={<Button className="button" type="submit" form={formId} variant="flat" color="primary" disabled={!form.formState.isValid || updatePassword.isPending}>
-    <h2 className='text-[18px] '>Update password </h2>
+    <span className='text-[18px] font-semibold'>Update password </span>
   </Button>}>
     <div className="flex justify-center items-center ">
       <Form className="w-full max-w-xl p-4 bg-white " form={form} id={formId} onSubmit={newValues => {

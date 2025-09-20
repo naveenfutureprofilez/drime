@@ -10,6 +10,28 @@ const defaultSortDescriptor = {
   orderBy: 'updated_at',
   orderDir: 'desc'
 };
+export function makeAllFilesPage(folder) {
+  return {
+    name: 'allChildren',
+    uniqueId: `${folder.hash}-all`,
+    label: `All files in ${folder.name}`,
+    path: `/drive/folders/${folder.hash}/all`,
+    hasActions: false,
+    canUpload: false,
+    sortDescriptor: defaultSortDescriptor,
+    queryParams: {
+      section: 'allChildren',
+      folderId: folder.hash
+    },
+    folder,
+    noContentMessage: () => ({
+      title: message('No files found'),
+      description: message('This folder and its subfolders contain no files'),
+      image: addFilesSvg
+    })
+  };
+}
+
 export function makeFolderPage(folder) {
   return {
     ...makePartialFolderPage(folder.hash),

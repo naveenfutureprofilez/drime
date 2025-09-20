@@ -23,12 +23,16 @@ import { useFileEntryUrls } from '@common/uploads/file-entry-urls';
 import { useRestoreEntries } from '../files/queries/use-restore-entries';
 import { RestoreIcon } from '@ui/icons/material/Restore';
 import { downloadFileFromUrl } from '@ui/utils/files/download-file-from-url';
+import { FolderOpenIcon } from '@ui/icons/material/FolderOpen';
+import { useNavigate } from '@common/ui/navigation/use-navigate';
+
 export function useEntryActions(entries) {
   const preview = usePreviewAction(entries);
   const share = useShareAction(entries);
   const getLink = useGetLinkAction(entries);
   const addStar = useAddToStarredAction(entries);
   const removeStar = useRemoveFromStarred(entries);
+  const showAllFiles = useShowAllFilesAction(entries);
   const moveTo = useMoveToAction(entries);
   const rename = useRenameAction(entries);
   const makeCopy = useMakeCopyAction(entries);
@@ -36,7 +40,7 @@ export function useEntryActions(entries) {
   const deleteAction = useDeleteEntriesAction(entries);
   const removeSharedEntries = useRemoveSharedEntriesAction(entries);
   const restoreEntries = useRestoreEntriesAction(entries);
-  return [preview, share, getLink, addStar, removeStar, moveTo, rename, makeCopy, download, deleteAction, removeSharedEntries, restoreEntries].filter(action => !!action);
+  return [preview, share, getLink, addStar, removeStar, showAllFiles, moveTo, rename, makeCopy, download, deleteAction, removeSharedEntries, restoreEntries].filter(action => !!action);
 }
 export function usePreviewAction(entries) {
   if (!entries.some(e => e.type !== 'folder')) return;
@@ -110,6 +114,26 @@ function useRemoveFromStarred(entries) {
         entryIds: entries.map(e => e.id)
       });
       driveState().selectEntries([]);
+    }
+  };
+}
+function useShowAllFilesAction(entries) {
+  const navigate = useNavigate();
+  const activePage = useDriveStore(s => s.activePage);
+  
+  // Only show for single folder entries, not in trash
+  if (entries.length !== 1 || entries[0].type !== 'folder' || activePage === TrashPage) {
+    return;
+  }
+  
+  return {
+    label: message('Show all files'),
+    icon: FolderOpenIcon,
+    key: 'showAllFiles',
+    execute: () => {
+      const folder = entries[0];
+      // Navigate to a special page that shows all files in this folder using allChildren section
+      navigate(`/drive/folders/${folder.hash}/all`);
     }
   };
 }

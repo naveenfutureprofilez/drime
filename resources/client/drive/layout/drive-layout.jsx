@@ -4,7 +4,7 @@ import { Sidebar } from './sidebar/sidebar';
 import { FileView } from '../file-view/file-view';
 import { UploadQueue } from '../uploading/upload-queue';
 import { driveState, useDriveStore } from '../drive-store';
-import { DRIVE_PAGES, makePartialFolderPage, SearchPage } from '../drive-page/drive-page';
+import { DRIVE_PAGES, makePartialFolderPage, makeAllFilesPage, SearchPage } from '../drive-page/drive-page';
 import { DetailsSidebar } from '../details-sidebar/details-sidebar';
 import { DriveDialogsContainer } from '../files/dialogs/drive-dialogs-container';
 import { NavbarSearch } from '../search/navbar-search';
@@ -45,7 +45,12 @@ export function DriveLayout() {
   } = useActiveWorkspaceId();
   const activePage = useDriveStore(s => s.activePage);
   useEffect(() => {
-    driveState().setActivePage(DRIVE_PAGES.find(p => p.path === pathname) || makePartialFolderPage(hash));
+    const isAllFilesRoute = pathname.includes('/all');
+    if (isAllFilesRoute && hash) {
+      driveState().setActivePage(makeAllFilesPage({ hash }));
+    } else {
+      driveState().setActivePage(DRIVE_PAGES.find(p => p.path === pathname) || makePartialFolderPage(hash));
+    }
   }, [pathname, hash]);
   const urlsContextValue = useMemo(() => {
     return {

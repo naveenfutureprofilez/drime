@@ -4,6 +4,7 @@ import { getActiveWorkspaceId } from '../workspace/active-workspace-id';
 import { isAbsoluteUrl } from '@ui/utils/urls/is-absolute-url';
 import { errorStatusIs } from '@common/http/error-status-is';
 import { getEchoSocketId } from '@common/http/get-echo-socket-id';
+import { getBootstrapData } from '@ui/bootstrap-data/bootstrap-data-store';
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -59,6 +60,15 @@ apiClient.interceptors.request.use(config => {
       ...config.headers,
       // @ts-ignore
       'X-Socket-ID': echoSocketId
+    };
+  }
+
+  // Add CSRF token for authenticated requests
+  const bootstrapData = getBootstrapData();
+  if (bootstrapData?.csrf_token) {
+    config.headers = {
+      ...config.headers,
+      'X-CSRF-TOKEN': bootstrapData.csrf_token
     };
   }
 

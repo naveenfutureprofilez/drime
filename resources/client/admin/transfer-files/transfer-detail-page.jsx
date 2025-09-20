@@ -21,7 +21,7 @@ import { MessageIcon } from '@ui/icons/material/Message';
 import { FolderIcon } from '@ui/icons/material/Folder';
 import { IconButton } from '@ui/buttons/icon-button';
 import { Tooltip } from '@ui/tooltip/tooltip';
-import { FileIcon } from '@ui/icons/material/InsertDriveFile';
+import { InsertDriveFileIcon } from '@ui/icons/material/InsertDriveFile';
 import { VideoFileIcon } from '@ui/icons/material/VideoFile';
 import { AudioFileIcon } from '@ui/icons/material/AudioFile';
 import { ImageIcon } from '@ui/icons/material/Image';
@@ -105,7 +105,7 @@ export function TransferDetailPage() {
   };
 
   const getFileIcon = (mimeType) => {
-    if (!mimeType) return <FileIcon className="text-muted" />;
+    if (!mimeType) return <InsertDriveFileIcon className="text-muted" />;
     
     if (mimeType.startsWith('image/')) {
       return <ImageIcon className="text-blue-500" />;
@@ -116,7 +116,7 @@ export function TransferDetailPage() {
     } else if (mimeType === 'application/pdf') {
       return <PictureAsPdfIcon className="text-red-600" />;
     } else {
-      return <FileIcon className="text-muted" />;
+      return <InsertDriveFileIcon className="text-muted" />;
     }
   };
 

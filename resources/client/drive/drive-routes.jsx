@@ -19,6 +19,9 @@ export const driveRoutes = [{
     path: 'folders/:hash',
     lazy: () => lazyDriveRoute('DriveLayout')
   }, {
+    path: 'folders/:hash/all',
+    lazy: () => lazyDriveRoute('DriveLayout')
+  }, {
     path: 'shares',
     lazy: () => lazyDriveRoute('DriveLayout')
   }, {

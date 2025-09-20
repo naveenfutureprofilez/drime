@@ -23,6 +23,15 @@ module.exports = defineConfig({
         secure: false,
       },
     },
+    // Enable history API fallback for React Router
+    historyApiFallback: {
+      index: '/index.html',
+      rewrites: [
+        { from: /^\/admin/, to: '/index.html' },
+        { from: /^\/drive/, to: '/index.html' },
+        { from: /./, to: '/index.html' }
+      ]
+    },
   },
 
   resolve: {
