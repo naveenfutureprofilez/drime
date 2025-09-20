@@ -98,7 +98,7 @@ function getInputPadding({
   if (inputRadius === 'rounded-full') {
     return clsx(startAdornment ? 'pl-54' : 'pl-28', endAdornment ? 'pr-54' : 'pr-28');
   }
-  return clsx(startAdornment ? 'pl-46' : 'pl-6', endAdornment ? 'pr-46' : 'pr-48');
+  return clsx(startAdornment ? 'pl-46' : 'pl-0', endAdornment ? 'pr-46' : '  py-3 px-3 lg:px-6');
 }
 function getRadius(props) {
   const {
@@ -161,7 +161,7 @@ function inputSizeClass({
     default:
       return {
         font: 'text-sm',
-        height: flexibleHeight ? 'min-h-42' : 'h-42'
+        height: flexibleHeight ? 'min-h-42' : 'h-11 lg:h-[54px]'
       };
   }
 }

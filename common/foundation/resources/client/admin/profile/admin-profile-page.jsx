@@ -10,9 +10,8 @@ import { TabPanel, TabPanels } from '@ui/tabs/tab-panels';
 import { Form, FormTextField } from '@ui/forms/form';
 import { FormSwitch } from '@ui/forms/toggle/switch';
 import { Button } from '@ui/buttons/button';
-import { MdPerson, MdSecurity, MdSettings, MdLock, MdEmail, MdPhone } from 'react-icons/md';
+import { MdPerson, MdSecurity, MdSettings, MdLock, MdEmail } from 'react-icons/md';
 import { PersonIcon } from '@ui/icons/material/Person';
-
 export function AdminProfilePage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');

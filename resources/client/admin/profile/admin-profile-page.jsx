@@ -42,8 +42,32 @@ export function AdminProfilePage() {
           <Trans message="Manage your admin account settings and system configuration" />
         </p>
       </div>
+      {/* Tabs */}
+      <div className="flex border-b border-gray-300 mb-4">
+        <button
+          className={`px-4 py-2 font-medium ${
+            activeTab === 'profile' ? 'border-b-1 border-primary text-primary' : 'text-gray-500'
+          }`}
+          onClick={() => setActiveTab('profile')}
+        >
+          Profile
+        </button>
+        <button
+          className={`px-4 py-2 font-medium ${
+            activeTab === 'password' ? 'border-b-1 border-primary text-primary' : 'text-gray-500'
+          }`}
+          onClick={() => setActiveTab('password')}
+        >
+          Password
+        </button>
+      </div>
 
-      <Tabs selectedTab={activeTab === 'profile' ? 0 : activeTab === 'security' ? 1 : 2} onTabChange={(index) => setActiveTab(index === 0 ? 'profile' : index === 1 ? 'security' : 'admin')} className="w-full">
+      {/* Tab content */}
+      <div>
+        {activeTab === 'profile' && <BasicInfoPanel user={user} />}
+        {activeTab === 'password' && <ChangePasswordPanel />}
+      </div>
+      {/* <Tabs selectedTab={activeTab === 'profile' ? 0 : activeTab === 'security' ? 1 : 2} onTabChange={(index) => setActiveTab(index === 0 ? 'profile' : index === 1 ? 'security' : 'admin')} className="w-full">
         <TabList className="grid w-full grid-cols-2">
           <Tab className="flex items-center gap-2">
             <MdPerson className="h-4 w-4" />
@@ -54,19 +78,17 @@ export function AdminProfilePage() {
             <Trans message="Security" />
           </Tab>
         </TabList>
-          {/* <Tab className="flex items-center gap-2">
+          <Tab className="flex items-center gap-2">
             <MdSettings className="h-4 w-4" />
             <Trans message="Admin Settings" />
-          </Tab> */}
+          </Tab> 
 
         <TabPanels className="mt-2 md:mt-6">
           <TabPanel>
-            <BasicInfoPanel user={user} />
           </TabPanel>
 
           <TabPanel>
             <div className="space-y-6">
-              <ChangePasswordPanel />
               <AdminTwoFactorAuthPage />
             </div>
           </TabPanel>
@@ -143,7 +165,7 @@ export function AdminProfilePage() {
             </div>
           </TabPanel>
         </TabPanels>
-      </Tabs>
+      </Tabs> */}
     </div>
   );
 }

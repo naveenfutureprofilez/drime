@@ -29,7 +29,7 @@ export const TextField = forwardRef(({
     inputFieldClassNames.input = `${inputFieldClassNames.input} py-12`;
   }
   return <Field ref={ref} fieldClassNames={inputFieldClassNames} {...fieldProps}>
-        <ElementType data-testid={inputTestId} ref={inputObjRef} {...inputProps} rows={isTextArea ? inputProps.rows || 4 : undefined} className={inputFieldClassNames.input} />
+        <ElementType data-testid={inputTestId}  ref={inputObjRef} {...inputProps} rows={isTextArea ? inputProps.rows || 4 : undefined} className={inputFieldClassNames.input} />
       </Field>;
 });
 export const FormTextField = React.forwardRef(({

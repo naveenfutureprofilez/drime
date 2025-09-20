@@ -29,7 +29,6 @@ export function BasicInfoPanel({ user }) {
   return (
     <AccountSettingsPanel
       id={AccountSettingsId.AccountDetails}
-      title={<h2 className=''>Update Name and Profile Image </h2>}
       actions={
         <Button
           type="submit"
@@ -51,8 +50,7 @@ export function BasicInfoPanel({ user }) {
         id={formId}
       >
         {/* Profile Photo Card */}
-        <div className="w-full border-b border-[rgba(0,0,0,.1)] py-6 lg:py-8 flex flex-wrap items-center">
-
+        <div className="w-full border-b border-[rgba(0,0,0,.1)] pb-4 flex flex-wrap items-center">
           <div className="w-full lg:w-5/12 xl:w-4/12 lg:pr-3 mb-3 lg:mb-0">
             <label className="block text-[#000000] tracking-[-0.04em] font-medium text-base xl:text-xl mb-1">
               Your Photo
@@ -86,38 +84,44 @@ export function BasicInfoPanel({ user }) {
         </div>
 
         {/* Name Fields */}
-        <div className="border-b border-[rgba(0,0,0,.1)]  py-6 lg:py-8 space-y-4 lg:space-y-6 w-full ">
-          <div className='flex flex-wrap flex-row'>
-            <div className='w-full w-full lg:w-5/12 xl:w-4/12 lg:pr-3 mb-2 lg:mb-0'>
-              <h3 className='block text-[#000000] font-medium text-base xl:text-xl mb-1 tracking-[-0.04em]'> Name </h3>
-              <p className='block text-[#535353] font-medium text-sm xl:text-base  tracking-[-0.04em] mb-0'>please enter name
-              </p>
-            </div>
+        <div className='flex flex-wrap items-start'>
+          <div className='w-full w-full lg:w-5/12 xl:w-4/12 lg:pr-3 mb-2 lg:mb-0'>
+            <h3 className='block text-[#000000] font-medium text-base xl:text-xl mb-1 tracking-[-0.04em]'> Name </h3>
+            <p className='block text-[#535353] font-medium text-sm xl:text-base  tracking-[-0.04em] mb-0'>please enter name
+            </p>
+          </div>
+          <div className="w-full lg:w-6/12 xl:w-5/12 lg:pl-3 relative">
             <FormTextField
               className="mb-2"
               name="first_name"
             />
           </div>
+        </div>
 
-          <div className='flex flex-wrap flex-row'>
-            <div className='w-full w-full lg:w-5/12 xl:w-4/12 lg:pr-3 mb-2 lg:mb-0'>
-              <h3 className='block text-[#000000] font-medium text-base xl:text-xl mb-1 tracking-[-0.04em]'> Last Name </h3>
-              <p className='block text-[#535353] font-medium text-sm xl:text-base  tracking-[-0.04em] mb-0'>please enter last name
-              </p>
-            </div>
+        <div className='flex flex-wrap items-start'>
+          <div className='w-full w-full lg:w-5/12 xl:w-4/12 lg:pr-3 mb-2 lg:mb-0'>
+            <h3 className='block text-[#000000] font-medium text-base xl:text-xl mb-1 tracking-[-0.04em]'> Last Name </h3>
+            <p className='block text-[#535353] font-medium text-sm xl:text-base  tracking-[-0.04em] mb-0'>please enter last name
+            </p>
+          </div>
+          <div className="w-full lg:w-6/12 xl:w-5/12 lg:pl-3 relative">
+
             <FormTextField
               className="mb-4"
               name="last_name"
             />
           </div>
+        </div>
 
-          {/* Email Field */}
-          <div className='flex flex-wrap flex-row'>
-            <div className='w-full w-full lg:w-5/12 xl:w-4/12 lg:pr-3 mb-2 lg:mb-0'>
-              <h3 className='block text-[#000000] font-medium text-base xl:text-xl mb-1 tracking-[-0.04em]'> Email </h3>
-              <p className='block text-[#535353] font-medium text-sm xl:text-base  tracking-[-0.04em] mb-0'>your email address
-              </p>
-            </div>
+
+        {/* Email Field */}
+        <div className='flex flex-wrap items-start'>
+          <div className='w-full w-full lg:w-5/12 xl:w-4/12 lg:pr-3 mb-2 lg:mb-0'>
+            <h3 className='block text-[#000000] font-medium text-base xl:text-xl mb-1 tracking-[-0.04em]'> Email </h3>
+            <p className='block text-[#535353] font-medium text-sm xl:text-base  tracking-[-0.04em] mb-0'>your email address
+            </p>
+          </div>
+          <div className="w-full lg:w-6/12 xl:w-5/12 lg:pl-3 relative">
             <FormTextField
               className="mb-4"
               name="email"
