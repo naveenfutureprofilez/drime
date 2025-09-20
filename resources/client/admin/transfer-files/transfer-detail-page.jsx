@@ -26,6 +26,14 @@ import { VideoFileIcon } from '@ui/icons/material/VideoFile';
 import { AudioFileIcon } from '@ui/icons/material/AudioFile';
 import { ImageIcon } from '@ui/icons/material/Image';
 import { PictureAsPdfIcon } from '@ui/icons/material/PictureAsPdf';
+import { useState } from 'react';
+import { DialogTrigger } from '@ui/overlays/dialog/dialog-trigger';
+import { FilePreviewDialog } from '@common/uploads/components/file-preview/file-preview-dialog';
+import { Dialog } from '@ui/overlays/dialog/dialog';
+import { DialogHeader } from '@ui/overlays/dialog/dialog-header';
+import { DialogBody } from '@ui/overlays/dialog/dialog-body';
+import { CloseIcon } from '@ui/icons/material/Close';
+import { VisibilityIcon } from '@ui/icons/material/Visibility';
 
 function useTransferDetail(transferId) {
   return useQuery({
@@ -55,11 +63,196 @@ function useTransferDetail(transferId) {
   });
 }
 
+// Custom preview component for transfer files
+function TransferFilePreview({ file, transfer, isOpen, onClose }) {
+  const isImage = file.mime?.startsWith('image/');
+  const isVideo = file.mime?.startsWith('video/');
+  const isAudio = file.mime?.startsWith('audio/');
+  const isPdf = file.mime === 'application/pdf';
+  const isText = file.mime?.startsWith('text/') || 
+                 ['application/json', 'application/xml'].includes(file.mime);
+
+  // Generate preview URL based on transfer hash and file ID
+  const previewUrl = `/download/${transfer.hash}/${file.id}`;
+  const downloadUrl = previewUrl;
+
+  const renderPreview = () => {
+    if (isImage) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <img 
+            src={previewUrl} 
+            alt={file.name}
+            className="max-w-full max-h-full object-contain"
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'block';
+            }}
+          />
+          <div className="hidden text-center text-muted">
+            <InsertDriveFileIcon className="h-16 w-16 mx-auto mb-4" />
+            <p>Image preview not available</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (isVideo) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <video 
+            controls 
+            className="max-w-full max-h-full"
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'block';
+            }}
+          >
+            <source src={previewUrl} type={file.mime} />
+            Your browser does not support the video tag.
+          </video>
+          <div className="hidden text-center text-muted">
+            <VideoFileIcon className="h-16 w-16 mx-auto mb-4" />
+            <p>Video preview not available</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (isAudio) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <AudioFileIcon className="h-16 w-16 mx-auto mb-4 text-primary" />
+            <audio controls className="mb-4">
+              <source src={previewUrl} type={file.mime} />
+              Your browser does not support the audio element.
+            </audio>
+            <p className="text-sm text-muted">{file.name}</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (isPdf) {
+      return (
+        <div className="h-full">
+          <iframe 
+            src={previewUrl}
+            className="w-full h-full border-0"
+            title={file.name}
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'block';
+            }}
+          />
+          <div className="hidden text-center text-muted p-8">
+            <PictureAsPdfIcon className="h-16 w-16 mx-auto mb-4" />
+            <p>PDF preview not available</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (isText) {
+      return (
+        <div className="h-full p-4 overflow-auto">
+          <iframe 
+            src={previewUrl}
+            className="w-full h-full border border-divider rounded"
+            title={file.name}
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'block';
+            }}
+          />
+          <div className="hidden text-center text-muted p-8">
+            <InsertDriveFileIcon className="h-16 w-16 mx-auto mb-4" />
+            <p>Text preview not available</p>
+          </div>
+        </div>
+      );
+    }
+
+    // Default fallback for unsupported file types
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center text-muted">
+          <InsertDriveFileIcon className="h-16 w-16 mx-auto mb-4" />
+          <p className="mb-4">Preview not available for this file type</p>
+          <p className="text-sm mb-4">{file.name}</p>
+          <a 
+            href={downloadUrl}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark"
+            download
+          >
+            <DownloadIcon className="h-4 w-4" />
+            Download File
+          </a>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <DialogTrigger 
+      type="modal" 
+      isOpen={isOpen} 
+      onClose={onClose}
+    >
+      <Dialog size="fullScreen">
+        <DialogHeader>
+          <div className="flex items-center justify-between w-full">
+            <div>
+              <h3 className="text-lg font-semibold">{file.name}</h3>
+              <p className="text-sm text-muted">{file.formatted_size} • {file.mime}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <a 
+                href={downloadUrl}
+                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-primary text-white rounded hover:bg-primary-dark"
+                download
+              >
+                <DownloadIcon className="h-4 w-4" />
+                Download
+              </a>
+              <button 
+                onClick={onClose}
+                className="p-2 hover:bg-hover rounded"
+              >
+                <CloseIcon className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        </DialogHeader>
+        <DialogBody className="p-0 h-full">
+          {renderPreview()}
+        </DialogBody>
+      </Dialog>
+    </DialogTrigger>
+  );
+}
+
 export function TransferDetailPage() {
   const { transferId } = useParams();
   const { data: transfer, isLoading, error } = useTransferDetail(transferId);
+  const [activePreviewIndex, setActivePreviewIndex] = useState(null);
+  const [previewFile, setPreviewFile] = useState(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   console.log('TransferDetailPage render:', { transferId, isLoading, error, transfer });
+
+  const handleFilePreview = (file, index) => {
+    setPreviewFile(file);
+    setActivePreviewIndex(index);
+    setIsPreviewOpen(true);
+  };
+
+  const handleClosePreview = () => {
+    setIsPreviewOpen(false);
+    setPreviewFile(null);
+    setActivePreviewIndex(null);
+  };
 
   if (isLoading) {
     console.log('Showing loading state');
@@ -118,6 +311,15 @@ export function TransferDetailPage() {
     } else {
       return <InsertDriveFileIcon className="text-muted" />;
     }
+  };
+
+  const isPreviewable = (mimeType) => {
+    if (!mimeType) return false;
+    return mimeType.startsWith('image/') || 
+           mimeType.startsWith('video/') || 
+           mimeType.startsWith('audio/') ||
+           mimeType === 'application/pdf' ||
+           mimeType.startsWith('text/');
   };
 
   return (
@@ -274,7 +476,13 @@ export function TransferDetailPage() {
               <div className="p-4 pt-0">
                 <div className="space-y-12">
                   {transfer.files.map((file, index) => (
-                    <div key={file.id} className="flex items-center justify-between p-12 rounded-md bg-alt/30 hover:bg-alt/50 transition-colors">
+                    <div 
+                      key={file.id} 
+                      className={`flex items-center justify-between p-12 rounded-md bg-alt/30 hover:bg-alt/50 transition-colors ${
+                        isPreviewable(file.mime) ? 'cursor-pointer' : ''
+                      }`}
+                      onClick={() => isPreviewable(file.mime) && handleFilePreview(file, index)}
+                    >
                       <div className="flex items-center gap-12 min-w-0 flex-1">
                         <div className="flex-shrink-0">
                           {getFileIcon(file.mime)}
@@ -282,6 +490,11 @@ export function TransferDetailPage() {
                         <div className="min-w-0 flex-1">
                           <div className="font-medium text-sm truncate" title={file.name}>
                             {file.name}
+                            {isPreviewable(file.mime) && (
+                              <span className="ml-8 text-xs text-primary opacity-70">
+                                <Trans message="Click to preview" />
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-8 text-xs text-muted mt-1">
                             <span>{file.formatted_size}</span>
@@ -424,6 +637,16 @@ export function TransferDetailPage() {
           </div>
         </div>
       </div>
+      
+      {/* Custom Preview Dialog */}
+      {previewFile && (
+        <TransferFilePreview
+          file={previewFile}
+          transfer={transfer}
+          isOpen={isPreviewOpen}
+          onClose={handleClosePreview}
+        />
+      )}
     </div>
   );
 }
