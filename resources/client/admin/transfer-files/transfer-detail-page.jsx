@@ -18,6 +18,7 @@ import { PersonIcon } from '@ui/icons/material/Person';
 import { ScheduleIcon } from '@ui/icons/material/Schedule';
 import { SecurityIcon } from '@ui/icons/material/Security';
 import { MessageIcon } from '@ui/icons/material/Message';
+import { TitleIcon } from '@ui/icons/material/Title';
 import { FolderIcon } from '@ui/icons/material/Folder';
 import { IconButton } from '@ui/buttons/icon-button';
 import { Tooltip } from '@ui/tooltip/tooltip';
@@ -34,6 +35,11 @@ import { DialogHeader } from '@ui/overlays/dialog/dialog-header';
 import { DialogBody } from '@ui/overlays/dialog/dialog-body';
 import { CloseIcon } from '@ui/icons/material/Close';
 import { VisibilityIcon } from '@ui/icons/material/Visibility';
+import { DeleteIcon } from '@ui/icons/material/Delete';
+import { AccessTimeIcon } from '@ui/icons/material/AccessTime';
+import { ConfirmationDialog } from '@ui/overlays/dialog/confirmation-dialog';
+import { toast } from '@ui/toast/toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 function useTransferDetail(transferId) {
   return useQuery({
@@ -239,8 +245,44 @@ export function TransferDetailPage() {
   const [activePreviewIndex, setActivePreviewIndex] = useState(null);
   const [previewFile, setPreviewFile] = useState(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   console.log('TransferDetailPage render:', { transferId, isLoading, error, transfer });
+
+  // Mutation for expiring transfer
+  const expireTransferMutation = useMutation({
+    mutationFn: (transferId) => 
+      apiClient.post(`admin/transfer-files/${transferId}/expire`),
+    onSuccess: () => {
+      toast.positive('Transfer has been expired successfully');
+      queryClient.invalidateQueries(['admin-transfer-detail', transferId]);
+    },
+    onError: (error) => {
+      toast.danger(error?.response?.data?.message || 'Failed to expire transfer');
+    }
+  });
+
+  // Mutation for deleting transfer
+  const deleteTransferMutation = useMutation({
+    mutationFn: (transferId) => 
+      apiClient.delete(`admin/transfer-files/${transferId}`),
+    onSuccess: () => {
+      toast.positive('Transfer has been deleted successfully');
+      // Redirect to transfers list after successful deletion
+      window.location.href = '/admin/transfer-files';
+    },
+    onError: (error) => {
+      toast.danger(error?.response?.data?.message || 'Failed to delete transfer');
+    }
+  });
+
+  const handleExpireTransfer = () => {
+    expireTransferMutation.mutate(transferId);
+  };
+
+  const handleDeleteTransfer = () => {
+    deleteTransferMutation.mutate(transferId);
+  };
 
   const handleFilePreview = (file, index) => {
     setPreviewFile(file);
@@ -353,24 +395,74 @@ export function TransferDetailPage() {
           </div>
         </div>
         
-        {transfer.share_url && (
-          <div className="flex items-center gap-8">
-            <Tooltip label={<Trans message="Copy share link" />}>
-              <IconButton
-                onClick={() => navigator.clipboard.writeText(transfer.share_url)}
+        <div className="flex items-center gap-8">
+          {/* Admin Controls */}
+          {transfer.status !== 'expired' && (
+            <DialogTrigger type="modal" onClose={(isConfirmed) => {
+              if (isConfirmed) {
+                handleExpireTransfer();
+              }
+            }}>
+              <Button
+                variant="outline"
+                color="warning"
+                size="sm"
+                startIcon={<AccessTimeIcon />}
+                disabled={expireTransferMutation.isPending}
               >
-                <LinkIcon />
-              </IconButton>
-            </Tooltip>
+                <Trans message="Expire Transfer" />
+              </Button>
+              <ConfirmationDialog
+                title={<Trans message="Expire Transfer" />}
+                body={<Trans message="Are you sure you want to expire this transfer? This action cannot be undone and will make the transfer inaccessible." />}
+                confirm={<Trans message="Expire Transfer" />}
+                isDanger
+              />
+            </DialogTrigger>
+          )}
+          
+          <DialogTrigger type="modal" onClose={(isConfirmed) => {
+            if (isConfirmed) {
+              handleDeleteTransfer();
+            }
+          }}>
             <Button
               variant="outline"
-              onClick={() => window.open(transfer.share_url, '_blank')}
-              startIcon={<LinkIcon />}
+              color="danger"
+              size="sm"
+              startIcon={<DeleteIcon />}
+              disabled={deleteTransferMutation.isPending}
             >
-              <Trans message="Open share link" />
+              <Trans message="Delete Transfer" />
             </Button>
-          </div>
-        )}
+            <ConfirmationDialog
+              title={<Trans message="Delete Transfer" />}
+              body={<Trans message="Are you sure you want to delete this transfer? This action cannot be undone and will permanently remove all transfer data and files." />}
+              confirm={<Trans message="Delete Transfer" />}
+              isDanger
+            />
+          </DialogTrigger>
+          
+          {/* Share Link Controls */}
+          {transfer.share_url && (
+            <>
+              <Tooltip label={<Trans message="Copy share link" />}>
+                <IconButton
+                  onClick={() => navigator.clipboard.writeText(transfer.share_url)}
+                >
+                  <LinkIcon />
+                </IconButton>
+              </Tooltip>
+              <Button
+                variant="outline"
+                onClick={() => window.open(transfer.share_url, '_blank')}
+                startIcon={<LinkIcon />}
+              >
+                <Trans message="Open share link" />
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-24 lg:grid-cols-3">
@@ -443,18 +535,33 @@ export function TransferDetailPage() {
                   )}
                 </div>
                 
-                {transfer.message && (
+                {(transfer.title || transfer.message) && (
                   <>
                     <div className="border-t my-16" />
-                    <div>
-                      <label className="text-sm font-medium text-muted flex items-center gap-4">
-                        <MessageIcon />
-                        <Trans message="Message" />
-                      </label>
-                      <div className="mt-8 rounded-md bg-alt p-12 text-sm">
-                        {transfer.message}
+                    
+                    {transfer.title && (
+                      <div className="mb-16">
+                        <label className="text-sm font-medium text-muted flex items-center gap-4">
+                          <TitleIcon />
+                          <Trans message="Title" />
+                        </label>
+                        <div className="mt-8 rounded-md bg-alt p-12 text-sm font-medium">
+                          {transfer.title}
+                        </div>
                       </div>
-                    </div>
+                    )}
+                    
+                    {transfer.message && (
+                      <div>
+                        <label className="text-sm font-medium text-muted flex items-center gap-4">
+                          <MessageIcon />
+                          <Trans message="Message" />
+                        </label>
+                        <div className="mt-8 rounded-md bg-alt p-12 text-sm">
+                          {transfer.message}
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
