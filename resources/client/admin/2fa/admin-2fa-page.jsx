@@ -8,7 +8,7 @@ export function AdminTwoFactorAuthPage() {
   const { user } = useAuth();
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="w-full px-4 sm:px-6 md:px-8 mx-auto pt-20 md:pt-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
           <Trans message="Two-Factor Authentication" />

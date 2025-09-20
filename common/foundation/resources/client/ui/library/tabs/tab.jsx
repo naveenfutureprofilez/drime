@@ -27,7 +27,7 @@ export function Tab({
   const mergedClassname = clsx('tracking-wide overflow-hidden capitalize text-sm flex items-center justify-center outline-none transition-colors', 'focus-visible:ring focus-visible:ring-2 ring-inset rounded whitespace-nowrap cursor-pointer', width, textColor({
     isDisabled,
     isSelected
-  }), className, size === 'md' && `${padding} ${height || 'h-48'}`, size === 'sm' && `${padding} ${height || 'h-32'}`, isDisabled && 'pointer-events-none');
+  }), className, size === 'md' && `${padding} ${height || 'h-12'}`, size === 'sm' && `${padding} ${height || 'h-32'}`, isDisabled && 'pointer-events-none');
   const onKeyDown = e => {
     switch (e.key) {
       case 'ArrowLeft':

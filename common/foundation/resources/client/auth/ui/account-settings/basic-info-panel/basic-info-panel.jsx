@@ -29,7 +29,7 @@ export function BasicInfoPanel({ user }) {
   return (
     <AccountSettingsPanel
       id={AccountSettingsId.AccountDetails}
-      title={<h2 className=''>Update name and profile image </h2>}
+      title={<h2 className=''>Update Name and Profile Image </h2>}
       actions={
         <Button
           type="submit"
@@ -94,7 +94,7 @@ export function BasicInfoPanel({ user }) {
               </p>
             </div>
             <FormTextField
-              className="mb-4"
+              className="mb-2"
               name="first_name"
             />
           </div>

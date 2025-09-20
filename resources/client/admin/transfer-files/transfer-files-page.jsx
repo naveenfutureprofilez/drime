@@ -58,11 +58,11 @@ const columnConfig = [
               </>
             )}
           </div>
-          {file.title && (
+          {/* {file.title && (
             <div className="text-xs text-muted mt-1 truncate">
               Title: {file.title}
             </div>
-          )}
+          )} */}
         </div>
       </div>
     ),
@@ -226,7 +226,7 @@ function RowActions({ file }) {
 
 export function TransferFilesPage() {
   return (
-    <div className="p-6">
+    <div className="mb-2 w-full rounded-panel bg px-4 py-4 md:px-8 md:py-8 pt-20 md:pt-5">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
           <Trans message="Transfer Files Management" />
@@ -331,7 +331,7 @@ function PageActions() {
   const cleanupFiles = useCleanupTransferFiles();
   
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center gap-3">
       <Button
         variant="outline"
         color="primary"

@@ -59,7 +59,7 @@ export function AdminProfilePage() {
   };
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto pt-20 md:pt-5 px-4">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">
           <Trans message="Admin Profile" />

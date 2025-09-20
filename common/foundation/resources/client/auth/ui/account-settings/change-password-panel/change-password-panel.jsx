@@ -11,11 +11,11 @@ export function ChangePasswordPanel() {
   const form = useForm();
   const formId = useId();
   const updatePassword = useUpdatePassword(form);
-  return <AccountSettingsPanel id={AccountSettingsId.Password} title={<Trans message="Update password" />} actions={<Button className="button" type="submit" form={formId} variant="flat" color="primary" disabled={!form.formState.isValid || updatePassword.isPending}>
-    <span className='text-[18px] font-semibold'>Update password </span>
+  return <AccountSettingsPanel id={AccountSettingsId.Password} title={<Trans message="Update Password" />} actions={<Button className="button" type="submit" form={formId} variant="flat" color="primary" disabled={!form.formState.isValid || updatePassword.isPending}>
+    <span className='text-[18px] font-semibold'>Update Password </span>
   </Button>}>
     <div className="flex justify-center items-center ">
-      <Form className="w-full max-w-xl p-4 bg-white " form={form} id={formId} onSubmit={newValues => {
+      <Form className="w-full max-w-2xl p-4 bg-white " form={form} id={formId} onSubmit={newValues => {
         updatePassword.mutate(newValues, {
           onSuccess: () => {
             form.reset();

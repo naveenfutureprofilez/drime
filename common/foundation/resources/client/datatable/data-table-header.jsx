@@ -27,7 +27,7 @@ export function HeaderLayout({
   children,
   ...domProps
 }) {
-  return <div className="hidden-scrollbar relative mb-6 flex items-center gap-4 overflow-x-auto text-muted md:gap-12" {...domProps}>
+  return <div className="hidden-scrollbar relative mb-4 md:mb-6 flex flex-wrap items-center gap-4 overflow-x-auto text-muted md:gap-12" {...domProps}>
       {children}
     </div>;
 }

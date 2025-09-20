@@ -98,7 +98,7 @@ function getInputPadding({
   if (inputRadius === 'rounded-full') {
     return clsx(startAdornment ? 'pl-54' : 'pl-28', endAdornment ? 'pr-54' : 'pr-28');
   }
-  return clsx(startAdornment ? 'pl-46' : 'pl-12', endAdornment ? 'pr-46' : 'pr-12');
+  return clsx(startAdornment ? 'pl-46' : 'pl-6', endAdornment ? 'pr-46' : 'pr-48');
 }
 function getRadius(props) {
   const {

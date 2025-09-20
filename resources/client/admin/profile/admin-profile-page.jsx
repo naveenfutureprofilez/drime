@@ -33,7 +33,7 @@ export function AdminProfilePage() {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-6 mx-auto">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           <Trans message="Admin Profile" />
@@ -44,7 +44,7 @@ export function AdminProfilePage() {
       </div>
 
       <Tabs selectedTab={activeTab === 'profile' ? 0 : activeTab === 'security' ? 1 : 2} onTabChange={(index) => setActiveTab(index === 0 ? 'profile' : index === 1 ? 'security' : 'admin')} className="w-full">
-        <TabList className="grid w-full grid-cols-3">
+        <TabList className="grid w-full grid-cols-2">
           <Tab className="flex items-center gap-2">
             <MdPerson className="h-4 w-4" />
             <Trans message="Profile" />
@@ -53,13 +53,13 @@ export function AdminProfilePage() {
             <MdSecurity className="h-4 w-4" />
             <Trans message="Security" />
           </Tab>
-          <Tab className="flex items-center gap-2">
+        </TabList>
+          {/* <Tab className="flex items-center gap-2">
             <MdSettings className="h-4 w-4" />
             <Trans message="Admin Settings" />
-          </Tab>
-        </TabList>
+          </Tab> */}
 
-        <TabPanels className="mt-6">
+        <TabPanels className="mt-2 md:mt-6">
           <TabPanel>
             <BasicInfoPanel user={user} />
           </TabPanel>
