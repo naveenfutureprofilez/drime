@@ -1,6 +1,5 @@
 import React from 'react';
 import { DatatableDataQueryKey } from '@common/datatable/requests/paginated-resources';
-import { DataTablePage } from '@common/datatable/page/data-table-page';
 import { DataTableEmptyStateMessage } from '@common/datatable/page/data-table-emty-state-message';
 import { Trans } from '@ui/i18n/trans';
 import { DataTableContext } from '@common/datatable/page/data-table-context';
@@ -24,6 +23,8 @@ import { CalendarTodayIcon } from '@ui/icons/material/CalendarToday';
 import { PersonIcon } from '@ui/icons/material/Person';
 import { FormattedDate } from '@ui/i18n/formatted-date';
 import { FormattedRelativeTime } from '@ui/i18n/formatted-relative-time';
+import { useTransferFilesTable } from './hooks/use-transfer-files-table';
+import { TransferFilesCustomTable } from './components/transfer-files-custom-table';
 
 const columnConfig = [
   {
@@ -225,104 +226,137 @@ function RowActions({ file }) {
 }
 
 export function TransferFilesPage() {
-  return (
-    <div className="mb-2 w-full rounded-panel bg px-4 py-4 md:px-8 md:py-8 pt-20 md:pt-5">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          <Trans message="Transfer Files Management" />
-        </h1>
-        <p className="text-gray-600">
-          <Trans message="Monitor and manage all file transfers in your WeTransfer service" />
-        </p>
-      </div>
+  // Define filters
+  const filters = [
+    {
+      key: 'status',
+      label: <Trans message="Status" />,
+      description: <Trans message="Filter transfers by their current status" />,
+      defaultOperator: '=',
+      control: {
+        type: 'Select',
+        defaultValue: 'all',
+        options: [
+          {
+            key: 'all',
+            label: <Trans message="All Statuses" />,
+            value: '',
+          },
+          {
+            key: 'active',
+            label: <Trans message="Active" />,
+            value: 'active',
+          },
+          {
+            key: 'expired',
+            label: <Trans message="Expired" />,
+            value: 'expired',
+          },
+          {
+            key: 'download_limit_reached',
+            label: <Trans message="Download Limit Reached" />,
+            value: 'download_limit_reached',
+          },
+        ],
+      },
+    },
+    {
+      key: 'has_password',
+      label: <Trans message="Protection" />,
+      description: <Trans message="Filter by password protection" />,
+      defaultOperator: '=',
+      control: {
+        type: 'Select',
+        defaultValue: '',
+        options: [
+          {
+            key: 'all',
+            label: <Trans message="All Transfers" />,
+            value: '',
+          },
+          {
+            key: 'protected',
+            label: <Trans message="Password Protected" />,
+            value: '1',
+          },
+          {
+            key: 'unprotected',
+            label: <Trans message="No Password" />,
+            value: '0',
+          },
+        ],
+      },
+    },
+    {
+      key: 'created_at',
+      label: <Trans message="Created Date" />,
+      description: <Trans message="Filter by creation date" />,
+      defaultOperator: '>=',
+      control: {
+        type: 'DatePicker',
+      },
+    },
+  ];
 
-      <DataTablePage
-        endpoint="admin/transfer-files"
-        title={<Trans message="All Transfers" />}
-        queryKey={DatatableDataQueryKey('admin-transfer-files')}
+  // Create empty state message component
+  const emptyStateMessage = (
+    <DataTableEmptyStateMessage
+      image={<FileUploadIcon size="xl" className="text-muted" />}
+      title={<Trans message="No transfer files found" />}
+      filteringTitle={<Trans message="No transfers match your filters" />}
+      description={<Trans message="Transfers will appear here once users start uploading files through your WeTransfer service." />}
+    />
+  );
+  
+  // Use custom hook for table state management
+  const {
+    contextValue,
+    query,
+    data,
+    pagination,
+    isFiltering,
+    params,
+    setParams,
+    selectedRows,
+    setSelectedRows,
+    encodedFilters
+  } = useTransferFilesTable(
+    filters, 
+    {}, 
+    DatatableDataQueryKey('admin-transfer-files')
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Transfer Files Management
+          </h1>
+          <p className="text-lg text-gray-600">
+            Monitor and manage all file transfers in your WeTransfer service
+          </p>
+        </div>
+
+      <TransferFilesCustomTable
+        filters={filters}
         columns={columnConfig}
         searchPlaceholder={<Trans message="Search by filename, sender, or recipient..." />}
-        filters={[
-          {
-            key: 'status',
-            label: <Trans message="Status" />,
-            description: <Trans message="Filter transfers by their current status" />,
-            defaultOperator: '=',
-            control: {
-              type: 'Select',
-              defaultValue: 'all',
-              options: [
-                {
-                  key: 'all',
-                  label: <Trans message="All Statuses" />,
-                  value: '',
-                },
-                {
-                  key: 'active',
-                  label: <Trans message="Active" />,
-                  value: 'active',
-                },
-                {
-                  key: 'expired',
-                  label: <Trans message="Expired" />,
-                  value: 'expired',
-                },
-                {
-                  key: 'download_limit_reached',
-                  label: <Trans message="Download Limit Reached" />,
-                  value: 'download_limit_reached',
-                },
-              ],
-            },
-          },
-          {
-            key: 'has_password',
-            label: <Trans message="Protection" />,
-            description: <Trans message="Filter by password protection" />,
-            defaultOperator: '=',
-            control: {
-              type: 'Select',
-              defaultValue: '',
-              options: [
-                {
-                  key: 'all',
-                  label: <Trans message="All Transfers" />,
-                  value: '',
-                },
-                {
-                  key: 'protected',
-                  label: <Trans message="Password Protected" />,
-                  value: '1',
-                },
-                {
-                  key: 'unprotected',
-                  label: <Trans message="No Password" />,
-                  value: '0',
-                },
-              ],
-            },
-          },
-          {
-            key: 'created_at',
-            label: <Trans message="Created Date" />,
-            description: <Trans message="Filter by creation date" />,
-            defaultOperator: '>=',
-            control: {
-              type: 'DatePicker',
-            },
-          },
-        ]}
         actions={<PageActions />}
         selectedActions={<SelectedItemsActions />}
-        emptyStateMessage={
-          <DataTableEmptyStateMessage
-            image={<FileUploadIcon size="xl" className="text-muted" />}
-            title={<Trans message="No transfer files found" />}
-            filteringTitle={<Trans message="No transfers match your filters" />}
-            description={<Trans message="Transfers will appear here once users start uploading files through your WeTransfer service." />}
-          />
-        }
+        emptyStateMessage={emptyStateMessage}
+        contextValue={contextValue}
+        query={query}
+        data={data}
+        pagination={pagination}
+        isFiltering={isFiltering}
+        params={params}
+        setParams={setParams}
+        selectedRows={selectedRows}
+        setSelectedRows={setSelectedRows}
+        encodedFilters={encodedFilters}
       />
+      </div>
     </div>
   );
 }
@@ -335,26 +369,16 @@ function PageActions() {
       <Button
         variant="outline"
         color="primary"
-        startIcon={<DeleteSweepIcon />}
+        startIcon={<DeleteSweepIcon className="!m-0 !text-2xl me-2" />}
         onClick={() => {
           if (window.confirm('Clean up all expired transfers?\n\nThis will permanently delete all expired transfers and their files.')) {
             cleanupFiles.mutate();
           }
         }}
         disabled={cleanupFiles.isPending}
-        className="hover:bg-primary/5"
+        className="hover:bg-primary/5 rounded-xl !px-3"
       >
-        <Trans message="Cleanup Expired" />
-      </Button>
-      
-      <Button
-        variant="flat"
-        color="primary"
-        elementType={Link}
-        to="/admin"
-        startIcon={<VisibilityIcon />}
-      >
-        <Trans message="Dashboard" />
+        <p className='ms-2'>Cleanup Expired</p>
       </Button>
     </div>
   );

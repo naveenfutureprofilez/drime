@@ -12,14 +12,16 @@ export function AdminLayout() {
   const variant = isMobile ? 'withNavbar' : 'withoutNavbar';
 
   return <>
-    <div className='layout flex'>
+    <div className='layout flex w-full'>
       <AdminSidebars variant={variant} />
-      <DashboardContent>
-        <div className={clsx(variant === 'withoutNavbar' ? 'relative' : 'bg dark:bg-alt')}>
+      <div className='w-full py-4 xl:max-w-[calc(100%-300px)]'>
           <SetupAlertsList />
           <Outlet />
+      </div>
+      {/* <DashboardContent>
+        <div className={clsx(variant === 'withoutNavbar' ? 'relative' : 'bg dark:bg-alt')}>
         </div>
-      </DashboardContent>
+      </DashboardContent> */}
     </div>
     {/* <DashboardLayout name="admin" leftSidenavCanBeCompact className="bg-alt">
       {variant === 'withNavbar' && <DashboardNavbar size="sm" menuPosition="admin-navbar" />}

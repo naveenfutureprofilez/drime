@@ -8,7 +8,7 @@ export { LandingPageSectionActionButtons } from '@app/admin/appearance/sections/
 export { LandingPageSectionPrimaryFeatures } from '@app/admin/appearance/sections/landing-page-section/landing-page-section-primary-features';
 export { LandingPageSecondaryFeatures } from '@app/admin/appearance/sections/landing-page-section/landing-page-section-secondary-features';
 export { AdminDashboardPage } from '../dashboard/admin-dashboard-page';
-export { TransferFilesPage } from '../transfer-files/transfer-files-page';
+export { NewTransferFilesPage as TransferFilesPage } from '../transfer-files/new-transfer-files-page';
 export { TransferUsersPage } from '../users/transfer-users-page';
 export { TransferAnalyticsPage } from '../analytics/transfer-analytics-page';
 export { TransferSettingsPage } from '../settings/transfer-settings-page';

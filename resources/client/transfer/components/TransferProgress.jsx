@@ -14,6 +14,8 @@ export function TransferProgress({
   uploadedBytes = 0
 }) {
   const [displayProgress, setDisplayProgress] = useState(progress);
+  const [displayTimeRemaining, setDisplayTimeRemaining] = useState(timeRemaining);
+  const [lastValidTime, setLastValidTime] = useState(null);
   
   // Smooth progress animation - simplified
   useEffect(() => {
@@ -35,6 +37,27 @@ export function TransferProgress({
     
     setDisplayProgress(progress);
   }, [progress, status, displayProgress]);
+
+  // Stable time remaining display - prevent blinking
+  useEffect(() => {
+    // Only update time remaining if we have a valid value
+    if (timeRemaining > 0 && timeRemaining !== Infinity) {
+      setDisplayTimeRemaining(timeRemaining);
+      setLastValidTime(timeRemaining);
+    } else if (timeRemaining === 0 && progress >= 100) {
+      // Upload complete, set to 0
+      setDisplayTimeRemaining(0);
+      setLastValidTime(0);
+    } else if (!timeRemaining || timeRemaining === Infinity) {
+      // Keep showing last valid time if current calculation is invalid
+      if (lastValidTime !== null && progress < 100) {
+        setDisplayTimeRemaining(lastValidTime);
+      } else if (progress < 5) {
+        // Show "Calculating..." only at the very beginning
+        setDisplayTimeRemaining(null);
+      }
+    }
+  }, [timeRemaining, progress, lastValidTime]);
 
   // Auto complete when progress reaches 100% and status is success
   useEffect(() => {
@@ -113,7 +136,9 @@ export function TransferProgress({
                {/* • {files.length} file{files.length !== 1 ? 's' : ''} */}
             </p>
             <p className="font-normal !text-[16px] text-gray-500 mt-1 mb-2">
-              3m25Sec remaining
+              {displayTimeRemaining === null ? 'Calculating time...' : 
+               displayTimeRemaining === 0 ? 'Almost done...' :
+               `${formatTime(displayTimeRemaining)} remaining`}
             </p>
 
 

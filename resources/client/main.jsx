@@ -7,6 +7,10 @@ import { ignoredSentryErrors } from '@common/errors/ignored-sentry-errors';
 import { appRouter } from '@app/app-router';
 import { getBootstrapData } from '@ui/bootstrap-data/bootstrap-data-store';
 import { rootEl } from '@ui/root-el';
+import { suppressUseStateShimErrors } from '@app/admin/transfer-files/utils/suppress-console-errors';
+
+// Suppress React useState shim errors that don't affect functionality
+suppressUseStateShimErrors();
 const data = getBootstrapData();
 const sentryDsn = data.settings.logging.sentry_public;
 if (sentryDsn && import.meta.env.PROD) {

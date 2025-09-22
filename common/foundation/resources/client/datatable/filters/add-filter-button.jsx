@@ -18,7 +18,7 @@ export function AddFilterButton({
   const desktopButton = <Button variant={variant} color={color} startIcon={icon} disabled={disabled} size={size} className={className}>
       <Trans message="Filter" />
     </Button>;
-  const mobileButton = <IconButton color={color} size="sm" variant={variant} disabled={disabled} className={className}>
+  const mobileButton = <IconButton color={color} size="sm" variant={variant} disabled={disabled} className={`${className} !m-0`}>
       {icon}
     </IconButton>;
   return <DialogTrigger type="popover">

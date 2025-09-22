@@ -94,6 +94,7 @@ body {
   --white: #ffffff;
   --bg-sky: #b5e7ff;
   --black: #000000;
+  --bg-main: #08CF65;
   --bg-my-green: #08CF65;
   --gray: #cccccc;
   --gray2: #4D4D4D;
@@ -103,6 +104,10 @@ body {
   --text-graydark: #333333;
   --text-paragraph: #999999;
   --linear-gradient: linear-gradient(to right, #f9a8d4, #f9a8d4, #f472b6);
+}
+
+.bg-main { 
+  background: var(--bg-main);
 }
 
 .hero_bg {

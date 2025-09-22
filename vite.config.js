@@ -40,8 +40,12 @@ module.exports = defineConfig({
       '@ui': path.resolve(__dirname, 'common/foundation/resources/client/ui/library'),
       '@common': path.resolve(__dirname, 'common/foundation/resources/client'),
       '@app': path.resolve(__dirname, 'resources/client'),
+      // Ensure React is resolved consistently
+      'react': path.resolve(__dirname, 'node_modules/react'),
+      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
     },
     extensions: ['.js', '.jsx', '.ts', '.tsx', '.vue', '.mjs'],
+    dedupe: ['react', 'react-dom'],
   },
   build: {
     sourcemap: true,
@@ -84,6 +88,15 @@ module.exports = defineConfig({
         }
       }
     },
+  },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react/jsx-runtime',
+      '@tanstack/react-query',
+      'use-sync-external-store/shim'
+    ],
   },
   plugins: [
     react(),
