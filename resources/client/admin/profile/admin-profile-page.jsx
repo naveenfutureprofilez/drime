@@ -42,7 +42,6 @@ export function AdminProfilePage() {
           <Trans message="Manage your admin account settings and system configuration" />
         </p>
       </div>
-      {/* Tabs */}
       <div className="flex border-b border-gray-300 mb-4">
         <button
           className={`px-4 py-2 font-medium ${
@@ -62,11 +61,8 @@ export function AdminProfilePage() {
         </button>
       </div>
 
-      {/* Tab content */}
-      <div>
         {activeTab === 'profile' && <BasicInfoPanel user={user} />}
         {activeTab === 'password' && <ChangePasswordPanel />}
-      </div>
       {/* <Tabs selectedTab={activeTab === 'profile' ? 0 : activeTab === 'security' ? 1 : 2} onTabChange={(index) => setActiveTab(index === 0 ? 'profile' : index === 1 ? 'security' : 'admin')} className="w-full">
         <TabList className="grid w-full grid-cols-2">
           <Tab className="flex items-center gap-2">
