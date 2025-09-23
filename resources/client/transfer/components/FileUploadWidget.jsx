@@ -99,6 +99,7 @@ export function FileUploadWidget({
         sender_email: formData?.email || '',
         sender_name: formData?.name || '',
         message: formData?.message || '',
+        expected_files: totalFilesCount.toString(), // Add total files count for email logic
       },
       
       onError: (error) => {
@@ -538,7 +539,8 @@ export function FileUploadWidget({
             max_downloads: settings?.maxDownloads,
             sender_email: formData?.email, // Use formData parameter, not data
             sender_name: formData?.name, // Use formData parameter, not data
-            message: formData?.message // Use formData parameter, not data
+            message: formData?.message, // Use formData parameter, not data
+            expected_files: totalFilesCount || window.totalExpectedFiles || 1 // Add expected files count
           };
           
           console.log(`📤 Sending file entry request:`, requestPayload);

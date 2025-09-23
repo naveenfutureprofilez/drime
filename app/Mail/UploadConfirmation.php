@@ -41,15 +41,18 @@ class UploadConfirmation extends Mailable implements ShouldQueue
             $subject = "Your file has been uploaded successfully";
         }
         
+        // TEMP FIX: Hardcode the correct FROM address
+        $fromAddress = 'Noreply@spennypiggy.co';
+        
         Log::info('UploadConfirmation envelope created', [
             'subject' => $subject,
-            'from_address' => config('mail.from.address', 'hello@example.com'),
+            'from_address' => $fromAddress,
             'items_count' => $itemsCount,
             'guest_upload_hash' => $this->guestUpload->hash
         ]);
         
         return new Envelope(
-            from: config('mail.from.address', 'hello@example.com'),
+            from: $fromAddress,
             subject: $subject,
         );
     }

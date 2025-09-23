@@ -11,6 +11,7 @@ use App\Console\Commands\ClearFrontendCache;
 use App\Console\Commands\CreateAdminUser;
 use App\Console\Commands\CreateDemoAccounts;
 use App\Console\Commands\DeleteExpiredLinks;
+use App\Console\Commands\FinalizeStuckUploads;
 use App\Console\Commands\MigrateGuestUploadToPivot;
 use App\Console\Commands\TestUserLogin;
 use Illuminate\Console\Scheduling\Schedule;
@@ -25,6 +26,7 @@ class Kernel extends ConsoleKernel
         CreateAdminUser::class,
         DeleteExpiredLinks::class,
         CleanupExpiredGuestUploads::class,
+        FinalizeStuckUploads::class,
         MigrateGuestUploadToPivot::class,
         ClearFrontendCache::class,
         TestUserLogin::class,
@@ -34,6 +36,7 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command(DeleteExpiredLinks::class)->everyMinute();
         $schedule->command(CleanupExpiredGuestUploads::class)->daily();
+        $schedule->command(FinalizeStuckUploads::class)->everyTenMinutes();
 
         if (config('common.site.demo')) {
             $schedule->command(CleanDemoSite::class)->daily();

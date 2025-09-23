@@ -189,6 +189,7 @@ class GuestUploadService
         $recipientEmail = $request->string('sender_email')->toString();
         $senderName = $request->string('sender_name')->toString();
         $message = $request->string('message')->toString();
+        $expectedFiles = $request->integer('expected_files') ?: $metadata['expected_files'] ?? null;
         $isNewUploadGroup = !$uploadGroupHash;
         
         logger('GuestUploadService::handleTusUpload - Form data extracted', [
@@ -204,6 +205,11 @@ class GuestUploadService
             
             if (!$guestUpload) {
                 throw new \Exception('Upload group not found');
+            }
+            
+            // Update expected_files if it wasn't set on the original upload
+            if ($expectedFiles && !$guestUpload->expected_files) {
+                $guestUpload->update(['expected_files' => $expectedFiles]);
             }
         } else {
             // Create new GuestUpload if no upload_group_hash supplied
@@ -228,6 +234,7 @@ class GuestUploadService
                 ],
                 'recipient_emails' => $recipientEmail ?: null, // Store as string
                 'total_size' => 0, // Will be updated after attaching files
+                'expected_files' => $expectedFiles, // Track expected files for multi-file uploads
             ]);
         }
         
@@ -307,17 +314,44 @@ class GuestUploadService
             'type' => 'file',
         ]);
 
-        // OPTIMIZED: Use a single database transaction for better performance
-        \DB::transaction(function () use ($guestUpload, $fileEntry, $fileSize) {
+        // OPTIMIZED: Use a single database transaction for better performance with email dispatch logic
+        $emailWillBeSent = \DB::transaction(function () use ($guestUpload, $fileEntry, $fileSize, $recipientEmail) {
+            // Use lockForUpdate to prevent race conditions during email dispatch checks
+            $lockedUpload = GuestUpload::lockForUpdate()->find($guestUpload->id);
+            
             // Attach the file to the GuestUpload
-            $guestUpload->files()->attach($fileEntry->id);
+            $lockedUpload->files()->attach($fileEntry->id);
             
             // Update total size efficiently - just add the current file size instead of recalculating
-            $currentTotalSize = $guestUpload->total_size + $fileSize;
-            $guestUpload->update([
+            $currentTotalSize = $lockedUpload->total_size + $fileSize;
+            $lockedUpload->update([
                 'total_size' => $currentTotalSize,
                 'status' => 'completed' // Mark as completed immediately - background jobs handle the rest
             ]);
+            
+            // Refresh the upload to get updated file counts
+            $lockedUpload->refresh();
+            
+            // Check if email should be dispatched within the same transaction
+            $shouldSendEmail = $this->shouldDispatchEmail($lockedUpload);
+            
+            if ($shouldSendEmail) {
+                // Dispatch the email job
+                \App\Jobs\ProcessGuestUploadJob::dispatch(
+                    $lockedUpload->hash,
+                    $fileEntry->id,
+                    $recipientEmail
+                )->delay(now()->addSeconds(10));
+                
+                logger('Email job dispatched for guest upload', [
+                    'guest_upload_hash' => $lockedUpload->hash,
+                    'recipient_email' => $recipientEmail,
+                    'current_files' => $lockedUpload->files()->count(),
+                    'expected_files' => $lockedUpload->expected_files
+                ]);
+            }
+            
+            return $shouldSendEmail;
         });
         
         logger()->info('File entry created successfully', [
@@ -340,21 +374,7 @@ class GuestUploadService
             )->delay(now()->addSeconds(5)); // Longer delay since it's not user-facing
         }
         
-        // Email sending is completely optional - dispatch with delay
-        $emailWillBeSent = false;
-        if ($isNewUploadGroup && $recipientEmail) {
-            \App\Jobs\ProcessGuestUploadJob::dispatch(
-                $guestUpload->hash,
-                $fileEntry->id,
-                $recipientEmail
-            )->delay(now()->addSeconds(10)); // Much longer delay since it's not critical
-            
-            $emailWillBeSent = true;
-            logger('Email job dispatched for guest upload', [
-                'guest_upload_hash' => $guestUpload->hash,
-                'recipient_email' => $recipientEmail
-            ]);
-        }
+        // Email dispatch logic moved to transaction above for race condition protection
 
         logger('GuestUploadService::handleTusUpload - Completed', [
             'upload_key' => $uploadKey,
@@ -382,6 +402,31 @@ class GuestUploadService
             'share_url' => EmailUrlHelper::emailUrl("/share/{$guestUpload->hash}"),
             'email_sent' => $emailWillBeSent, // Only true if email job was actually dispatched
         ];
+    }
+
+    /**
+     * Determine if an email should be dispatched for a guest upload
+     */
+    private function shouldDispatchEmail(GuestUpload $guestUpload): bool
+    {
+        // Check if recipient email exists
+        if (empty($guestUpload->recipient_emails)) {
+            return false;
+        }
+        
+        // Check if email was already sent
+        if ($guestUpload->email_sent) {
+            return false;
+        }
+        
+        // If expected_files is null, send immediately (legacy behavior)
+        if ($guestUpload->expected_files === null) {
+            return true;
+        }
+        
+        // If expected_files is set, only send when we have all files
+        $currentFileCount = $guestUpload->files()->count();
+        return $currentFileCount >= $guestUpload->expected_files;
     }
 
     /**

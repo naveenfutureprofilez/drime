@@ -9,7 +9,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             line-height: 1.6;
             color: #333;
-            background-color: #e3f2fd;
+            background-color: #f0f0f0;
             margin: 0;
             padding: 20px;
         }
@@ -18,14 +18,14 @@
             margin: 0 auto;
             background-color: #ffffff;
             border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            /* box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); */
             overflow: hidden;
         }
         .header {
             text-align: center;
             padding: 40px 30px 30px;
-            background: linear-gradient(135deg, #4fc3f7 0%, #29b6f6 100%);
-            color: white;
+            /* background: #fbfbfb; */
+            color: rgb(0, 0, 0);
             position: relative;
         }
         .logo-container {
@@ -33,39 +33,38 @@
             align-items: center;
             justify-content: center;
             margin-bottom: 15px;
+            width: 100%;
         }
         .logo {
-            width: 40px;
-            height: 40px;
-            background: white;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 12px;
-            font-size: 20px;
-            font-weight: bold;
-            color: #4fc3f7;
+            width: 100%;
+            height: 100%;
+            max-width:150px; margin:auto;
         }
-        .app-name {
-            font-size: 28px;
-            font-weight: bold;
-            color: white;
-            letter-spacing: 2px;
+        .logo img {
+            width: 100%;
+            height: 100%;max-width:150px;
         }
+        
         .success-icon {
             font-size: 48px;
             margin: 10px 0;
         }
+        .title1 { 
+         margin-top: 50px !important;
+        }
         .header-title {
             font-size: 24px;
-            font-weight: 600;
+            font-weight: 600; text-align: center;
             margin: 10px 0 0 0;
             line-height: 1.2;
         }
+        .header-title.title2 {
+         text-align: center;
+            font-size: 22px !important;
+        }
         .stats {
             margin-top: 15px;
-            font-size: 14px;
+            font-size: 14px; text-align: center;
             opacity: 0.9;
         }
         .content {
@@ -73,7 +72,7 @@
         }
         .success-message {
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 60px;
         }
         .success-title {
             font-size: 20px;
@@ -82,7 +81,7 @@
             margin-bottom: 10px;
         }
         .success-subtitle {
-            color: #666;
+            color: #666; margin-top: 30px;
             font-size: 16px;
         }
         .download-button {
@@ -131,7 +130,7 @@
             background-color: #f8f9fa;
             padding: 15px;
             border-radius: 8px;
-            margin: 20px 0;
+            margin: 20px 0 0px 0;
             word-break: break-all;
         }
         .download-link-title {
@@ -162,7 +161,7 @@
             font-size: 14px;
         }
         .footer {
-            padding: 30px;
+            padding: 10px;
             text-align: center;
             background-color: #f8f9fa;
             border-top: 1px solid #e9ecef;
@@ -192,34 +191,28 @@
 </head>
 <body>
     <div class="email-container">
-        <div class="header">
+        
+      <div class="content">
             <div class="logo-container">
-                <div class="logo">🏝</div>
-                <div class="app-name">{{ $appName }}</div>
+                  <div class="logo">
+                  <img src="https://framerusercontent.com/images/YhGPy2lP1gtKzS0mhb6SSgDA.png?scale-down-to=512" />
+                  </div>
             </div>
-            <div class="success-icon">✅</div>
-            <h1 class="header-title">Your transfer has been sent<br>to your recipient(s)</h1>
+            <h1 class="header-title title1">You’ve received {{ $itemsCount }}</h1> 
+            <h1 class="header-title title2">{{ $itemsCount === 1 ? 'file' : 'files' }} with a total size of {{ $totalSizeFormatted }}.</h1>
             <div class="stats">
-                {{ $itemsCount }} {{ $itemsCount === 1 ? 'item' : 'items' }}, {{ $totalSizeFormatted }} in total
-                @if($expiresAtFormatted)
-                    • Expires on {{ $expiresAtFormatted }}
-                @endif
+                  {{ $itemsCount }} {{ $itemsCount === 1 ? 'item' : 'items' }}, {{ $totalSizeFormatted }} in total
+                  @if($expiresAtFormatted)
+                     • Expires on {{ $expiresAtFormatted }}
+                  @endif
             </div>
-        </div>
+            
 
-        <div class="content">
-            <div class="success-message">
-                <div class="success-subtitle">
-                    We give you a heads up the first time your link transfer is downloaded<br>
-                    (we won't email you each time). You can see if this transfer gets downloaded again in your account.
-                </div>
-            </div>
-
-            <div style="text-align: center;">
+            <!-- <div style="text-align: center;">
                 <a href="{{ $linkUrl }}" class="download-button">View transfer</a>
-            </div>
+            </div> -->
 
-            @if(count($filesList) > 0)
+            <!-- @if(count($filesList) > 0)
                 <div class="files-section">
                     <div class="section-title">{{ $itemsCount }} {{ $itemsCount === 1 ? 'item' : 'items' }}</div>
                     @foreach($filesList as $file)
@@ -229,35 +222,39 @@
                         </div>
                     @endforeach
                 </div>
-            @endif
+            @endif -->
 
             <div class="download-link">
                 <div class="download-link-title">Download link</div>
                 <a href="{{ $linkUrl }}">{{ $linkUrl }}</a>
             </div>
 
-            @if($expiresAtFormatted)
+            <div class="success-message">
+                <br class="success-subtitle">
+                    Thanks for using Drime! </br>
+We help you share files quickly, securely, and without hassle.
+                    <!-- We'll email you a confirmation as soon as your files have been downloaded. -->
+                </div>
+            </div>
+
+            <!-- @if($expiresAtFormatted)
                 <div class="expiry-notice">
                     <div class="icon">⏰</div>
                     <div class="expiry-text">Expires on {{ $expiresAtFormatted }}</div>
                 </div>
-            @endif
+            @endif -->
 
-            <div class="social-proof">
+            <!-- <div class="social-proof">
                 <div class="social-proof-text">
                     Want to send more files? Start a new transfer.
                 </div>
+            </div> -->
+            <div class="footer">
+                <p>Need to send more files? <a href="{{ config('app.url') }}">Start a new transfer</a></p>
+                <!-- <p><a href="{{ config('app.url') }}">DRIME</a></p> -->
             </div>
         </div>
 
-        <div class="footer">
-            <p>Need to send more files? <a href="{{ config('app.url') }}">Start a new transfer</a></p>
-            <p style="margin-top: 20px;">
-                <a href="#">About {{ $appName }}</a> • 
-                <a href="#">Help</a> • 
-                <a href="#">Legal</a>
-            </p>
-        </div>
     </div>
 </body>
 </html>

@@ -54,6 +54,15 @@ class ProcessGuestUploadJob implements ShouldQueue
                 ]);
                 return;
             }
+            
+            // Early return if email was already sent (defensive programming)
+            if ($guestUpload->email_sent) {
+                Log::info('Email already sent for guest upload, skipping job', [
+                    'guest_upload_hash' => $this->guestUploadHash,
+                    'email_sent_at' => $guestUpload->email_sent_at
+                ]);
+                return;
+            }
 
             // Send confirmation email if recipient email is provided
             if ($this->recipientEmail && !$guestUpload->email_sent) {

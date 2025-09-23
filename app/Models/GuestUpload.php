@@ -31,7 +31,8 @@ class GuestUpload extends Model
         'message',
         'last_downloaded_at',
         'email_sent',
-        'email_sent_at'
+        'email_sent_at',
+        'expected_files'
     ];
 
     protected $casts = [
@@ -40,6 +41,7 @@ class GuestUpload extends Model
         'total_size' => 'integer',
         'download_count' => 'integer',
         'max_downloads' => 'integer',
+        'expected_files' => 'integer',
         'expires_at' => 'datetime',
         'last_downloaded_at' => 'datetime',
         'email_sent_at' => 'datetime',
