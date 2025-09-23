@@ -4,6 +4,7 @@ import { RiEyeLine } from "react-icons/ri";
 import { FileSize } from '../../components/FileSize';
 import NoData from '../../components/NoData';
 import { useFileDrop } from '../../components/useFileDrop';
+import ImagePreviewModal from '../../components/ImagePreviewModal';
 import { useState } from 'react';
 
 export default function FileData({ isLocked, step, selectedFiles, setSelectedFiles, setStep, hash, hasPassword, password }) {
@@ -26,20 +27,39 @@ export default function FileData({ isLocked, step, selectedFiles, setSelectedFil
 
     const fileIcons = {
         video: <VideoIcon  className="" />,
-        image: <FigmaImageIcon size={30} className="" />,
-        audio: <FigmaAudioIcon size={30} className="" />,
-        other: <FigmaDocumentIcon size={30} className="" />,
-        doc: <FigmaDocumentIcon size={30} className="" />,
+        image: <FigmaImageIcon size={34} className="" />,
+        audio: <FigmaAudioIcon size={34} className="" />,
+        other: <FigmaDocumentIcon size={34} className="" />,
+        doc: <FigmaDocumentIcon size={34} className="" />,
     };
 
     const handleRemove = (index) => {
         setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
     };
 
+    // State for image preview modal
+    const [previewModalOpen, setPreviewModalOpen] = useState(false);
+    const [selectedFileForPreview, setSelectedFileForPreview] = useState(null);
+
+    // Helper function to check if file is an image
+    const isImageFile = (file) => {
+        if (!file) return false;
+        const imageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+        return imageTypes.includes(file.type) || (file.filename && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.filename));
+    };
+
     const handleView = (file) => {
-        if (file instanceof File) {
-            // const fileURL = URL?.createObjectURL(file);
-            window.open(file, '_blank');
+        if (isImageFile(file)) {
+            // Open image preview modal
+            setSelectedFileForPreview(file);
+            setPreviewModalOpen(true);
+        } else {
+            // For non-images, just open in new tab (existing behavior)
+            const downloadParams = hasPassword && password 
+                ? `?password=${encodeURIComponent(password)}` 
+                : "";
+            const viewUrl = `/download/${hash}/${file.id}${downloadParams}`;
+            window.open(viewUrl, '_blank');
         }
     };
 
@@ -148,7 +168,7 @@ export default function FileData({ isLocked, step, selectedFiles, setSelectedFil
                     selectedFiles.map((file, index) => (
                         <div key={index} className="between-align  bg-white rounded-[10px]   transition-all duration-200 mb-3">
                             <div className="flex items-center">
-                                <div className="flex-shrink-0 p-2 bg-gray-50 rounded-[10px]">
+                                <div className="flex-shrink-0 pe-2 bg-gray-50 rounded-[10px]">
                                     {fileIcons[getMime(file.type)]}
                                 </div>
                                 <div className='max-w-[90%]'>
@@ -164,15 +184,20 @@ export default function FileData({ isLocked, step, selectedFiles, setSelectedFil
                             <div className="ml-auto ps-3 flex items-center gap-2">
                                 {step === 4 && !file.files && (
                                     <>
-                                        <button 
-                                            onClick={() => handleView(file)}
-                                            className="p-2 rounded-[10px] bg-gray-100 hover:bg-gray-200 transition-all duration-200"
-                                        >
-                                            <EyeFigmaIcon />
-                                        </button>
+                                        {/* Show view button for images only */}
+                                        {isImageFile(file) && (
+                                            <button 
+                                                onClick={() => handleView(file)}
+                                                className="p-2 rounded-[10px] bg-blue-100 hover:bg-blue-200 transition-all duration-200"
+                                                title="Preview image"
+                                            >
+                                                <EyeFigmaIcon />
+                                            </button>
+                                        )}
                                         <button 
                                             onClick={() => handleIndividualDownload(file)}
                                             className="p-2 rounded-[10px] bg-green-100 hover:bg-green-200 transition-all duration-200"
+                                            title="Download file"
                                         >
                                             <DownloadFigmaIcon/>
                                         </button>
@@ -192,6 +217,15 @@ export default function FileData({ isLocked, step, selectedFiles, setSelectedFil
                 )}
             </div>
             
+            {/* Image preview modal */}
+            <ImagePreviewModal 
+                isOpen={previewModalOpen}
+                onClose={() => setPreviewModalOpen(false)}
+                file={selectedFileForPreview}
+                hash={hash}
+                hasPassword={hasPassword}
+                password={password}
+            />
         </>
     );
 }

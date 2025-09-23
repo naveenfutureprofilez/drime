@@ -12,7 +12,7 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
-class UploadConfirmation extends Mailable implements ShouldQueue
+class UploadConfirmation extends Mailable // implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
@@ -36,23 +36,20 @@ class UploadConfirmation extends Mailable implements ShouldQueue
         $itemsCount = $this->guestUpload->files()->count();
         
         if ($itemsCount > 1) {
-            $subject = "Your files have been uploaded successfully";
+            $subject = "📂 You’ve received files via Drime";
         } else {
-            $subject = "Your file has been uploaded successfully";
+            $subject = "📂 You’ve received a file via Drime";
         }
-        
-        // TEMP FIX: Hardcode the correct FROM address
-        $fromAddress = 'Noreply@spennypiggy.co';
         
         Log::info('UploadConfirmation envelope created', [
             'subject' => $subject,
-            'from_address' => $fromAddress,
+            'from_address' => config('mail.from.address', 'hello@example.com'),
             'items_count' => $itemsCount,
             'guest_upload_hash' => $this->guestUpload->hash
         ]);
         
         return new Envelope(
-            from: $fromAddress,
+            from: config('mail.from.address', 'hello@example.com'),
             subject: $subject,
         );
     }

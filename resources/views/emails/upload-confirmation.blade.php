@@ -198,8 +198,8 @@
                   <img src="https://framerusercontent.com/images/YhGPy2lP1gtKzS0mhb6SSgDA.png?scale-down-to=512" />
                   </div>
             </div>
-            <h1 class="header-title title1">You’ve received {{ $itemsCount }}</h1> 
-            <h1 class="header-title title2">{{ $itemsCount === 1 ? 'file' : 'files' }} with a total size of {{ $totalSizeFormatted }}.</h1>
+            <h1 class="header-title title1">You’ve received {{ $itemsCount }} {{ $itemsCount === 1 ? 'file' : 'files' }} </h1> 
+            <h1 class="header-title title2">with a total size of {{ $totalSizeFormatted }}.</h1>
             <div class="stats">
                   {{ $itemsCount }} {{ $itemsCount === 1 ? 'item' : 'items' }}, {{ $totalSizeFormatted }} in total
                   @if($expiresAtFormatted)

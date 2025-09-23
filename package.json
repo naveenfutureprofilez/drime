@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
+    "cache": "php artisan cache:clear && php artisan config:clear && php artisan route:clear && php artisan view:clear",
     "build:fresh": "php artisan frontend:clear-cache",
     "preview": "vite preview",
     "test": "jest",
