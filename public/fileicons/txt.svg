@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="TXT" xmlns="http://www.w3.org/2000/svg" viewBox="15 15 400 505">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #2b669f;
+      }
+
+      .cls-2 {
+        fill: #fff;
+        font-family: Gilroy-Heavy, Gilroy-Heavy;
+        font-size: 167.46px;
+        font-weight: 800;
+      }
+    </style>
+  </defs>
+  <path class="cls-1" d="m417.21,92.23v425H92.21c-41.42,0-75-33.58-75-75V17.23h325c41.42,0,75,33.58,75,75Z"/>
+  <text class="cls-2" transform="translate(70.98 325.31)"><tspan x="0" y="0">TXT</tspan></text>
+</svg>

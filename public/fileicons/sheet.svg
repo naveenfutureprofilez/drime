@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Sheet" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 412 512.84">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+      }
+
+      .cls-2 {
+        fill: #00ac47;
+      }
+    </style>
+  </defs>
+  <path class="cls-2" d="m412,87.84v425H87c-41.42,0-75-33.58-75-75V12.84h325c41.42,0,75,33.58,75,75Z"/>
+  <rect class="cls-1" x="87" y="175.34" width="250" height="35"/>
+  <rect class="cls-1" x="87" y="245.84" width="250" height="35"/>
+  <rect class="cls-1" x="87" y="314.84" width="250" height="35"/>
+  <rect class="cls-1" x="18" y="245" width="173" height="35" transform="translate(367 158) rotate(90)"/>
+  <rect class="cls-1" x="233" y="245" width="173" height="35" transform="translate(582 -57) rotate(90)"/>
+  <rect class="cls-1" x="125" y="246" width="173" height="35" transform="translate(475 52) rotate(90)"/>
+</svg>

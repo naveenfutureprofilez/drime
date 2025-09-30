@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Slide" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 424.39 636.26">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+      }
+
+      .cls-2 {
+        fill: #ffba00;
+      }
+    </style>
+  </defs>
+  <path class="cls-2" d="m424.39,75v425H99.39c-41.42,0-75-33.58-75-75V0h325c41.42,0,75,33.58,75,75Z"/>
+  <rect class="cls-1" x="99.39" y="160" width="250" height="40"/>
+  <rect class="cls-1" x="99.39" y="299.5" width="250" height="40"/>
+  <rect class="cls-1" x="30.39" y="232.16" width="173" height="35" transform="translate(366.55 132.77) rotate(90)"/>
+  <rect class="cls-1" x="245.39" y="232.16" width="173" height="35" transform="translate(581.55 -82.23) rotate(90)"/>
+</svg>

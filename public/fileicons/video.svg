@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Video" xmlns="http://www.w3.org/2000/svg" viewBox="15 50 400 505">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+      }
+
+      .cls-2 {
+        fill: #ff274a;
+      }
+    </style>
+  </defs>
+  <path class="cls-2" d="m418.42,123.39v425H93.42c-41.42,0-75-33.58-75-75V48.39h325c41.42,0,75,33.58,75,75Z"/>
+  <polygon class="cls-1" points="298.19 298.81 268.29 316.07 199 356.08 169 373.4 169 224.1 199 241.42 268.3 281.43 298.08 298.62 298.19 298.81"/>
+</svg>
