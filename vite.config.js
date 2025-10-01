@@ -22,6 +22,11 @@ module.exports = defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/fileicons': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+      },
     },
     // Enable history API fallback for React Router
     historyApiFallback: {

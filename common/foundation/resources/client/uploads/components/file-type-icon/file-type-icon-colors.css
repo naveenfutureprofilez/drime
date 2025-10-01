@@ -1,0 +1,102 @@
+/* File type icon color classes for SVG images */
+/* Note: Since we're using <img> tags with SVG files, we can't change colors directly.
+   The SVG files already have their intended colors built-in. */
+
+/* Archive files - No filter needed, SVG has correct colors */
+.archive-file-color {
+  /* SVG already has yellow/gold color */
+}
+
+/* Audio files - No filter needed, SVG has correct colors */
+.audio-file-color {
+  /* SVG already has purple color */
+}
+
+/* Document files - No filter needed, SVG has correct colors */
+.docs-file-color,
+.document-file-color,
+.word-file-color {
+  /* SVG already has blue color */
+}
+
+/* Default files - No filter needed, SVG has correct colors */
+.file-file-color,
+.default-file-color {
+  /* SVG already has gray color */
+}
+
+/* Folder - No filter needed, SVG has correct colors */
+.folder-file-color {
+  /* SVG already has yellow/gold color */
+}
+
+/* PDF files - No filter needed, SVG has correct colors */
+.pdf-file-color {
+  /* SVG already has red color */
+}
+
+/* Image/Photo files - No filter needed, SVG has correct colors */
+.photos-file-color,
+.image-file-color {
+  /* SVG already has orange color */
+}
+
+/* Spreadsheet files - No filter needed, SVG has correct colors */
+.sheet-file-color,
+.spreadsheet-file-color,
+.excel-file-color {
+  /* SVG already has green color */
+}
+
+/* Presentation files - No filter needed, SVG has correct colors */
+.slide-file-color,
+.powerpoint-file-color,
+.presentation-file-color {
+  /* SVG already has amber/gold color */
+}
+
+/* Text files - No filter needed, SVG has correct colors */
+.txt-file-color,
+.text-file-color {
+  /* SVG already has blue color */
+}
+
+/* Video files - No filter needed, SVG has correct colors */
+.video-file-color {
+  /* SVG already has red/pink color */
+}
+
+/* Legacy color classes for backward compatibility */
+.powerPoint-file-color {
+  /* SVG already has correct color */
+}
+
+.sharedFolder-file-color {
+  /* SVG already has correct color */
+}
+
+/* Icon size classes */
+.file-type-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.file-type-icon.small {
+  width: 16px;
+  height: 16px;
+}
+
+.file-type-icon.medium {
+  width: 32px;
+  height: 32px;
+}
+
+.file-type-icon.large {
+  width: 48px;
+  height: 48px;
+}
+
+.file-type-icon.xl {
+  width: 64px;
+  height: 64px;
+}

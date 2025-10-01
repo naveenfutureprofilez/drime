@@ -5,6 +5,8 @@ import { FileSize } from '../../components/FileSize';
 import NoData from '../../components/NoData';
 import { useFileDrop } from '../../components/useFileDrop';
 import ImagePreviewModal from '../../components/ImagePreviewModal';
+import { FileTypeIcon } from '@common/uploads/components/file-type-icon/file-type-icon';
+import '@common/uploads/components/file-type-icon/file-type-icon-colors.css';
 import { useState } from 'react';
 
 export default function FileData({ isLocked, step, selectedFiles, setSelectedFiles, setStep, hash, hasPassword, password }) {
@@ -15,22 +17,62 @@ export default function FileData({ isLocked, step, selectedFiles, setSelectedFil
     };
 
     const { isDragging, handleDragOver, handleDragLeave, handleDrop } = useFileDrop(handleDropAction);
-    // File type icons
-    const getMime = (type) => {
-        if (!type) return 'other';
-        if (type.includes('image')) return 'image';
-        if (type.includes('video')) return 'video';
-        if (type.includes('audio')) return 'audio';
-        if (type.includes('doc')) return 'doc';
-        return 'other';
-    };
-
-    const fileIcons = {
-        video: <VideoIcon  className="" />,
-        image: <FigmaImageIcon size={34} className="" />,
-        audio: <FigmaAudioIcon size={34} className="" />,
-        other: <FigmaDocumentIcon size={34} className="" />,
-        doc: <FigmaDocumentIcon size={34} className="" />,
+    // Enhanced file type detection function
+    const getFileTypeFromMimeAndName = (file) => {
+        const mimeType = file.type || '';
+        const fileName = file.filename || file.name || '';
+        const extension = fileName.toLowerCase().split('.').pop();
+        
+        // Handle folders
+        if (file.files && file.files.length > 0) {
+            return 'folder';
+        }
+        
+        // Use MIME type if available
+        if (mimeType) {
+            if (mimeType.startsWith('image/')) return 'photos';
+            if (mimeType.startsWith('video/')) return 'video';
+            if (mimeType.startsWith('audio/')) return 'audio';
+            if (mimeType === 'application/pdf') return 'pdf';
+            if (mimeType.includes('word') || mimeType.includes('document')) return 'docs';
+            if (mimeType.includes('sheet') || mimeType.includes('excel')) return 'sheet';
+            if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return 'slide';
+            if (mimeType.includes('zip') || mimeType.includes('archive')) return 'archive';
+            if (mimeType.includes('text/plain')) return 'txt';
+        }
+        
+        // Fallback to extension-based detection
+        if (extension) {
+            // Images
+            if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(extension)) return 'photos';
+            
+            // Videos
+            if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp'].includes(extension)) return 'video';
+            
+            // Audio
+            if (['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma'].includes(extension)) return 'audio';
+            
+            // Documents
+            if (['doc', 'docx', 'odt', 'rtf'].includes(extension)) return 'docs';
+            
+            // Spreadsheets
+            if (['xls', 'xlsx', 'ods', 'csv'].includes(extension)) return 'sheet';
+            
+            // Presentations
+            if (['ppt', 'pptx', 'odp'].includes(extension)) return 'slide';
+            
+            // PDF
+            if (extension === 'pdf') return 'pdf';
+            
+            // Archives
+            if (['zip', 'rar', '7z', 'tar', 'gz', 'bz2'].includes(extension)) return 'archive';
+            
+            // Text files
+            if (['txt', 'md', 'log', 'json', 'xml', 'csv', 'yaml', 'yml'].includes(extension)) return 'txt';
+        }
+        
+        // Default fallback
+        return 'file';
     };
 
     const handleRemove = (index) => {
@@ -168,11 +210,16 @@ export default function FileData({ isLocked, step, selectedFiles, setSelectedFil
                     selectedFiles.map((file, index) => (
                         <div key={index} className="between-align  bg-white rounded-[10px]   transition-all duration-200 mb-3">
                             <div className="flex items-center">
-                                <div className="flex-shrink-0 pe-2 bg-gray-50 rounded-[10px]">
-                                    {fileIcons[getMime(file.type)]}
+                                <div className="flex-shrink-0 pe-2 bg-gray-50 rounded-[10px] p-2">
+                                    <FileTypeIcon 
+                                        type={getFileTypeFromMimeAndName(file)}
+                                        mime={file.type}
+                                        size="32"
+                                        className="file-type-icon"
+                                    />
                                 </div>
                                 <div className='max-w-[90%]'>
-                                    <h6 className="heading text-start break-all text-[16px] md:!text-[18px] line-clamp-1 font-semibold text-black">
+                                    <h6 className="heading capitalize text-start break-all text-[16px] md:!text-[18px] line-clamp-1 font-semibold text-black">
                                         {file.filename || file.folderName || file?.name}
                                     </h6>
                                     <p className="normal-para text-[14px] md:!text-[16px] !text-left text-gray-500">

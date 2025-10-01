@@ -1,40 +1,83 @@
 import clsx from 'clsx';
-import { DefaultFileIcon } from './icons/default-file-icon';
-import { AudioFileIcon } from './icons/audio-file-icon';
-import { VideoFileIcon } from './icons/video-file-icon';
-import { TextFileIcon } from './icons/text-file-icon';
-import { PdfFileIcon } from './icons/pdf-file-icon';
-import { ArchiveFileIcon } from './icons/archive-file-icon';
-import { FolderFileIcon } from './icons/folder-file-icon';
-import { ImageFileIcon } from './icons/image-file-icon';
-import { PowerPointFileIcon } from './icons/power-point-file-icon';
-import { WordFileIcon } from './icons/word-file-icon';
-import { SpreadsheetFileIcon } from './icons/spreadsheet-file-icon';
-import { SharedFolderFileIcon } from './icons/shared-folder-file-icon';
 export function FileTypeIcon({
   type,
   mime,
   className,
-  size
+  size = '24'
 }) {
   if (!type && mime) {
     type = mime.split('/')[0];
   }
-  // @ts-ignore
-  const Icon = FileTypeIcons[type] || FileTypeIcons.default;
-  return <Icon size={size} className={clsx(className, `${type}-file-color`)} viewBox="0 0 64 64" />;
+  
+  // Enhanced file type detection
+  if (mime) {
+    const mimeType = mime.toLowerCase();
+    if (mimeType.includes('word') || mimeType.includes('document')) {
+      type = 'docs';
+    } else if (mimeType.includes('sheet') || mimeType.includes('excel')) {
+      type = 'sheet';
+    } else if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) {
+      type = 'slide';
+    } else if (mimeType.includes('zip') || mimeType.includes('archive') || mimeType.includes('rar') || mimeType.includes('7z')) {
+      type = 'archive';
+    } else if (mimeType.includes('plain')) {
+      type = 'txt';
+    } else if (mimeType.startsWith('image/')) {
+      type = 'photos';
+    }
+  }
+  
+  // Get the SVG file path
+  const svgFile = getSvgFileName(type);
+  const svgPath = `/fileicons/${svgFile}`;
+  
+  // Convert size to pixels if it's a number
+  const sizeInPx = typeof size === 'string' ? (size.includes('px') ? size : `${size}px`) : `${size}px`;
+  
+  return (
+    <img 
+      src={svgPath}
+      alt={`${type} file icon`}
+      className={clsx('file-type-icon', className, `${type}-file-color`)}
+      style={{
+        width: "35px",
+        height: "35px",
+        objectFit: 'contain',
+        display: 'block'
+      }}
+    />
+  );
 }
-const FileTypeIcons = {
-  default: DefaultFileIcon,
-  audio: AudioFileIcon,
-  video: VideoFileIcon,
-  text: TextFileIcon,
-  pdf: PdfFileIcon,
-  archive: ArchiveFileIcon,
-  folder: FolderFileIcon,
-  sharedFolder: SharedFolderFileIcon,
-  image: ImageFileIcon,
-  powerPoint: PowerPointFileIcon,
-  word: WordFileIcon,
-  spreadsheet: SpreadsheetFileIcon
-};
+
+// Map file types to SVG filenames
+function getSvgFileName(type) {
+  const svgMap = {
+    // Primary mappings
+    file: 'file.svg',
+    default: 'file.svg',
+    audio: 'audio.svg',
+    video: 'video.svg',
+    text: 'txt.svg',
+    txt: 'txt.svg',
+    pdf: 'pdf.svg',
+    archive: 'archive.svg',
+    folder: 'folder.svg',
+    image: 'photos.svg',
+    photos: 'photos.svg',
+    docs: 'docs.svg',
+    document: 'docs.svg',
+    word: 'docs.svg',
+    sheet: 'sheet.svg',
+    spreadsheet: 'sheet.svg',
+    excel: 'sheet.svg',
+    slide: 'slide.svg',
+    powerpoint: 'slide.svg',
+    presentation: 'slide.svg',
+    
+    // Legacy support
+    sharedFolder: 'folder.svg',
+    powerPoint: 'slide.svg',
+  };
+  
+  return svgMap[type] || svgMap.default;
+}
