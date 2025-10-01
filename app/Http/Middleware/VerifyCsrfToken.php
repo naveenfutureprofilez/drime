@@ -15,6 +15,7 @@ class VerifyCsrfToken extends BaseVerifyCsrfToken
         'api/v1/guest/upload',
         'api/v1/guest/tus/entries',
         'api/v1/guest/upload/*/verify-password',
+        'api/v1/guest-uploads/send-email',
         'api/v1/quick-share/uploads',
         'api/v1/quick-share/email-share',
         'api/v1/tus/*', // TUS protocol endpoints

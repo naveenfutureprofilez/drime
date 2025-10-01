@@ -56,16 +56,19 @@ class ProcessGuestUploadJob implements ShouldQueue
             }
             
             // Early return if email was already sent (defensive programming)
-            if ($guestUpload->email_sent) {
-                Log::info('Email already sent for guest upload, skipping job', [
+            // OR if manual email sending was attempted (takes precedence)
+            if ($guestUpload->email_sent || ($guestUpload->metadata['manual_email_sent'] ?? false)) {
+                Log::info('Email already sent or manual email attempted for guest upload, skipping job', [
                     'guest_upload_hash' => $this->guestUploadHash,
-                    'email_sent_at' => $guestUpload->email_sent_at
+                    'email_sent_at' => $guestUpload->email_sent_at,
+                    'manual_email_sent' => $guestUpload->metadata['manual_email_sent'] ?? false
                 ]);
                 return;
             }
 
             // Send confirmation email if recipient email is provided
-            if ($this->recipientEmail && !$guestUpload->email_sent) {
+            // BUT skip if manual email was already attempted
+            if ($this->recipientEmail && !$guestUpload->email_sent && !($guestUpload->metadata['manual_email_sent'] ?? false)) {
                 Log::info('About to send confirmation email', [
                     'recipient_email' => $this->recipientEmail,
                     'guest_upload_hash' => $this->guestUploadHash,

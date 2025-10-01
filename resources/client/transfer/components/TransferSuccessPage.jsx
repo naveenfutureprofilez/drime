@@ -1,10 +1,7 @@
 // Your consolidated component file: TransferSuccessPage.jsx
 
 import React, { useState } from 'react';
-import { AiOutlineCopy } from 'react-icons/ai';
-import Shared from "../../../../public/images/Shared.png"
 import Mail from "../../../../public/images/Mail.png"
-import { EmailIcon } from '@ui/icons/material/Email';
 import { CopyIcon, LinkShareIcon } from '@app/components/FigmaIcons';
 
 // Helper function to calculate and format expiry message
@@ -48,34 +45,35 @@ const getExpiryMessage = (files, expiresInHours) => {
 
 const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onNewTransfer, files, expiresInHours, uploadResponse }) => {
     // Debug logging
-    console.log('🔍 TransferSuccessPage Debug:', {
-        uploadResponse,
-        email_sent: uploadResponse?.email_sent,
-        type: typeof uploadResponse?.email_sent,
-        uploadResponseKeys: uploadResponse ? Object.keys(uploadResponse) : 'null'
-    });
+    console.log('🔍 TransferSuccessPage Debug:',  uploadResponse);
     
-    // Determine the display type based on whether email was sent
-    const emailWasSent = uploadResponse?.email_sent || false;
+    // Get form data from upload response (most reliable source)
+    const formData = uploadResponse?.formData || {};
+    console.log('🔍 Form Data from Response:', formData);
     
-    // Get recipient email from the fileEntry data structure
-    const recipientEmail = uploadResponse?.fileEntry?.recipient_emails || 
-                          uploadResponse?.recipient_emails || 
-                          uploadResponse?.fileEntry?.fileEntry?.recipient_emails;
+    // Determine email was sent based on form data (more reliable than backend flag)
+    const emailFromForm = formData?.email?.trim() || '';
+    const emailWasSent = emailFromForm.length > 0;
+    
+    // Get recipient email from form data (primary) or backup from response
+    const recipientEmail = emailFromForm || 
+                          uploadResponse?.fileEntry?.recipient_emails || 
+                          uploadResponse?.recipient_emails;
     
     const displayType = emailWasSent ? 'Email' : 'Link';
     
     console.log('🎯 Display Logic:', {
         emailWasSent,
         displayType,
-        recipientEmail
+        recipientEmail,
+        emailFromForm
     });
     
     const headingText = displayType === 'Link'
         ? 'Your link is ready'
         : recipientEmail 
             ? `Your transfer has been sent to your recipient(s)`
-            : 'Your transfer has been sent';
+            : 'Your transfer has been sent to your recipient(s)';
 
     const [copied, setCopied] = useState(false);
     const copyToClipboard = async () => {
@@ -104,7 +102,7 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
                 </div>
 
                 <div className="mb-2 text-center pt-[35px]">
-                    <h2 className="text-[18px] font-bold text-black">{headingText}</h2>
+                    <h2 className="text-[18px] font-semibold text-black">{headingText}</h2>
                 </div>
 
                 {displayType === 'Link' && (
@@ -138,10 +136,10 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
                 )}
                 {displayType === 'Email' && (
                     <div className="manage-col mt-3 mb-4 md:mb-8 p-1 md:p-3">
-                        <p className="normal-para text-center mb-3">
-                            Your transfer has been sent to your recipient(s)
-                        </p>
-                        <div className="center-align mb-4">
+                        {/* <p className="normal-para text-center mb-3">
+                            Your transfer has been sent <br></br> to your recipient(s)
+                        </p> */}
+                        <div className="center-align mb-4 mt-4">
                             <button 
                                 className="button-md bg-[#08CF65] text-white hover:bg-green-600 transition-all duration-200 shadow-md hover:shadow-lg"
                                 onClick={() => window.open(downloadLink, '_blank')}

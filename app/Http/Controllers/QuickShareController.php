@@ -194,20 +194,69 @@ class QuickShareController extends BaseController
             $fileEntry = $shareableLink->entry;
 
             // Send emails to recipients using proper Mailable
+            $successCount = 0;
+            $failures = [];
+            
             foreach ($recipientEmails as $recipientEmail) {
-                Mail::to($recipientEmail)->queue(
-                    new GuestUploadSent($shareableLink, $guestUpload, $senderName, $linkUrl, $message)
-                );
+                try {
+                    \Log::info('Queuing email for quick share', [
+                        'recipient' => $recipientEmail,
+                        'sender' => $senderName,
+                        'link_hash' => $shareableLink->hash,
+                        'link_url' => $linkUrl
+                    ]);
+                    
+                    Mail::to($recipientEmail)->queue(
+                        new GuestUploadSent($shareableLink, $guestUpload, $senderName, $linkUrl, $message)
+                    );
+                    
+                    $successCount++;
+                    
+                    \Log::info('Email queued successfully', [
+                        'recipient' => $recipientEmail,
+                        'link_hash' => $shareableLink->hash
+                    ]);
+                } catch (\Exception $mailException) {
+                    $failures[] = [
+                        'recipient' => $recipientEmail,
+                        'error' => $mailException->getMessage()
+                    ];
+                    
+                    \Log::error('Failed to queue email', [
+                        'recipient' => $recipientEmail,
+                        'link_hash' => $shareableLink->hash,
+                        'error' => $mailException->getMessage()
+                    ]);
+                }
+            }
+            
+            if (!empty($failures)) {
+                \Log::warning('Some emails failed to queue', [
+                    'success_count' => $successCount,
+                    'failure_count' => count($failures),
+                    'failures' => $failures
+                ]);
             }
 
+            $message = $successCount === count($recipientEmails) 
+                ? 'Email(s) queued successfully'
+                : ($successCount > 0 
+                    ? 'Some emails queued successfully' 
+                    : 'Failed to queue emails');
+                    
+            $statusCode = $successCount > 0 ? 200 : 500;
+            
             return response()->json([
-                'message' => 'Email(s) sent successfully',
+                'message' => $message,
                 'data' => [
                     'sender_email' => $senderEmail,
-                    'recipient_count' => count($recipientEmails),
+                    'total_recipients' => count($recipientEmails),
+                    'successful_queues' => $successCount,
+                    'failed_queues' => count($failures),
                     'link_url' => $linkUrl,
+                    'failures' => !empty($failures) ? $failures : null,
                 ]
-            ]);
+            ], $statusCode);
 
         } catch (\Exception $e) {
             return response()->json([

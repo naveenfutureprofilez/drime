@@ -12,7 +12,7 @@ import { apiClient } from '@common/http/query-client';
 import { prettyBytes } from '@ui/utils/files/pretty-bytes';
 
 const TUS_CHUNK_SIZE = 8 * 1024 * 1024; // 8MB chunks - LARGER to reduce number of requests
-const TUS_RETRY_DELAYS = [0, 2000, 8000, 20000, 45000]; // Reasonable retry delays
+const TUS_RETRY_DELAYS = [0, 2000, 4000, 6000, 10000]; // Reasonable retry delays
 const MANUAL_RETRY_DELAYS = [5000, 15000, 30000, 60000, 120000]; // Manual retry delays
 const CHUNK_DELAY = 100; // 100ms delay between chunks
 
@@ -34,6 +34,13 @@ export function FileUploadWidget({
   const [totalBytes, setTotalBytes] = useState(0);
   const [guestUploadGroupHash, setGuestUploadGroupHash] = useState(null);
   const [errorMessage, setErrorMessage] = useState(''); // For inline error messages
+  
+  // Form data state - moved up to avoid temporal dead zone
+  const [data, setData] = useState({
+    email: "",
+    name: "",
+    message: ""
+  });
   
   const uploadsRef = useRef(new Map()); // Store TUS Upload instances
   const speedCalculatorRef = useRef({ lastBytes: 0, lastTime: Date.now() });
@@ -688,10 +695,17 @@ export function FileUploadWidget({
           }
           window.completedUploadFiles.push(fileEntry);
           
-          // Store the upload response data for the success page
-          if (!window.uploadResponseData) {
-            window.uploadResponseData = response.data;
-          }
+          // Store the upload response data for the success page (always update to avoid caching)
+          console.log('💾 Storing upload response data with form data:', {
+            responseData: response.data,
+            formData: data,
+            emailFromFormData: data?.email
+          });
+          window.uploadResponseData = {
+            ...response.data,
+            formData: data // Include form data for email detection
+          };
+          console.log('💾 Stored window.uploadResponseData:', window.uploadResponseData);
           
           // Remove this file from uploadsRef to prevent double counting in progress
           uploadsRef.current.delete(file.name);
@@ -787,7 +801,7 @@ export function FileUploadWidget({
             error: error.message,
             status: error.response?.status,
             statusText: error.response?.statusText,
-            data: error.response?.data,
+            responseData: error.response?.data,
             uploadKey: upload.url?.split('/').pop(),
             groupHash: groupHash || guestUploadGroupHash
           });
@@ -853,7 +867,7 @@ export function FileUploadWidget({
     });
 
     return upload;
-  }, [settings, uploadProgress, onProgressUpdate, onUploadComplete, uploadSpeed, timeRemaining, selectedFiles]);
+  }, [settings, uploadProgress, onProgressUpdate, onUploadComplete, uploadSpeed, timeRemaining, selectedFiles, data]);
 
   // Manual retry function for persistent rate limiting
   const manualRetryUpload = useCallback(async (file, resumeFromBytes = 0) => {
@@ -916,14 +930,7 @@ export function FileUploadWidget({
         }
       }));
     }
-  }, [createTusUpload, guestUploadGroupHash]);
-
-  // Form data state - moved up to avoid temporal dead zone
-  const [data, setData] = useState({
-    email: "",
-    name: "",
-    message: ""
-  });
+  }, [createTusUpload, guestUploadGroupHash, data]);
 
   function formatExpiryTime(hours) {
     // Calculate the expiry date by adding hours to current date

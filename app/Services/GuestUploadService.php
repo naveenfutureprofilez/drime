@@ -59,7 +59,7 @@ class GuestUploadService
             'metadata' => [
                 'upload_method' => 'direct', // Will be 'tus' for resumable uploads
             ],
-            'recipient_emails' => $recipientEmail ?: null, // Store the email from form as string
+            'recipient_emails' => $recipientEmail ? [$recipientEmail] : null, // Store the email from form as array
             'total_size' => 0, // Will be updated after processing all files
         ]);
         
@@ -130,7 +130,7 @@ class GuestUploadService
             'expires_at' => $guestUpload->expires_at->toISOString(),
             'files' => $uploadedFiles,
             'download_all_url' => EmailUrlHelper::emailUrl("/download/{$guestUpload->hash}"),
-            'email_sent' => $emailSent,
+            'email_sent' => !empty($recipientEmail), // True if recipient email (sender_email from frontend) is provided
             'recipient_email' => $recipientEmail,
         ];
     }
@@ -232,7 +232,7 @@ class GuestUploadService
                 'metadata' => [
                     'upload_method' => 'tus',
                 ],
-                'recipient_emails' => $recipientEmail ?: null, // Store as string
+                'recipient_emails' => $recipientEmail ? [$recipientEmail] : null, // Store as array
                 'total_size' => 0, // Will be updated after attaching files
                 'expected_files' => $expectedFiles, // Track expected files for multi-file uploads
             ]);
@@ -337,15 +337,21 @@ class GuestUploadService
             
             if ($shouldSendEmail) {
                 // Dispatch the email job
+                // Get first recipient email from array
+                $firstRecipientEmail = is_array($lockedUpload->recipient_emails) && !empty($lockedUpload->recipient_emails) 
+                    ? $lockedUpload->recipient_emails[0] 
+                    : $recipientEmail;
+                
                 \App\Jobs\ProcessGuestUploadJob::dispatch(
                     $lockedUpload->hash,
                     $fileEntry->id,
-                    $recipientEmail
+                    $firstRecipientEmail
                 )->delay(now()->addSeconds(10));
                 
                 logger('Email job dispatched for guest upload', [
                     'guest_upload_hash' => $lockedUpload->hash,
-                    'recipient_email' => $recipientEmail,
+                    'recipient_email' => $firstRecipientEmail,
+                    'recipient_emails_array' => $lockedUpload->recipient_emails,
                     'current_files' => $lockedUpload->files()->count(),
                     'expected_files' => $lockedUpload->expected_files
                 ]);
@@ -384,6 +390,9 @@ class GuestUploadService
             'email_will_be_sent' => $emailWillBeSent
         ]);
         
+        // Follow the simple rule: email_sent = true if sender_email is provided
+        $emailSentStatus = !empty($recipientEmail);
+        
         return [
             'hash' => $guestUpload->hash, // Return shared hash for group
             'fileEntry' => [ // Maintain compatibility with existing TUS frontend
@@ -400,7 +409,7 @@ class GuestUploadService
             'expires_at' => $guestUpload->expires_at->toISOString(),
             'download_url' => EmailUrlHelper::emailUrl("/download/{$guestUpload->hash}"),
             'share_url' => EmailUrlHelper::emailUrl("/share/{$guestUpload->hash}"),
-            'email_sent' => $emailWillBeSent, // Only true if email job was actually dispatched
+            'email_sent' => $emailSentStatus, // True if recipient email (sender_email from frontend) is provided
         ];
     }
 
@@ -409,8 +418,8 @@ class GuestUploadService
      */
     private function shouldDispatchEmail(GuestUpload $guestUpload): bool
     {
-        // Check if recipient email exists
-        if (empty($guestUpload->recipient_emails)) {
+        // Check if recipient email exists (should be an array)
+        if (empty($guestUpload->recipient_emails) || !is_array($guestUpload->recipient_emails)) {
             return false;
         }
         

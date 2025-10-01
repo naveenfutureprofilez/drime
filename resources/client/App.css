@@ -129,7 +129,7 @@ body {
   }
 
   .button {
-    @apply bg-[#08CF65] !text-white !px-[25px] md:px-[25px] !py-[7px] md:py-[7px] text-center font-[600] cursor-pointer rounded-[10px] inline-block font-schibsted  transition-all hover:bg-[#04BA71];
+    @apply bg-[#08CF65] !text-white !px-[25px] md:px-[25px] !py-[8px] md:py-[8px] text-center font-[600] cursor-pointer rounded-[10px] inline-block font-schibsted  transition-all hover:bg-[#04BA71];
   }
 
   .button-sm {

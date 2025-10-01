@@ -591,7 +591,10 @@ class GuestUploadController extends BaseController
     public function sendEmail(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'from_email' => 'required|email',
+            'sender_email' => 'required|email',
+            'recipient_emails' => 'required|array|min:1',
+            'recipient_emails.*' => 'email',
+            'title' => 'required|string|max:255',
             'message' => 'nullable|string|max:500',
             'share_url' => 'required|string',
             'files' => 'required|array|min:1',
@@ -601,13 +604,26 @@ class GuestUploadController extends BaseController
 
         if ($validator->fails()) {
             return response()->json([
+                'success' => false,
                 'message' => 'Validation failed',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
+                'email_sent' => false
+            ], 422);
+        }
+
+        // Additional validation: ensure recipient emails array is not empty
+        $recipientEmails = $request->input('recipient_emails');
+        if (empty($recipientEmails) || count($recipientEmails) === 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'At least one recipient email is required',
+                'email_sent' => false
             ], 422);
         }
 
         try {
-            $fromEmail = $request->input('from_email');
+            $senderEmail = $request->input('sender_email');
+            $title = $request->input('title');
             $message = $request->input('message');
             $shareUrl = $request->input('share_url');
             $files = $request->input('files');
@@ -620,13 +636,25 @@ class GuestUploadController extends BaseController
             
             if (!$guestUpload) {
                 return response()->json([
-                    'message' => 'Upload not found'
+                    'success' => false,
+                    'message' => 'Upload not found',
+                    'email_sent' => false
                 ], 404);
             }
 
             // Update guest upload record with email information
+            // email_sent = true if sender_email is provided and not empty
+            $emailSent = !empty($senderEmail);
+            
             $guestUpload->update([
-                'sender_email' => $fromEmail,
+                'sender_email' => $senderEmail,
+                'recipient_emails' => $recipientEmails, // Store recipient emails as array (Laravel will cast to JSON)
+                'title' => $title,
+                'email_sent' => $emailSent,
+                'email_sent_at' => $emailSent ? now() : null,
+                'metadata' => array_merge($guestUpload->metadata ?? [], [
+                    'manual_email_sent' => true // Flag to indicate manual email was attempted
+                ])
             ]);
 
             // Create or get shareable link for the transfer
@@ -648,23 +676,110 @@ class GuestUploadController extends BaseController
 
             $linkUrl = EmailUrlHelper::emailUrl("/share/{$guestUpload->hash}");
 
-            // Send confirmation email to the sender
-            Mail::to($fromEmail)->queue(
-                new GuestUploadSent($shareableLink, $guestUpload, $fromEmail, $linkUrl, $message)
-            );
+            $emailsSent = 0;
+            $failedEmails = [];
 
-            return response()->json([
-                'message' => 'Email sent successfully',
-                'data' => [
-                    'sender_email' => $fromEmail,
-                    'link_url' => $linkUrl,
-                ]
-            ]);
+            // Send email to each recipient
+            foreach ($recipientEmails as $recipientEmail) {
+                try {
+                    \Log::info('Queuing email for guest upload to recipient', [
+                        'recipient' => $recipientEmail,
+                        'sender' => $senderEmail,
+                        'upload_hash' => $guestUpload->hash,
+                        'link_url' => $linkUrl
+                    ]);
+                    
+                    Mail::to($recipientEmail)->queue(
+                        new GuestUploadSent($shareableLink, $guestUpload, $senderEmail, $linkUrl, $message)
+                    );
+                    
+                    $emailsSent++;
+                    
+                    \Log::info('Email queued successfully to recipient', [
+                        'recipient' => $recipientEmail,
+                        'upload_hash' => $guestUpload->hash
+                    ]);
+                } catch (\Exception $mailException) {
+                    \Log::error('Failed to queue email to recipient', [
+                        'recipient' => $recipientEmail,
+                        'sender' => $senderEmail,
+                        'upload_hash' => $guestUpload->hash,
+                        'error' => $mailException->getMessage()
+                    ]);
+                    $failedEmails[] = $recipientEmail;
+                }
+            }
+
+            // Also send confirmation email to sender
+            try {
+                \Log::info('Queuing confirmation email to sender', [
+                    'sender' => $senderEmail,
+                    'upload_hash' => $guestUpload->hash,
+                    'recipients_count' => count($recipientEmails)
+                ]);
+                
+                // Send confirmation email to sender (same template as recipients)
+                Mail::to($senderEmail)->queue(
+                    new GuestUploadSent($shareableLink, $guestUpload, $senderEmail, $linkUrl, $message)
+                );
+            } catch (\Exception $confirmationException) {
+                \Log::error('Failed to send confirmation email to sender', [
+                    'sender' => $senderEmail,
+                    'error' => $confirmationException->getMessage()
+                ]);
+            }
+
+            // Determine response based on success/failure
+            if ($emailsSent === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to send emails to any recipients',
+                    'failed_emails' => $failedEmails,
+                    'email_sent' => $emailSent // Based on from_email presence, not sending results
+                ], 500);
+            } elseif (count($failedEmails) > 0) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Emails sent to {$emailsSent} recipients, but failed for some",
+                    'data' => [
+                        'sender_email' => $senderEmail,
+                        'link_url' => $linkUrl,
+                        'emails_sent' => $emailsSent,
+                        'failed_emails' => $failedEmails,
+                        'email_sent' => $emailSent // Based on sender_email presence, not sending results
+                    ]
+                ]);
+            } else {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Emails sent successfully to all {$emailsSent} recipients",
+                    'data' => [
+                        'sender_email' => $senderEmail,
+                        'link_url' => $linkUrl,
+                        'emails_sent' => $emailsSent,
+                        'email_sent' => $emailSent // Based on sender_email presence, not sending results
+                    ]
+                ]);
+            }
 
         } catch (\Exception $e) {
+            // For exceptions, email_sent depends on whether sender_email was provided
+            $senderEmail = $request->input('sender_email', '');
+            $emailSent = !empty($senderEmail);
+            
+            // Update guest upload if it exists
+            if (isset($guestUpload)) {
+                $guestUpload->update([
+                    'email_sent' => $emailSent,
+                    'email_sent_at' => $emailSent ? now() : null
+                ]);
+            }
+            
             return response()->json([
+                'success' => false,
                 'message' => 'Failed to send email',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'email_sent' => $emailSent
             ], 500);
         }
     }

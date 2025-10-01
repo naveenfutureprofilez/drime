@@ -47,7 +47,7 @@ class GuestUpload extends Model
         'email_sent_at' => 'datetime',
         'email_sent' => 'boolean',
         'metadata' => 'array',
-        // recipient_emails is now a string, not array
+        'recipient_emails' => 'array',
     ];
 
     protected $attributes = [
