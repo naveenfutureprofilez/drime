@@ -19,13 +19,22 @@ class ReactErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    // Check if it's the useState shim error we want to ignore
-    if (error?.message?.includes('useState') || error?.stack?.includes('use-sync-external-store-shim')) {
-      // Suppress this specific error
-      return;
+    // Check if this is the useState shim error we want to suppress
+    const errorMessage = error.message || '';
+    const errorStack = error.stack || '';
+    
+    if (
+      errorMessage.includes('Cannot read properties of undefined (reading \'useState\')') ||
+      errorMessage.includes('use-sync-external-store-shim') ||
+      errorStack.includes('use-sync-external-store-shim') ||
+      errorStack.includes('use-sync-external-store-shim.production.js')
+    ) {
+      // Log a suppressed warning instead of the full error
+      console.warn('[React Error Boundary] Suppressed useState shim error - this is harmless and doesn\'t affect functionality');
+      return; // Don't log the full error
     }
     
-    // Log other errors normally
+    // For all other errors, log normally
     console.error('React Error Boundary caught an error:', error, errorInfo);
   }
 

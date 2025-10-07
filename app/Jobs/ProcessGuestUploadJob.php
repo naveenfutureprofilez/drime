@@ -17,7 +17,7 @@ class ProcessGuestUploadJob implements ShouldQueue
 
     protected string $guestUploadHash;
     protected string $fileEntryId;
-    protected ?string $recipientEmail;
+    protected ?array $recipientEmails;
 
     /**
      * Create a new job instance.
@@ -25,11 +25,11 @@ class ProcessGuestUploadJob implements ShouldQueue
     public function __construct(
         string $guestUploadHash,
         string $fileEntryId,
-        ?string $recipientEmail = null
+        ?array $recipientEmails = null
     ) {
         $this->guestUploadHash = $guestUploadHash;
         $this->fileEntryId = $fileEntryId;
-        $this->recipientEmail = $recipientEmail;
+        $this->recipientEmails = $recipientEmails;
 
         // Set job to high priority for user experience
         $this->onQueue('high');
@@ -44,7 +44,7 @@ class ProcessGuestUploadJob implements ShouldQueue
             Log::info('Starting guest upload processing job', [
                 'guest_upload_hash' => $this->guestUploadHash,
                 'file_entry_id' => $this->fileEntryId,
-                'recipient_email' => $this->recipientEmail
+                'recipient_emails' => $this->recipientEmails
             ]);
 
             $guestUpload = GuestUpload::where('hash', $this->guestUploadHash)->first();
@@ -66,28 +66,55 @@ class ProcessGuestUploadJob implements ShouldQueue
                 return;
             }
 
-            // Send confirmation email if recipient email is provided
+            // Send confirmation emails if recipient emails are provided
             // BUT skip if manual email was already attempted
-            if ($this->recipientEmail && !$guestUpload->email_sent && !($guestUpload->metadata['manual_email_sent'] ?? false)) {
-                Log::info('About to send confirmation email', [
-                    'recipient_email' => $this->recipientEmail,
+            if ($this->recipientEmails && !empty($this->recipientEmails) && !$guestUpload->email_sent && !($guestUpload->metadata['manual_email_sent'] ?? false)) {
+                Log::info('About to send confirmation emails', [
+                    'recipient_emails' => $this->recipientEmails,
+                    'recipient_count' => count($this->recipientEmails),
                     'guest_upload_hash' => $this->guestUploadHash,
                     'current_email_sent_status' => $guestUpload->email_sent,
                     'guest_upload_id' => $guestUpload->id,
                     'files_count' => $guestUpload->files()->count()
                 ]);
                 
-                try {
-                    Log::info('Calling GuestUploadService::sendConfirmationEmailAsync', [
-                        'service_class' => GuestUploadService::class,
-                        'method' => 'sendConfirmationEmailAsync'
-                    ]);
-                    
-                    app(GuestUploadService::class)->sendConfirmationEmailAsync($guestUpload, $this->recipientEmail);
-                    
-                    Log::info('Email sending service call completed successfully');
-                    
-                    // Mark email as sent to prevent duplicate sends
+                $emailsSent = 0;
+                $emailErrors = [];
+                
+                foreach ($this->recipientEmails as $recipientEmail) {
+                    try {
+                        Log::info('Sending email to recipient', [
+                            'recipient_email' => $recipientEmail,
+                            'service_class' => GuestUploadService::class,
+                            'method' => 'sendConfirmationEmailAsync'
+                        ]);
+                        
+                        app(GuestUploadService::class)->sendConfirmationEmailAsync($guestUpload, $recipientEmail);
+                        $emailsSent++;
+                        
+                        Log::info('Email sent successfully to recipient', [
+                            'recipient_email' => $recipientEmail
+                        ]);
+                        
+                    } catch (\Exception $emailException) {
+                        $emailErrors[] = [
+                            'recipient_email' => $recipientEmail,
+                            'error' => $emailException->getMessage()
+                        ];
+                        
+                        Log::error('Email sending failed for recipient', [
+                            'recipient_email' => $recipientEmail,
+                            'error' => $emailException->getMessage(),
+                            'trace' => $emailException->getTraceAsString(),
+                            'file' => $emailException->getFile(),
+                            'line' => $emailException->getLine(),
+                            'guest_upload_hash' => $this->guestUploadHash
+                        ]);
+                    }
+                }
+                
+                // Mark email as sent if at least one email was sent successfully
+                if ($emailsSent > 0) {
                     $guestUpload->update([
                         'email_sent' => true,
                         'email_sent_at' => now()
@@ -95,23 +122,25 @@ class ProcessGuestUploadJob implements ShouldQueue
                     
                     Log::info('Database updated with email_sent = true', [
                         'guest_upload_id' => $guestUpload->id,
+                        'emails_sent' => $emailsSent,
+                        'total_recipients' => count($this->recipientEmails),
                         'email_sent_at' => $guestUpload->fresh()->email_sent_at
                     ]);
-                } catch (\Exception $emailException) {
-                    Log::error('Email sending failed in ProcessGuestUploadJob', [
-                        'error' => $emailException->getMessage(),
-                        'trace' => $emailException->getTraceAsString(),
-                        'file' => $emailException->getFile(),
-                        'line' => $emailException->getLine(),
+                }
+                
+                if (!empty($emailErrors)) {
+                    Log::warning('Some emails failed to send', [
                         'guest_upload_hash' => $this->guestUploadHash,
-                        'recipient_email' => $this->recipientEmail
+                        'errors' => $emailErrors,
+                        'successful_sends' => $emailsSent
                     ]);
                 }
+                
             } else {
                 Log::info('Skipping email send', [
-                    'recipient_email' => $this->recipientEmail,
+                    'recipient_emails' => $this->recipientEmails,
                     'email_already_sent' => $guestUpload->email_sent,
-                    'reason' => !$this->recipientEmail ? 'no_recipient_email' : 'email_already_sent',
+                    'reason' => empty($this->recipientEmails) ? 'no_recipient_emails' : 'email_already_sent',
                     'guest_upload_hash' => $this->guestUploadHash
                 ]);
             }

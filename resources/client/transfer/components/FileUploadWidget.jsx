@@ -10,6 +10,7 @@ import { SettingsPanel } from './SettingsPanel';
 import { FileSize } from '@app/components/FileSize';
 import { apiClient } from '@common/http/query-client';
 import { prettyBytes } from '@ui/utils/files/pretty-bytes';
+import { MultipleEmailInput } from './MultipleEmailInput';
 
 const TUS_CHUNK_SIZE = 8 * 1024 * 1024; // 8MB chunks - LARGER to reduce number of requests
 const TUS_RETRY_DELAYS = [0, 2000, 4000, 6000, 10000]; // Reasonable retry delays
@@ -37,7 +38,7 @@ export function FileUploadWidget({
   
   // Form data state - moved up to avoid temporal dead zone
   const [data, setData] = useState({
-    email: "",
+    emails: [], // Changed from single email to array of emails
     name: "",
     message: ""
   });
@@ -65,6 +66,14 @@ export function FileUploadWidget({
       chunkStrategy: '8MB chunks (fewer requests to prevent rate limiting)',
       estimatedChunks: Math.ceil(file.size / TUS_CHUNK_SIZE),
       rateLimitPrevention: 'Larger chunks + reasonable delays'
+    });
+    
+    console.log('🔧 Form Data being used for TUS upload:', {
+      formData_full: formData,
+      emails_array: formData?.emails,
+      emails_length: formData?.emails?.length || 0,
+      first_email: formData?.emails?.[0],
+      emails_json: JSON.stringify(formData?.emails || [])
     });
     
     const upload = new Upload(file, {
@@ -103,7 +112,8 @@ export function FileUploadWidget({
         max_downloads: settings?.maxDownloads?.toString() || '',
         upload_group_hash: uploadGroupHash,
         // Form data fields
-        sender_email: formData?.email || '',
+        sender_email: formData?.emails?.[0] || '', // Use first email for backward compatibility
+        recipient_emails: JSON.stringify(formData?.emails || []), // Send all emails as JSON
         sender_name: formData?.name || '',
         message: formData?.message || '',
         expected_files: totalFilesCount.toString(), // Add total files count for email logic
@@ -111,9 +121,13 @@ export function FileUploadWidget({
       
       onError: (error) => {
         console.log('🔧 TUS Metadata being sent:', {
-          sender_email: formData?.email || '',
+          sender_email: formData?.emails?.[0] || '',
+          recipient_emails: JSON.stringify(formData?.emails || []),
+          recipient_emails_parsed: formData?.emails || [],
           sender_name: formData?.name || '',
           message: formData?.message || '',
+          formData_emails_length: formData?.emails?.length || 0,
+          formData_full: formData
         });
         const statusCode = error.originalResponse?.getStatus();
         
@@ -544,7 +558,8 @@ export function FileUploadWidget({
             password: settings?.password,
             expires_in_hours: settings?.expiresInHours || 72,
             max_downloads: settings?.maxDownloads,
-            sender_email: formData?.email, // Use formData parameter, not data
+            sender_email: formData?.emails?.[0] || '', // Extract first email from emails array
+            recipient_emails: JSON.stringify(formData?.emails || []), // Send all emails as JSON
             sender_name: formData?.name, // Use formData parameter, not data
             message: formData?.message, // Use formData parameter, not data
             expected_files: totalFilesCount || window.totalExpectedFiles || 1 // Add expected files count
@@ -699,7 +714,7 @@ export function FileUploadWidget({
           console.log('💾 Storing upload response data with form data:', {
             responseData: response.data,
             formData: data,
-            emailFromFormData: data?.email
+            emailsFromFormData: data?.emails
           });
           window.uploadResponseData = {
             ...response.data,
@@ -1439,6 +1454,23 @@ export function FileUploadWidget({
     })
   }
 
+  // Handle emails change from MultipleEmailInput
+  const handleEmailsChange = (newEmails) => {
+    console.log('📧 Emails change received:', newEmails);
+    console.log('📧 Emails array length:', newEmails.length);
+    console.log('📧 Individual emails:', newEmails);
+    setData((prevData) => {
+      const newData = {
+        ...prevData,
+        emails: newEmails
+      };
+      console.log('📊 Updated data state with emails:', newData);
+      console.log('📊 Data.emails array:', newData.emails);
+      console.log('📊 Data.emails length:', newData.emails?.length || 0);
+      return newData;
+    });
+  };
+
 
 
   const addInputRef = useRef(null);
@@ -1551,8 +1583,8 @@ export function FileUploadWidget({
       </div> 
       :
       <>
-        <div className=" relative transition-all duration-200 border-gray-300 bg-white">
-          <div className='p-[20px] md:p-[30px]'>
+        <div className=" relative transition-all w-full  duration-200 border-gray-300 bg-white">
+          <div className='p-[20px] md:p-[30px] w-full max-w-[100%]'>
             <div className="between-align">
               <div>
                 <h2 className="text-[18px] font-semibold mb-1 !text-left">{selectedFiles?.length} items</h2>
@@ -1623,13 +1655,11 @@ export function FileUploadWidget({
             <FileData selectedFiles={selectedFiles} setSelectedFiles={setSelectedFiles} />
             {activeTab === "Email" && (
               <>
-                <input autoComplete="email"
-                  type="email"
-                  name='email'
-                  value={data?.email}
-                  onChange={handleChange}
-                  placeholder="Email"
-                  className="input mb-0"
+                <MultipleEmailInput
+                  emails={data?.emails || []}
+                  onChange={handleEmailsChange}
+                  placeholder="Enter email addresses..."
+                  className="mb-0"
                 />
               </>
             )}

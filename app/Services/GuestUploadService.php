@@ -37,12 +37,39 @@ class GuestUploadService
         $maxDownloads = $request->integer('max_downloads');
         
         // Process form data - map frontend fields correctly
-        $recipientEmail = $request->string('sender_email')->toString(); // Frontend sends as 'sender_email' but it's actually recipient
+        // Frontend sends recipient_emails as JSON string, parse it
+        $recipientEmailsJson = $request->string('recipient_emails')->toString();
+        $recipientEmails = [];
+        
+        if (!empty($recipientEmailsJson)) {
+            try {
+                $recipientEmails = json_decode($recipientEmailsJson, true);
+                if (!is_array($recipientEmails)) {
+                    $recipientEmails = [];
+                }
+            } catch (\Exception $e) {
+                logger('Failed to parse recipient_emails JSON', [
+                    'recipient_emails_json' => $recipientEmailsJson,
+                    'error' => $e->getMessage()
+                ]);
+                $recipientEmails = [];
+            }
+        }
+        
+        // Fallback to sender_email for backward compatibility
+        if (empty($recipientEmails)) {
+            $recipientEmail = $request->string('sender_email')->toString();
+            if (!empty($recipientEmail)) {
+                $recipientEmails = [$recipientEmail];
+            }
+        }
+        
         $title = $request->string('sender_name')->toString(); // Frontend sends as 'sender_name' but it's actually title
         $message = $request->string('message')->toString();
         
         logger('Form data processed', [
-            'recipient_email' => $recipientEmail,
+            'recipient_emails' => $recipientEmails,
+            'recipient_count' => count($recipientEmails),
             'title' => $title,
             'message' => $message
         ]);
@@ -59,7 +86,7 @@ class GuestUploadService
             'metadata' => [
                 'upload_method' => 'direct', // Will be 'tus' for resumable uploads
             ],
-            'recipient_emails' => $recipientEmail ? [$recipientEmail] : null, // Store the email from form as array
+            'recipient_emails' => !empty($recipientEmails) ? $recipientEmails : null, // Store the emails from form as array
             'total_size' => 0, // Will be updated after processing all files
         ]);
         
@@ -114,12 +141,12 @@ class GuestUploadService
 
         // e. OPTIMIZED: Send confirmation email asynchronously (completely optional)
         $emailSent = false;
-        if ($recipientEmail) {
+        if (!empty($recipientEmails)) {
             // Dispatch background job for email sending with delay
             \App\Jobs\ProcessGuestUploadJob::dispatch(
                 $guestUpload->hash,
                 $guestUpload->files->first()?->id ?? 0,
-                $recipientEmail
+                $recipientEmails
             )->delay(now()->addSeconds(10)); // Longer delay since it's not critical
             $emailSent = true; // Set to true since job is dispatched
         }
@@ -130,8 +157,8 @@ class GuestUploadService
             'expires_at' => $guestUpload->expires_at->toISOString(),
             'files' => $uploadedFiles,
             'download_all_url' => EmailUrlHelper::emailUrl("/download/{$guestUpload->hash}"),
-            'email_sent' => !empty($recipientEmail), // True if recipient email (sender_email from frontend) is provided
-            'recipient_email' => $recipientEmail,
+            'email_sent' => !empty($recipientEmails), // True if recipient emails are provided
+            'recipient_emails' => $recipientEmails,
         ];
     }
 
@@ -186,14 +213,42 @@ class GuestUploadService
         
         // Get or create GuestUpload based on upload_group_hash
         $uploadGroupHash = $request->string('upload_group_hash')->toString();
-        $recipientEmail = $request->string('sender_email')->toString();
+        
+        // Process recipient emails from TUS metadata
+        $recipientEmailsJson = $request->string('recipient_emails')->toString();
+        $recipientEmails = [];
+        
+        if (!empty($recipientEmailsJson)) {
+            try {
+                $recipientEmails = json_decode($recipientEmailsJson, true);
+                if (!is_array($recipientEmails)) {
+                    $recipientEmails = [];
+                }
+            } catch (\Exception $e) {
+                logger('Failed to parse recipient_emails JSON in TUS upload', [
+                    'recipient_emails_json' => $recipientEmailsJson,
+                    'error' => $e->getMessage()
+                ]);
+                $recipientEmails = [];
+            }
+        }
+        
+        // Fallback to sender_email for backward compatibility
+        if (empty($recipientEmails)) {
+            $recipientEmail = $request->string('sender_email')->toString();
+            if (!empty($recipientEmail)) {
+                $recipientEmails = [$recipientEmail];
+            }
+        }
+        
         $senderName = $request->string('sender_name')->toString();
         $message = $request->string('message')->toString();
         $expectedFiles = $request->integer('expected_files') ?: $metadata['expected_files'] ?? null;
         $isNewUploadGroup = !$uploadGroupHash;
         
         logger('GuestUploadService::handleTusUpload - Form data extracted', [
-            'recipient_email' => $recipientEmail,
+            'recipient_emails' => $recipientEmails,
+            'recipient_count' => count($recipientEmails),
             'sender_name' => $senderName,
             'message' => $message,
             'upload_group_hash' => $uploadGroupHash
@@ -232,7 +287,7 @@ class GuestUploadService
                 'metadata' => [
                     'upload_method' => 'tus',
                 ],
-                'recipient_emails' => $recipientEmail ? [$recipientEmail] : null, // Store as array
+                'recipient_emails' => !empty($recipientEmails) ? $recipientEmails : null, // Store as array
                 'total_size' => 0, // Will be updated after attaching files
                 'expected_files' => $expectedFiles, // Track expected files for multi-file uploads
             ]);
@@ -315,7 +370,7 @@ class GuestUploadService
         ]);
 
         // OPTIMIZED: Use a single database transaction for better performance with email dispatch logic
-        $emailWillBeSent = \DB::transaction(function () use ($guestUpload, $fileEntry, $fileSize, $recipientEmail) {
+        $emailWillBeSent = \DB::transaction(function () use ($guestUpload, $fileEntry, $fileSize, $recipientEmails) {
             // Use lockForUpdate to prevent race conditions during email dispatch checks
             $lockedUpload = GuestUpload::lockForUpdate()->find($guestUpload->id);
             
@@ -337,21 +392,21 @@ class GuestUploadService
             
             if ($shouldSendEmail) {
                 // Dispatch the email job
-                // Get first recipient email from array
-                $firstRecipientEmail = is_array($lockedUpload->recipient_emails) && !empty($lockedUpload->recipient_emails) 
-                    ? $lockedUpload->recipient_emails[0] 
-                    : $recipientEmail;
+                // Get all recipient emails from array
+                $recipientEmailsArray = is_array($lockedUpload->recipient_emails) && !empty($lockedUpload->recipient_emails) 
+                    ? $lockedUpload->recipient_emails 
+                    : (!empty($recipientEmails) ? $recipientEmails : []);
                 
                 \App\Jobs\ProcessGuestUploadJob::dispatch(
                     $lockedUpload->hash,
                     $fileEntry->id,
-                    $firstRecipientEmail
+                    $recipientEmailsArray
                 )->delay(now()->addSeconds(10));
                 
                 logger('Email job dispatched for guest upload', [
                     'guest_upload_hash' => $lockedUpload->hash,
-                    'recipient_email' => $firstRecipientEmail,
-                    'recipient_emails_array' => $lockedUpload->recipient_emails,
+                    'recipient_emails' => $recipientEmailsArray,
+                    'recipient_count' => count($recipientEmailsArray),
                     'current_files' => $lockedUpload->files()->count(),
                     'expected_files' => $lockedUpload->expected_files
                 ]);
@@ -390,8 +445,8 @@ class GuestUploadService
             'email_will_be_sent' => $emailWillBeSent
         ]);
         
-        // Follow the simple rule: email_sent = true if sender_email is provided
-        $emailSentStatus = !empty($recipientEmail);
+        // Follow the simple rule: email_sent = true if recipient emails are provided
+        $emailSentStatus = !empty($recipientEmails);
         
         return [
             'hash' => $guestUpload->hash, // Return shared hash for group
@@ -409,7 +464,8 @@ class GuestUploadService
             'expires_at' => $guestUpload->expires_at->toISOString(),
             'download_url' => EmailUrlHelper::emailUrl("/download/{$guestUpload->hash}"),
             'share_url' => EmailUrlHelper::emailUrl("/share/{$guestUpload->hash}"),
-            'email_sent' => $emailSentStatus, // True if recipient email (sender_email from frontend) is provided
+            'email_sent' => $emailSentStatus, // True if recipient emails are provided
+            'recipient_emails' => $recipientEmails, // Return the recipient emails array
         ];
     }
 

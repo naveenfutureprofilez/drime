@@ -51,28 +51,29 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
     const formData = uploadResponse?.formData || {};
     console.log('🔍 Form Data from Response:', formData);
     
-    // Determine email was sent based on form data (more reliable than backend flag)
-    const emailFromForm = formData?.email?.trim() || '';
-    const emailWasSent = emailFromForm.length > 0;
+    // Get all recipient emails from form data
+    const recipientEmails = formData?.emails || [];
+    const emailWasSent = recipientEmails.length > 0;
     
-    // Get recipient email from form data (primary) or backup from response
-    const recipientEmail = emailFromForm || 
-                          uploadResponse?.fileEntry?.recipient_emails || 
-                          uploadResponse?.recipient_emails;
+    // Get recipient emails from form data (primary) or backup from response
+    const allRecipientEmails = recipientEmails.length > 0 
+        ? recipientEmails 
+        : (uploadResponse?.recipient_emails || []);
     
     const displayType = emailWasSent ? 'Email' : 'Link';
     
     console.log('🎯 Display Logic:', {
         emailWasSent,
         displayType,
-        recipientEmail,
-        emailFromForm
+        recipientEmails,
+        recipientCount: recipientEmails.length,
+        allRecipientEmails
     });
     
     const headingText = displayType === 'Link'
         ? 'Your link is ready'
-        : recipientEmail 
-            ? `Your transfer has been sent to your recipient(s)`
+        : allRecipientEmails.length > 0
+            ? `Your transfer has been sent to ${allRecipientEmails.length} recipient${allRecipientEmails.length > 1 ? 's' : ''}`
             : 'Your transfer has been sent to your recipient(s)';
 
     const [copied, setCopied] = useState(false);
@@ -136,9 +137,22 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
                 )}
                 {displayType === 'Email' && (
                     <div className="manage-col mt-3 mb-4 md:mb-8 p-1 md:p-3">
-                        {/* <p className="normal-para text-center mb-3">
-                            Your transfer has been sent <br></br> to your recipient(s)
-                        </p> */}
+                        {/* Show recipient emails list */}
+                        {allRecipientEmails.length > 0 && (
+                            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                                {/* <p className="text-sm font-medium text-gray-700 mb-2">
+                                    Sent to:
+                                </p> */}
+                                <div className="space-y-1">
+                                    {allRecipientEmails.map((email, index) => (
+                                        <div key={index} className="text-sm text-gray-600 flex items-center">
+                                            <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                            {email.trim()}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         <div className="center-align mb-4 mt-4">
                             <button 
                                 className="button-md bg-[#08CF65] text-white hover:bg-green-600 transition-all duration-200 shadow-md hover:shadow-lg"
