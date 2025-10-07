@@ -143,9 +143,9 @@ const TransferSuccessPage = ({ type = 'Link', downloadLink, onEmailTransfer, onN
                                 {/* <p className="text-sm font-medium text-gray-700 mb-2">
                                     Sent to:
                                 </p> */}
-                                <div className="space-y-1">
+                                <div className="space-y-1 ">
                                     {allRecipientEmails.map((email, index) => (
-                                        <div key={index} className="text-sm text-gray-600 flex items-center">
+                                        <div key={index} className="text-sm text-gray-600 flex items-center justify-center">
                                             <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
                                             {email.trim()}
                                         </div>
